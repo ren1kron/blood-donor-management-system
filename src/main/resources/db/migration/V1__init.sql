@@ -269,7 +269,28 @@ values
     ('DOCTOR', 'Doctor'),
     ('NURSE', 'Nurse'),
     ('LAB', 'Lab Technician'),
-    ('REGISTRAR', 'Registrar')
+    ('REGISTRAR', 'Registrar'),
+    ('GOD', 'Head Administrator')
+on conflict do nothing;
+
+with god_account as (
+    insert into account (email, password_hash)
+    values ('god@system.local', crypt('big_papa', gen_salt('bf')))
+    on conflict (email) do nothing
+    returning id
+),
+god_account_id as (
+    select id from god_account
+    union
+    select id from account where email = 'god@system.local'
+),
+god_role as (
+    select id from role where code = 'GOD'
+)
+insert into account_role (account_id, role_id)
+select a.id, r.id
+from god_account_id a
+cross join god_role r
 on conflict do nothing;
 
 insert into lab_test_type (code, name)
