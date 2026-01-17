@@ -8,4 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AppointmentSlotRepository extends JpaRepository<AppointmentSlot, UUID> {
     List<AppointmentSlot> findByStartAtAfterOrderByStartAtAsc(OffsetDateTime startAt);
+
+    List<AppointmentSlot> findByPurposeIgnoreCaseAndStartAtAfterOrderByStartAtAsc(String purpose,
+                                                                                   OffsetDateTime startAt);
 }

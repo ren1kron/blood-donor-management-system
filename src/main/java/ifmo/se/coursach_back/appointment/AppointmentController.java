@@ -4,18 +4,22 @@ import ifmo.se.coursach_back.appointment.dto.AppointmentSlotResponse;
 import ifmo.se.coursach_back.appointment.dto.BookingResponse;
 import ifmo.se.coursach_back.appointment.dto.CreateBookingRequest;
 import ifmo.se.coursach_back.appointment.dto.CreateSlotRequest;
+import ifmo.se.coursach_back.donor.dto.DonorBookingResponse;
+import ifmo.se.coursach_back.donor.dto.RescheduleRequest;
 import ifmo.se.coursach_back.model.AppointmentSlot;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,9 +34,11 @@ public class AppointmentController {
 
     @GetMapping("/slots")
     public List<AppointmentSlotResponse> listSlots(@RequestParam(value = "from", required = false)
-                                                   OffsetDateTime from) {
+                                                   OffsetDateTime from,
+                                                   @RequestParam(value = "purpose", required = false)
+                                                   String purpose) {
         OffsetDateTime start = from == null ? OffsetDateTime.now() : from;
-        return appointmentService.listUpcomingSlots(start).stream()
+        return appointmentService.listUpcomingSlots(start, purpose).stream()
                 .map(AppointmentSlotResponse::from)
                 .toList();
     }
@@ -50,5 +56,33 @@ public class AppointmentController {
                                                          @Valid @RequestBody CreateBookingRequest request) {
         Booking booking = appointmentService.createBooking(principal.getId(), request.slotId());
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking));
+    }
+
+    @GetMapping("/bookings/my")
+    @PreAuthorize("hasRole('DONOR')")
+    public List<DonorBookingResponse> listMyBookings(
+            @AuthenticationPrincipal AccountPrincipal principal) {
+        return appointmentService.listDonorBookings(principal.getId()).stream()
+                .map(DonorBookingResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/bookings/{bookingId}/cancel")
+    @PreAuthorize("hasRole('DONOR')")
+    public ResponseEntity<Void> cancelBooking(@AuthenticationPrincipal AccountPrincipal principal,
+                                              @PathVariable UUID bookingId) {
+        appointmentService.cancelBooking(principal.getId(), bookingId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bookings/{bookingId}/reschedule")
+    @PreAuthorize("hasRole('DONOR')")
+    public ResponseEntity<DonorBookingResponse> rescheduleBooking(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable UUID bookingId,
+            @Valid @RequestBody RescheduleRequest request) {
+        Booking booking = appointmentService.rescheduleBooking(principal.getId(), bookingId, request.newSlotId());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(DonorBookingResponse.from(booking));
     }
 }
