@@ -37,9 +37,6 @@ drop table if exists lab_test_type cascade;
 drop table if exists blood_component_type cascade;
 drop table if exists role cascade;
 
-
-drop extension if exists pgcrypto;
-
 -- ===============================
 -- END DROP SCRIPT
 -- ===============================
