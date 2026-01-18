@@ -54,14 +54,14 @@ public class DonorController {
     @GetMapping("/donations")
     public List<DonationHistoryResponse> donationHistory(@AuthenticationPrincipal AccountPrincipal principal) {
         return donorService.listDonationHistory(principal.getId()).stream()
-                .map(DonationHistoryResponse::from)
+                .map(DonationHistoryResponse::fromProjection)
                 .toList();
     }
 
     @GetMapping("/test-results")
     public List<LabResultResponse> testResults(@AuthenticationPrincipal AccountPrincipal principal) {
         return donorService.listPublishedResults(principal.getId()).stream()
-                .map(LabResultResponse::from)
+                .map(LabResultResponse::fromProjection)
                 .toList();
     }
 

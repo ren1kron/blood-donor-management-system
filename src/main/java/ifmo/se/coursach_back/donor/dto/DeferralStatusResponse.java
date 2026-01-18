@@ -20,4 +20,14 @@ public record DeferralStatusResponse(
                 deferral.getEndsAt()
         );
     }
+
+    public static DeferralStatusResponse fromProjection(DeferralProjection projection) {
+        return new DeferralStatusResponse(
+                projection.getDeferralId(),
+                projection.getDeferralType(),
+                projection.getReason(),
+                projection.getStartsAt(),
+                projection.getEndsAt()
+        );
+    }
 }

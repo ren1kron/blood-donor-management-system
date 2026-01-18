@@ -2,15 +2,16 @@ package ifmo.se.coursach_back.donor;
 
 import ifmo.se.coursach_back.donor.dto.ConsentRequest;
 import ifmo.se.coursach_back.donor.dto.DeferralStatusResponse;
+import ifmo.se.coursach_back.donor.dto.DeferralProjection;
 import ifmo.se.coursach_back.donor.dto.DonorProfileResponse;
+import ifmo.se.coursach_back.donor.dto.DonationHistoryProjection;
 import ifmo.se.coursach_back.donor.dto.EligibilityResponse;
+import ifmo.se.coursach_back.donor.dto.LabResultProjection;
 import ifmo.se.coursach_back.donor.dto.UpdateDonorProfileRequest;
 import ifmo.se.coursach_back.model.Account;
 import ifmo.se.coursach_back.model.Consent;
-import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
-import ifmo.se.coursach_back.model.LabTestResult;
 import ifmo.se.coursach_back.model.NotificationDelivery;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Visit;
@@ -118,12 +119,12 @@ public class DonorService {
         return consentRepository.save(consent);
     }
 
-    public List<Donation> listDonationHistory(UUID accountId) {
+    public List<DonationHistoryProjection> listDonationHistory(UUID accountId) {
         requireDonor(accountId);
-        return donationRepository.findByDonorAccountId(accountId);
+        return donationRepository.findDonorDonations(accountId);
     }
 
-    public List<LabTestResult> listPublishedResults(UUID accountId) {
+    public List<LabResultProjection> listPublishedResults(UUID accountId) {
         requireDonor(accountId);
         return labTestResultRepository.findPublishedByDonorAccountId(accountId);
     }
@@ -132,7 +133,7 @@ public class DonorService {
         DonorProfile donor = requireDonor(accountId);
         OffsetDateTime now = OffsetDateTime.now();
 
-        Deferral activeDeferral = deferralRepository.findActiveDeferral(donor.getId(), now).orElse(null);
+        DeferralProjection activeDeferral = deferralRepository.findActiveDeferral(donor.getId(), now).orElse(null);
         Donation lastDonation = donationRepository
                 .findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(accountId)
                 .orElse(null);
@@ -158,7 +159,7 @@ public class DonorService {
                 eligible,
                 lastDonationAt,
                 nextEligibleAt,
-                activeDeferral == null ? null : DeferralStatusResponse.from(activeDeferral)
+                activeDeferral == null ? null : DeferralStatusResponse.fromProjection(activeDeferral)
         );
     }
 
@@ -172,8 +173,7 @@ public class DonorService {
         DonorProfile donor = requireDonor(accountId);
         NotificationDelivery delivery = notificationDeliveryRepository.findByIdAndDonor_Id(deliveryId, donor.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
-        delivery.setStatus("ACKED");
-        notificationDeliveryRepository.save(delivery);
+        notificationDeliveryRepository.acknowledgeDelivery(delivery.getId(), donor.getId());
     }
 
     private DonorProfile requireDonor(UUID accountId) {

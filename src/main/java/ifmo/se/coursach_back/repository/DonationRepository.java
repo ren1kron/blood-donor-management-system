@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.repository;
 
-import ifmo.se.coursach_back.admin.dto.EligibleDonorRow;
+import ifmo.se.coursach_back.admin.dto.EligibleDonorProjection;
+import ifmo.se.coursach_back.donor.dto.DonationHistoryProjection;
 import ifmo.se.coursach_back.model.Donation;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -13,35 +14,27 @@ import org.springframework.data.repository.query.Param;
 public interface DonationRepository extends JpaRepository<Donation, UUID> {
     Optional<Donation> findByVisit_Id(UUID visitId);
 
-    @Query("""
-            select new ifmo.se.coursach_back.admin.dto.EligibleDonorRow(
-                donor.id,
-                donor.fullName,
-                account.phone,
-                account.email,
-                max(donation.performedAt)
-            )
-            from Donation donation
-            join donation.visit visit
-            join visit.booking booking
-            join booking.donor donor
-            join donor.account account
-            group by donor.id, donor.fullName, account.phone, account.email
-            having max(donation.performedAt) <= :threshold
-            order by max(donation.performedAt) asc
-            """)
-    List<EligibleDonorRow> findEligibleDonors(@Param("threshold") OffsetDateTime threshold);
+    @Query(value = """
+            select
+                donor_id as donorId,
+                full_name as fullName,
+                phone,
+                email,
+                last_donation_at as lastDonationAt
+            from fn_eligible_donors(:threshold)
+            """, nativeQuery = true)
+    List<EligibleDonorProjection> findEligibleDonors(@Param("threshold") OffsetDateTime threshold);
 
-    @Query("""
-            select donation
-            from Donation donation
-            join donation.visit visit
-            join visit.booking booking
-            join booking.donor donor
-            where donor.account.id = :accountId
-            order by donation.performedAt desc
-            """)
-    List<Donation> findByDonorAccountId(@Param("accountId") UUID accountId);
+    @Query(value = """
+            select
+                donation_id as donationId,
+                visit_id as visitId,
+                performed_at as performedAt,
+                donation_type as donationType,
+                volume_ml as volumeMl
+            from fn_donor_donations(:accountId)
+            """, nativeQuery = true)
+    List<DonationHistoryProjection> findDonorDonations(@Param("accountId") UUID accountId);
 
     java.util.Optional<Donation> findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(UUID accountId);
 }

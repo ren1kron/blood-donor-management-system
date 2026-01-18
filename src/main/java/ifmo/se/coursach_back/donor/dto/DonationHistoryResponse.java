@@ -20,4 +20,14 @@ public record DonationHistoryResponse(
                 donation.getVolumeMl()
         );
     }
+
+    public static DonationHistoryResponse fromProjection(DonationHistoryProjection projection) {
+        return new DonationHistoryResponse(
+                projection.getDonationId(),
+                projection.getVisitId(),
+                projection.getPerformedAt(),
+                projection.getDonationType(),
+                projection.getVolumeMl()
+        );
+    }
 }

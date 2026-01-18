@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.lab;
 
 import ifmo.se.coursach_back.lab.dto.LabTestResultRequest;
+import ifmo.se.coursach_back.lab.dto.PendingSampleProjection;
 import ifmo.se.coursach_back.model.LabTestResult;
 import ifmo.se.coursach_back.model.LabTestType;
 import ifmo.se.coursach_back.model.Sample;
@@ -30,11 +31,11 @@ public class LabWorkflowService {
     private final LabTestTypeRepository labTestTypeRepository;
     private final StaffProfileRepository staffProfileRepository;
 
-    public List<Sample> listPendingSamples(String status) {
+    public List<PendingSampleProjection> listPendingSamples(String status) {
         List<String> statuses = status == null || status.isBlank()
                 ? DEFAULT_PENDING_STATUSES
                 : List.of(status.trim().toUpperCase());
-        return sampleRepository.findByStatusInOrderByCollectedAtAsc(statuses);
+        return sampleRepository.findPendingSamples(statuses.toArray(String[]::new));
     }
 
     @Transactional

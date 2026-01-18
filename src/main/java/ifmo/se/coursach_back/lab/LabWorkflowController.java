@@ -2,9 +2,9 @@ package ifmo.se.coursach_back.lab;
 
 import ifmo.se.coursach_back.lab.dto.LabTestResultRequest;
 import ifmo.se.coursach_back.lab.dto.LabTestResultResponse;
+import ifmo.se.coursach_back.lab.dto.PendingSampleProjection;
 import ifmo.se.coursach_back.lab.dto.PendingSampleResponse;
 import ifmo.se.coursach_back.model.LabTestResult;
-import ifmo.se.coursach_back.model.Sample;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -31,8 +31,8 @@ public class LabWorkflowController {
 
     @GetMapping("/samples")
     public List<PendingSampleResponse> listPendingSamples(@RequestParam(value = "status", required = false) String status) {
-        List<Sample> samples = labWorkflowService.listPendingSamples(status);
-        return samples.stream().map(PendingSampleResponse::from).toList();
+        List<PendingSampleProjection> samples = labWorkflowService.listPendingSamples(status);
+        return samples.stream().map(PendingSampleResponse::fromProjection).toList();
     }
 
     @PostMapping("/results")

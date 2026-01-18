@@ -28,4 +28,18 @@ public record LabResultResponse(
                 result.getPublishedAt()
         );
     }
+
+    public static LabResultResponse fromProjection(LabResultProjection projection) {
+        return new LabResultResponse(
+                projection.getResultId(),
+                projection.getSampleId(),
+                projection.getSampleCode(),
+                projection.getTestTypeId(),
+                projection.getTestTypeCode(),
+                projection.getResultFlag(),
+                projection.getResultValue(),
+                projection.getTestedAt(),
+                projection.getPublishedAt()
+        );
+    }
 }

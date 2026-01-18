@@ -3,9 +3,9 @@ package ifmo.se.coursach_back.admin;
 import ifmo.se.coursach_back.admin.dto.AdminRegisterDonorRequest;
 import ifmo.se.coursach_back.admin.dto.AdminRegisterDonorResponse;
 import ifmo.se.coursach_back.admin.dto.EligibleDonorResponse;
-import ifmo.se.coursach_back.admin.dto.EligibleDonorRow;
+import ifmo.se.coursach_back.admin.dto.EligibleDonorProjection;
 import ifmo.se.coursach_back.admin.dto.ExpiredDocumentResponse;
-import ifmo.se.coursach_back.admin.dto.ExpiredDocumentRow;
+import ifmo.se.coursach_back.admin.dto.ExpiredDocumentProjection;
 import ifmo.se.coursach_back.admin.dto.MarkNotifiedRequest;
 import ifmo.se.coursach_back.admin.dto.NotificationMarkResponse;
 import ifmo.se.coursach_back.model.Account;
@@ -93,31 +93,31 @@ public class AdminService {
         }
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime threshold = now.minusDays(minDaysSinceDonation);
-        List<EligibleDonorRow> rows = donationRepository.findEligibleDonors(threshold);
+        List<EligibleDonorProjection> rows = donationRepository.findEligibleDonors(threshold);
         return rows.stream()
                 .map(row -> new EligibleDonorResponse(
-                        row.donorId(),
-                        row.fullName(),
-                        row.phone(),
-                        row.email(),
-                        row.lastDonationAt(),
-                        ChronoUnit.DAYS.between(row.lastDonationAt(), now)
+                        row.getDonorId(),
+                        row.getFullName(),
+                        row.getPhone(),
+                        row.getEmail(),
+                        row.getLastDonationAt(),
+                        ChronoUnit.DAYS.between(row.getLastDonationAt(), now)
                 ))
                 .toList();
     }
 
     public List<ExpiredDocumentResponse> listExpiredDocuments(LocalDate asOf) {
         LocalDate date = asOf != null ? asOf : LocalDate.now();
-        List<ExpiredDocumentRow> rows = donorDocumentRepository.findExpiredDocuments(date);
+        List<ExpiredDocumentProjection> rows = donorDocumentRepository.findExpiredDocuments(date);
         return rows.stream()
                 .map(row -> new ExpiredDocumentResponse(
-                        row.documentId(),
-                        row.donorId(),
-                        row.fullName(),
-                        row.phone(),
-                        row.email(),
-                        row.docType(),
-                        row.expiresAt()
+                        row.getDocumentId(),
+                        row.getDonorId(),
+                        row.getFullName(),
+                        row.getPhone(),
+                        row.getEmail(),
+                        row.getDocType(),
+                        row.getExpiresAt()
                 ))
                 .toList();
     }

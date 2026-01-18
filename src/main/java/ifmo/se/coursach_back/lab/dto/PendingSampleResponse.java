@@ -24,4 +24,16 @@ public record PendingSampleResponse(
                 sample.getDonation().getVisit().getBooking().getDonor().getFullName()
         );
     }
+
+    public static PendingSampleResponse fromProjection(PendingSampleProjection projection) {
+        return new PendingSampleResponse(
+                projection.getSampleId(),
+                projection.getSampleCode(),
+                projection.getStatus(),
+                projection.getCollectedAt(),
+                projection.getDonationId(),
+                projection.getDonorId(),
+                projection.getDonorFullName()
+        );
+    }
 }
