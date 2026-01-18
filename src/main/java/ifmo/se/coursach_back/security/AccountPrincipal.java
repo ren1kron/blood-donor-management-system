@@ -5,11 +5,14 @@ import ifmo.se.coursach_back.model.Role;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public class AccountPrincipal implements UserDetails {
+    @Getter
     private final UUID id;
     private final String email;
     private final String phone;
@@ -34,10 +37,6 @@ public class AccountPrincipal implements UserDetails {
                 .toList();
         return new AccountPrincipal(account.getId(), account.getEmail(), account.getPhone(),
                 account.getPasswordHash(), account.isActive(), authorities);
-    }
-
-    public UUID getId() {
-        return id;
     }
 
     @Override
