@@ -5,18 +5,18 @@ begin;
 
 -- Fixed IDs for repeatable assertions.
 -- Donor account/profile
-insert into account (id, email, phone, password_hash, is_active)
-values ('11111111-1111-1111-1111-111111111111', 'donor.test@example.com', null, 'hash', true);
+insert into account (id, email, phone, password_hash, full_name, is_active)
+values ('11111111-1111-1111-1111-111111111111', 'donor.test@example.com', null, 'hash', 'Test Donor', true);
 
-insert into donor_profile (id, account_id, full_name, birth_date, donor_status)
-values ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Test Donor', '1990-01-01', 'ACTIVE');
+insert into donor_profile (id, account_id, birth_date, blood_group, rh_factor, donor_status)
+values ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', '1990-01-01', 'O', 'POSITIVE', 'ACTIVE');
 
 -- Staff account/profile (LAB)
-insert into account (id, email, phone, password_hash, is_active)
-values ('33333333-3333-3333-3333-333333333333', 'lab.test@example.com', null, 'hash', true);
+insert into account (id, email, phone, password_hash, full_name, is_active)
+values ('33333333-3333-3333-3333-333333333333', 'lab.test@example.com', null, 'hash', 'Lab Tech', true);
 
-insert into staff_profile (id, account_id, full_name, staff_kind)
-values ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Lab Tech', 'LAB');
+insert into staff_profile (id, account_id, staff_kind)
+values ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'LAB');
 
 -- Booking/visit/donation
 insert into appointment_slot (id, purpose, start_at, end_at, location, capacity)

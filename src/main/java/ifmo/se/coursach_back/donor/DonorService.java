@@ -54,7 +54,7 @@ public class DonorService {
         return new DonorProfileResponse(
                 account.getId(),
                 donor.getId(),
-                donor.getFullName(),
+                account.getFullName(),
                 donor.getBirthDate(),
                 donor.getBloodGroup(),
                 donor.getRhFactor(),
@@ -71,7 +71,7 @@ public class DonorService {
 
         if (request.fullName() != null) {
             String fullName = normalizeRequired(request.fullName(), "fullName");
-            donor.setFullName(fullName);
+            account.setFullName(fullName);
         }
         if (request.birthDate() != null) {
             donor.setBirthDate(request.birthDate());

@@ -29,9 +29,6 @@ public class StaffProfile {
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     private Account account;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
-
     @Column(name = "staff_kind", nullable = false)
     private String staffKind;
 }

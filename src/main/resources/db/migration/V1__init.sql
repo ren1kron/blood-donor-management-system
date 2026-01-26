@@ -32,11 +32,14 @@ create table account (
     email           text unique,
     phone           text unique,
     password_hash   text not null,
+    full_name       text not null,
     created_at      timestamptz not null default now(),
     is_active       boolean not null default true,
     constraint chk_account_contact
         check (email is not null or phone is not null)
 );
+
+create index idx_account_full_name on account (full_name);
 
 create table account_role (
     account_id  uuid not null references account(id) on delete cascade,
@@ -50,23 +53,19 @@ create index idx_account_role_role on account_role (role_id);
 create table donor_profile (
     id           uuid primary key default gen_random_uuid(),
     account_id   uuid not null unique references account(id) on delete cascade,
-    full_name    text not null,
     birth_date   date not null,
     blood_group  text,
     rh_factor    text,
-    donor_status text not null default 'ACTIVE'
+    donor_status text not null default 'ACTIVE',
+    constraint chk_donor_status
+        check (upper(donor_status) in ('ACTIVE', 'INACTIVE', 'DEFERRED'))
 );
-
-create index idx_donor_profile_full_name on donor_profile (full_name);
 
 create table staff_profile (
     id          uuid primary key default gen_random_uuid(),
     account_id  uuid not null unique references account(id) on delete cascade,
-    full_name   text not null,
     staff_kind  text not null
 );
-
-create index idx_staff_profile_full_name on staff_profile (full_name);
 
 create table donor_contraindication (
     donor_id            uuid not null references donor_profile(id) on delete cascade,
@@ -99,6 +98,8 @@ create table booking (
     status       text not null default 'BOOKED',
     created_at   timestamptz not null default now(),
     cancelled_at timestamptz,
+    constraint chk_booking_status
+        check (upper(status) in ('BOOKED', 'CANCELLED')),
     constraint uq_booking_donor_slot unique (donor_id, slot_id)
 );
 
@@ -109,7 +110,9 @@ create table visit (
     id           uuid primary key default gen_random_uuid(),
     booking_id   uuid not null unique references booking(id) on delete cascade,
     check_in_at  timestamptz,
-    visit_status text not null default 'SCHEDULED'
+    visit_status text not null default 'SCHEDULED',
+    constraint chk_visit_status
+        check (upper(visit_status) in ('SCHEDULED', 'DONE'))
 );
 
 create table consent (
@@ -189,7 +192,9 @@ create table sample (
     collected_at        timestamptz not null default now(),
     status              text not null default 'NEW',
     quarantine_reason   text,
-    rejection_reason    text
+    rejection_reason    text,
+    constraint chk_sample_status
+        check (upper(status) in ('NEW', 'REGISTERED', 'QUARANTINED', 'REJECTED'))
 );
 
 create index idx_sample_donation on sample (donation_id);
@@ -221,8 +226,24 @@ create table blood_unit (
     collected_at         timestamptz not null default now(),
     expires_at           timestamptz,
     status               text not null default 'IN_STOCK',
-    storage_location     text
+    storage_location     text,
+    constraint chk_blood_unit_status
+        check (upper(status) in ('IN_STOCK', 'RESERVED', 'ISSUED', 'DISCARDED'))
 );
+
+-- view для вычисляемого статуса blood_unit:
+-- если срок годности истёк, возвращает EXPIRED,
+-- не изменяя физическое состояние строки в таблице
+create view v_blood_unit as
+select
+  bu.*,
+  case
+    when bu.expires_at is not null and bu.expires_at <= now()
+         and upper(bu.status) in ('IN_STOCK', 'RESERVED')
+      then 'EXPIRED'
+    else upper(bu.status)
+  end as effective_status
+from blood_unit bu;
 
 create index idx_blood_unit_donation on blood_unit (donation_id);
 create index idx_blood_unit_component on blood_unit (component_type_id);
@@ -234,7 +255,9 @@ create table donor_document (
     doc_type    text not null,
     issued_at   date,
     expires_at  date,
-    status      text not null default 'VALID'
+    status      text not null default 'VALID',
+    constraint chk_document_status
+        check (upper(status) in ('VALID', 'EXPIRED'))
 );
 
 create index idx_donor_document_donor on donor_document (donor_id);
@@ -254,12 +277,97 @@ create table notification_delivery (
     donor_id        uuid references donor_profile(id) on delete cascade,
     staff_id        uuid references staff_profile(id) on delete set null,
     sent_at         timestamptz,
-    status          text not null default 'PENDING'
+    status          text not null default 'PENDING',
+    constraint chk_delivery_status
+        check (upper(status) in ('PENDING', 'SENT', 'ACKED'))
 );
 
 create index idx_delivery_notification on notification_delivery (notification_id);
 create index idx_delivery_donor on notification_delivery (donor_id);
 create index idx_delivery_status on notification_delivery (status);
+
+-- Универсальная функция валидации полей группы крови и резус-фактора.
+-- Используется разными сущностями для централизованной бизнес-валидации.
+-- p_required = true  → поля обязательны
+-- p_context  → имя сущности для текста ошибки
+create or replace function fn_validate_blood_fields(
+    p_blood_group text,
+    p_rh_factor text,
+    p_required boolean,
+    p_context text
+)
+returns void
+language plpgsql
+as $$
+begin
+    -- Если оба поля отсутствуют
+    if p_blood_group is null and p_rh_factor is null then
+        if p_required then
+            raise exception '% requires blood_group and rh_factor', p_context;
+        end if;
+        return;
+    end if;
+
+    -- Если заполнено только одно из двух полей
+    if p_blood_group is null or p_rh_factor is null then
+        raise exception '% requires both blood_group and rh_factor when one is provided', p_context;
+    end if;
+
+    -- Проверка допустимых значений группы крови
+    if upper(p_blood_group) not in ('A', 'B', 'AB', 'O') then
+        raise exception 'Invalid blood_group % in % (allowed: A, B, AB, O)', p_blood_group, p_context;
+    end if;
+
+    -- Проверка допустимых значений резус-фактора
+    if upper(p_rh_factor) not in ('POSITIVE', 'NEGATIVE') then
+        raise exception 'Invalid rh_factor % in % (allowed: POSITIVE, NEGATIVE)', p_rh_factor, p_context;
+    end if;
+end;
+$$;
+
+-- Триггер-функция для валидации группы крови донора.
+-- Для ACTIVE-доноров blood_group и rh_factor обязательны.
+create or replace function trg_validate_donor_profile_blood_fields()
+returns trigger
+language plpgsql
+as $$
+begin
+    perform fn_validate_blood_fields(
+        new.blood_group,
+        new.rh_factor,
+        upper(new.donor_status) = 'ACTIVE',
+        'donor_profile'
+    );
+    return new;
+end;
+$$;
+
+-- Триггер вызывается при INSERT / UPDATE donor_profile
+-- и предотвращает сохранение некорректных данных
+create trigger trg_donor_profile_blood_fields
+before insert or update on donor_profile
+for each row execute function trg_validate_donor_profile_blood_fields();
+
+-- Триггер-функция для валидации группы крови компонента крови.
+-- Поля не обязательны, но если указаны — должны быть валидны.
+create or replace function trg_validate_blood_unit_fields()
+returns trigger
+language plpgsql
+as $$
+begin
+    perform fn_validate_blood_fields(
+        new.blood_group,
+        new.rh_factor,
+        false,
+        'blood_unit'
+    );
+    return new;
+end;
+$$;
+
+create trigger trg_blood_unit_blood_fields
+before insert or update on blood_unit
+for each row execute function trg_validate_blood_unit_fields();
 
 insert into role (code, name)
 values

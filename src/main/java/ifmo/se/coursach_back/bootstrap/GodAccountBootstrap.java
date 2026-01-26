@@ -19,6 +19,7 @@ public class GodAccountBootstrap implements ApplicationRunner {
     private static final String GOD_EMAIL = "god@system.local";
     private static final String GOD_PASSWORD = "big_papa";
     private static final String GOD_ROLE = "GOD";
+    private static final String GOD_FULL_NAME = "System Administrator";
 
     private final AccountRepository accountRepository;
     private final RoleRepository roleRepository;
@@ -38,6 +39,7 @@ public class GodAccountBootstrap implements ApplicationRunner {
             account = new Account();
             account.setEmail(GOD_EMAIL);
             account.setPasswordHash(passwordEncoder.encode(GOD_PASSWORD));
+            account.setFullName(GOD_FULL_NAME);
             account.getRoles().add(godRole);
             accountRepository.save(account);
             log.info("Created GOD account with email {}", GOD_EMAIL);

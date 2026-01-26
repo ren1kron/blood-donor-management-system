@@ -31,9 +31,6 @@ public class DonorProfile {
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     private Account account;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
-
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 

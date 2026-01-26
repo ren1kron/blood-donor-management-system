@@ -40,6 +40,9 @@ public class Account {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 

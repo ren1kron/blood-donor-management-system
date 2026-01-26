@@ -73,12 +73,12 @@ public class AdminService {
         account.setPhone(phone);
         account.setEmail(email);
         account.setPasswordHash(passwordEncoder.encode(request.password()));
+        account.setFullName(request.fullName().trim());
         account.getRoles().add(donorRole);
         Account savedAccount = accountRepository.save(account);
 
         DonorProfile profile = new DonorProfile();
         profile.setAccount(savedAccount);
-        profile.setFullName(request.fullName());
         profile.setBirthDate(request.birthDate());
         profile.setBloodGroup(normalize(request.bloodGroup()));
         profile.setRhFactor(normalize(request.rhFactor()));

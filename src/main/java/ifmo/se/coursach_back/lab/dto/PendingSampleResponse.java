@@ -21,7 +21,7 @@ public record PendingSampleResponse(
                 sample.getCollectedAt(),
                 sample.getDonation().getId(),
                 sample.getDonation().getVisit().getBooking().getDonor().getId(),
-                sample.getDonation().getVisit().getBooking().getDonor().getFullName()
+                sample.getDonation().getVisit().getBooking().getDonor().getAccount().getFullName()
         );
     }
 

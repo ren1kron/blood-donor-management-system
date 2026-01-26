@@ -14,7 +14,7 @@ begin
     return query
     select
         donor.id,
-        donor.full_name,
+        account.full_name,
         account.phone,
         account.email,
         max(donation.performed_at)
@@ -23,7 +23,7 @@ begin
     join booking on visit.booking_id = booking.id
     join donor_profile donor on booking.donor_id = donor.id
     join account on donor.account_id = account.id
-    group by donor.id, donor.full_name, account.phone, account.email
+    group by donor.id, account.full_name, account.phone, account.email
     having max(donation.performed_at) <= p_threshold
     order by max(donation.performed_at) asc;
 end;
@@ -46,7 +46,7 @@ begin
     select
         document.id,
         donor.id,
-        donor.full_name,
+        account.full_name,
         account.phone,
         account.email,
         document.doc_type,
@@ -81,12 +81,13 @@ begin
         sample.collected_at,
         sample.donation_id,
         donor.id,
-        donor.full_name
+        account.full_name
     from sample
     join donation on sample.donation_id = donation.id
     join visit on donation.visit_id = visit.id
     join booking on visit.booking_id = booking.id
     join donor_profile donor on booking.donor_id = donor.id
+    join account on donor.account_id = account.id
     where sample.status = any(p_statuses)
     order by sample.collected_at asc;
 end;

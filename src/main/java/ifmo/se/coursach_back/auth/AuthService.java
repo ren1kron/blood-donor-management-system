@@ -52,12 +52,12 @@ public class AuthService {
         account.setEmail(email);
         account.setPhone(phone);
         account.setPasswordHash(passwordEncoder.encode(request.password()));
+        account.setFullName(request.fullName().trim());
         account.getRoles().add(donorRole);
         Account savedAccount = accountRepository.save(account);
 
         DonorProfile profile = new DonorProfile();
         profile.setAccount(savedAccount);
-        profile.setFullName(request.fullName());
         profile.setBirthDate(request.birthDate());
         profile.setBloodGroup(normalize(request.bloodGroup()));
         profile.setRhFactor(normalize(request.rhFactor()));
@@ -90,19 +90,17 @@ public class AuthService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
 
         String profileType = "NONE";
-        String fullName = null;
         DonorProfile donorProfile = donorProfileRepository.findByAccountId(account.getId()).orElse(null);
         if (donorProfile != null) {
             profileType = "DONOR";
-            fullName = donorProfile.getFullName();
         } else {
             StaffProfile staffProfile = staffProfileRepository.findByAccountId(account.getId()).orElse(null);
             if (staffProfile != null) {
                 profileType = "STAFF";
-                fullName = staffProfile.getFullName();
             }
         }
 
+        String fullName = account.getFullName();
         List<String> roles = account.getRoles().stream()
                 .map(Role::getCode)
                 .sorted()

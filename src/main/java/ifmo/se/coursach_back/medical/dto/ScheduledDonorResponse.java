@@ -23,7 +23,7 @@ public record ScheduledDonorResponse(
                 booking.getId(),
                 visit != null ? visit.getId() : null,
                 booking.getDonor().getId(),
-                booking.getDonor().getFullName(),
+                booking.getDonor().getAccount().getFullName(),
                 booking.getDonor().getDonorStatus(),
                 booking.getSlot().getId(),
                 booking.getSlot().getPurpose(),
