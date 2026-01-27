@@ -97,7 +97,6 @@ public class SecurityConfig {
                 ROLE_GOD > ROLE_DOCTOR
                 ROLE_GOD > ROLE_NURSE
                 ROLE_GOD > ROLE_LAB
-                ROLE_GOD > ROLE_REGISTRAR
                 ROLE_GOD > ROLE_DONOR
                 """);
     }

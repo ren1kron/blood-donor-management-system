@@ -44,7 +44,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/slots")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('REGISTRAR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR', 'NURSE')")
     public ResponseEntity<AppointmentSlotResponse> createSlot(@Valid @RequestBody CreateSlotRequest request) {
         AppointmentSlot slot = appointmentService.createSlot(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(AppointmentSlotResponse.from(slot));

@@ -269,7 +269,6 @@ values
     ('DOCTOR', 'Doctor'),
     ('NURSE', 'Nurse'),
     ('LAB', 'Lab Technician'),
-    ('REGISTRAR', 'Registrar'),
     ('GOD', 'Head Administrator')
 on conflict do nothing;
 
@@ -421,32 +420,6 @@ insert into account_role (account_id, role_id)
 select a.id, r.id
 from lab_account_id a
 cross join lab_role r
-on conflict do nothing;
-
-with registrar_account as (
-    insert into account (email, password_hash)
-    values ('registrar@system.local', crypt('registrar_pass', gen_salt('bf')))
-    on conflict (email) do nothing
-    returning id
-),
-registrar_account_id as (
-    select id from registrar_account
-    union
-    select id from account where email = 'registrar@system.local'
-),
-registrar_role as (
-    select id from role where code = 'REGISTRAR'
-),
-registrar_profile_seed as (
-    insert into staff_profile (account_id, full_name, staff_kind)
-    select id, 'Demo Registrar Petrovich', 'REGISTRAR'
-    from registrar_account_id
-    on conflict (account_id) do nothing
-)
-insert into account_role (account_id, role_id)
-select a.id, r.id
-from registrar_account_id a
-cross join registrar_role r
 on conflict do nothing;
 
 insert into lab_test_type (code, name)
