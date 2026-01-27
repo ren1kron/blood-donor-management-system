@@ -309,7 +309,7 @@ donor_role as (
 ),
 donor_profile_seed as (
     insert into donor_profile (account_id, full_name, birth_date, blood_group, rh_factor, donor_status)
-    select id, 'Demo Donor', date '1995-05-15', 'I', '+', 'ACTIVE'
+    select id, 'Demo Donor Nikolaevich', date '1995-05-15', 'I', '+', 'ACTIVE'
     from donor_account_id
     on conflict (account_id) do nothing
 )
@@ -335,7 +335,7 @@ admin_role as (
 ),
 admin_profile_seed as (
     insert into staff_profile (account_id, full_name, staff_kind)
-    select id, 'Demo Admin', 'ADMIN'
+    select id, 'Demo Admin Ignatevich', 'ADMIN'
     from admin_account_id
     on conflict (account_id) do nothing
 )
@@ -361,7 +361,7 @@ doctor_role as (
 ),
 doctor_profile_seed as (
     insert into staff_profile (account_id, full_name, staff_kind)
-    select id, 'Demo Doctor', 'DOCTOR'
+    select id, 'Demo Doctor Romanovich', 'DOCTOR'
     from doctor_account_id
     on conflict (account_id) do nothing
 )
@@ -387,7 +387,7 @@ nurse_role as (
 ),
 nurse_profile_seed as (
     insert into staff_profile (account_id, full_name, staff_kind)
-    select id, 'Demo Nurse', 'NURSE'
+    select id, 'Demo Nurse Ivanovna', 'NURSE'
     from nurse_account_id
     on conflict (account_id) do nothing
 )
@@ -439,7 +439,7 @@ registrar_role as (
 ),
 registrar_profile_seed as (
     insert into staff_profile (account_id, full_name, staff_kind)
-    select id, 'Demo Registrar', 'REGISTRAR'
+    select id, 'Demo Registrar Petrovich', 'REGISTRAR'
     from registrar_account_id
     on conflict (account_id) do nothing
 )
