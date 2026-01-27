@@ -14,6 +14,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/appointments")
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentController {
     private final AppointmentService appointmentService;
 
@@ -39,15 +41,17 @@ public class AppointmentController {
                                                    String purpose) {
         OffsetDateTime start = from == null ? OffsetDateTime.now() : from;
         return appointmentService.listUpcomingSlots(start, purpose).stream()
-                .map(AppointmentSlotResponse::from)
+                .map(slot -> AppointmentSlotResponse.from(slot, appointmentService.getSlotBookedCount(slot.getId())))
                 .toList();
     }
 
     @PostMapping("/slots")
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR', 'NURSE')")
     public ResponseEntity<AppointmentSlotResponse> createSlot(@Valid @RequestBody CreateSlotRequest request) {
+        log.info("POST /api/appointments/slots - Creating slot");
         AppointmentSlot slot = appointmentService.createSlot(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(AppointmentSlotResponse.from(slot));
+        log.info("Slot created with id={}", slot.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(AppointmentSlotResponse.from(slot, 0L));
     }
 
     @PostMapping("/bookings")

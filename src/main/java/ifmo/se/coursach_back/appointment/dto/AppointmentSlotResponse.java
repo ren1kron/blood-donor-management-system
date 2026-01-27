@@ -10,16 +10,22 @@ public record AppointmentSlotResponse(
         OffsetDateTime startAt,
         OffsetDateTime endAt,
         String location,
-        Integer capacity
+        Integer capacity,
+        Long bookedCount
 ) {
-    public static AppointmentSlotResponse from(AppointmentSlot slot) {
+    public static AppointmentSlotResponse from(AppointmentSlot slot, Long bookedCount) {
         return new AppointmentSlotResponse(
                 slot.getId(),
                 slot.getPurpose(),
                 slot.getStartAt(),
                 slot.getEndAt(),
                 slot.getLocation(),
-                slot.getCapacity()
+                slot.getCapacity(),
+                bookedCount
         );
+    }
+
+    public static AppointmentSlotResponse from(AppointmentSlot slot) {
+        return from(slot, 0L);
     }
 }

@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentService {
     private final AppointmentSlotRepository slotRepository;
     private final BookingRepository bookingRepository;
@@ -30,7 +32,14 @@ public class AppointmentService {
         return slotRepository.findByPurposeIgnoreCaseAndStartAtAfterOrderByStartAtAsc(purpose.trim(), from);
     }
 
+    public long getSlotBookedCount(UUID slotId) {
+        return bookingRepository.countBySlot_IdAndStatus(slotId, "BOOKED");
+    }
+
     public AppointmentSlot createSlot(CreateSlotRequest request) {
+        log.info("Creating slot with purpose={}, startAt={}, endAt={}, location={}, capacity={}", 
+                 request.purpose(), request.startAt(), request.endAt(), request.location(), request.capacity());
+        
         if (!request.endAt().isAfter(request.startAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endAt must be after startAt");
         }
@@ -41,7 +50,10 @@ public class AppointmentService {
         slot.setEndAt(request.endAt());
         slot.setLocation(request.location());
         slot.setCapacity(request.capacity());
-        return slotRepository.save(slot);
+        
+        AppointmentSlot saved = slotRepository.save(slot);
+        log.info("Slot created successfully with id={}", saved.getId());
+        return saved;
     }
 
     public Booking createBooking(UUID accountId, UUID slotId) {
