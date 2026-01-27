@@ -293,6 +293,162 @@ from god_account_id a
 cross join god_role r
 on conflict do nothing;
 
+with donor_account as (
+    insert into account (email, password_hash)
+    values ('donor@system.local', crypt('donor_pass', gen_salt('bf')))
+    on conflict (email) do nothing
+    returning id
+),
+donor_account_id as (
+    select id from donor_account
+    union
+    select id from account where email = 'donor@system.local'
+),
+donor_role as (
+    select id from role where code = 'DONOR'
+),
+donor_profile_seed as (
+    insert into donor_profile (account_id, full_name, birth_date, blood_group, rh_factor, donor_status)
+    select id, 'Demo Donor', date '1995-05-15', 'O', '+', 'ACTIVE'
+    from donor_account_id
+    on conflict (account_id) do nothing
+)
+insert into account_role (account_id, role_id)
+select a.id, r.id
+from donor_account_id a
+cross join donor_role r
+on conflict do nothing;
+
+with admin_account as (
+    insert into account (email, password_hash)
+    values ('admin@system.local', crypt('admin_pass', gen_salt('bf')))
+    on conflict (email) do nothing
+    returning id
+),
+admin_account_id as (
+    select id from admin_account
+    union
+    select id from account where email = 'admin@system.local'
+),
+admin_role as (
+    select id from role where code = 'ADMIN'
+),
+admin_profile_seed as (
+    insert into staff_profile (account_id, full_name, staff_kind)
+    select id, 'Demo Admin', 'ADMIN'
+    from admin_account_id
+    on conflict (account_id) do nothing
+)
+insert into account_role (account_id, role_id)
+select a.id, r.id
+from admin_account_id a
+cross join admin_role r
+on conflict do nothing;
+
+with doctor_account as (
+    insert into account (email, password_hash)
+    values ('doctor@system.local', crypt('doctor_pass', gen_salt('bf')))
+    on conflict (email) do nothing
+    returning id
+),
+doctor_account_id as (
+    select id from doctor_account
+    union
+    select id from account where email = 'doctor@system.local'
+),
+doctor_role as (
+    select id from role where code = 'DOCTOR'
+),
+doctor_profile_seed as (
+    insert into staff_profile (account_id, full_name, staff_kind)
+    select id, 'Demo Doctor', 'DOCTOR'
+    from doctor_account_id
+    on conflict (account_id) do nothing
+)
+insert into account_role (account_id, role_id)
+select a.id, r.id
+from doctor_account_id a
+cross join doctor_role r
+on conflict do nothing;
+
+with nurse_account as (
+    insert into account (email, password_hash)
+    values ('nurse@system.local', crypt('nurse_pass', gen_salt('bf')))
+    on conflict (email) do nothing
+    returning id
+),
+nurse_account_id as (
+    select id from nurse_account
+    union
+    select id from account where email = 'nurse@system.local'
+),
+nurse_role as (
+    select id from role where code = 'NURSE'
+),
+nurse_profile_seed as (
+    insert into staff_profile (account_id, full_name, staff_kind)
+    select id, 'Demo Nurse', 'NURSE'
+    from nurse_account_id
+    on conflict (account_id) do nothing
+)
+insert into account_role (account_id, role_id)
+select a.id, r.id
+from nurse_account_id a
+cross join nurse_role r
+on conflict do nothing;
+
+with lab_account as (
+    insert into account (email, password_hash)
+    values ('lab@system.local', crypt('lab_pass', gen_salt('bf')))
+    on conflict (email) do nothing
+    returning id
+),
+lab_account_id as (
+    select id from lab_account
+    union
+    select id from account where email = 'lab@system.local'
+),
+lab_role as (
+    select id from role where code = 'LAB'
+),
+lab_profile_seed as (
+    insert into staff_profile (account_id, full_name, staff_kind)
+    select id, 'Demo Lab Tech', 'LAB'
+    from lab_account_id
+    on conflict (account_id) do nothing
+)
+insert into account_role (account_id, role_id)
+select a.id, r.id
+from lab_account_id a
+cross join lab_role r
+on conflict do nothing;
+
+with registrar_account as (
+    insert into account (email, password_hash)
+    values ('registrar@system.local', crypt('registrar_pass', gen_salt('bf')))
+    on conflict (email) do nothing
+    returning id
+),
+registrar_account_id as (
+    select id from registrar_account
+    union
+    select id from account where email = 'registrar@system.local'
+),
+registrar_role as (
+    select id from role where code = 'REGISTRAR'
+),
+registrar_profile_seed as (
+    insert into staff_profile (account_id, full_name, staff_kind)
+    select id, 'Demo Registrar', 'REGISTRAR'
+    from registrar_account_id
+    on conflict (account_id) do nothing
+)
+insert into account_role (account_id, role_id)
+select a.id, r.id
+from registrar_account_id a
+cross join registrar_role r
+on conflict do nothing;
+
 insert into lab_test_type (code, name)
 values
     ('HIV', 'HIV'),
