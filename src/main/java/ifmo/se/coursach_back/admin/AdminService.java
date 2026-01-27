@@ -23,6 +23,7 @@ import ifmo.se.coursach_back.repository.NotificationDeliveryRepository;
 import ifmo.se.coursach_back.repository.NotificationRepository;
 import ifmo.se.coursach_back.repository.RoleRepository;
 import ifmo.se.coursach_back.repository.StaffProfileRepository;
+import ifmo.se.coursach_back.util.BloodGroupNormalizer;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -80,7 +81,7 @@ public class AdminService {
         profile.setAccount(savedAccount);
         profile.setFullName(request.fullName());
         profile.setBirthDate(request.birthDate());
-        profile.setBloodGroup(normalize(request.bloodGroup()));
+        profile.setBloodGroup(BloodGroupNormalizer.normalizeNullable(request.bloodGroup()));
         profile.setRhFactor(normalize(request.rhFactor()));
         DonorProfile savedProfile = donorProfileRepository.save(profile);
 

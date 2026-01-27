@@ -309,7 +309,7 @@ donor_role as (
 ),
 donor_profile_seed as (
     insert into donor_profile (account_id, full_name, birth_date, blood_group, rh_factor, donor_status)
-    select id, 'Demo Donor', date '1995-05-15', 'O', '+', 'ACTIVE'
+    select id, 'Demo Donor', date '1995-05-15', 'I', '+', 'ACTIVE'
     from donor_account_id
     on conflict (account_id) do nothing
 )

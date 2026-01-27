@@ -23,6 +23,7 @@ import ifmo.se.coursach_back.repository.DonorProfileRepository;
 import ifmo.se.coursach_back.repository.LabTestResultRepository;
 import ifmo.se.coursach_back.repository.NotificationDeliveryRepository;
 import ifmo.se.coursach_back.repository.VisitRepository;
+import ifmo.se.coursach_back.util.BloodGroupNormalizer;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -76,7 +77,7 @@ public class DonorService {
             donor.setBirthDate(request.birthDate());
         }
         if (request.bloodGroup() != null) {
-            donor.setBloodGroup(normalizeNullable(request.bloodGroup()));
+            donor.setBloodGroup(BloodGroupNormalizer.normalizeNullable(request.bloodGroup()));
         }
         if (request.rhFactor() != null) {
             donor.setRhFactor(normalizeNullable(request.rhFactor()));
