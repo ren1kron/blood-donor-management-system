@@ -7,6 +7,7 @@ import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.repository.AppointmentSlotRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
+import ifmo.se.coursach_back.repository.MedicalCheckRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -21,9 +22,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 @Slf4j
 public class AppointmentService {
+    private static final int MEDICAL_CHECK_VALIDITY_MONTHS = 6;
+    
     private final AppointmentSlotRepository slotRepository;
     private final BookingRepository bookingRepository;
     private final DonorProfileRepository donorProfileRepository;
+    private final MedicalCheckRepository medicalCheckRepository;
 
     public List<AppointmentSlot> listUpcomingSlots(OffsetDateTime from, String purpose) {
         if (purpose == null || purpose.isBlank()) {
@@ -63,12 +67,26 @@ public class AppointmentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Slot not found"));
 
         ensureSlotAvailable(donor, slot);
+        
+        if ("DONATION".equalsIgnoreCase(slot.getPurpose())) {
+            ensureDonorHasValidMedicalCheck(donor);
+        }
 
         Booking booking = new Booking();
         booking.setDonor(donor);
         booking.setSlot(slot);
         booking.setStatus("BOOKED");
         return bookingRepository.save(booking);
+    }
+    
+    private void ensureDonorHasValidMedicalCheck(DonorProfile donor) {
+        OffsetDateTime sixMonthsAgo = OffsetDateTime.now().minusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
+        List<?> validChecks = medicalCheckRepository.findValidAdmittedChecksByDonorId(donor.getId(), sixMonthsAgo);
+        if (validChecks.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Для записи на донацию необходимо пройти медицинский осмотр. " +
+                    "Запишитесь сначала на осмотр.");
+        }
     }
 
     public List<Booking> listDonorBookings(UUID accountId) {

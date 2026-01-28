@@ -12,6 +12,8 @@ import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.Notification;
+import ifmo.se.coursach_back.model.NotificationDelivery;
 import ifmo.se.coursach_back.model.Sample;
 import ifmo.se.coursach_back.model.StaffProfile;
 import ifmo.se.coursach_back.model.Visit;
@@ -21,6 +23,8 @@ import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
 import ifmo.se.coursach_back.repository.MedicalCheckRepository;
+import ifmo.se.coursach_back.repository.NotificationDeliveryRepository;
+import ifmo.se.coursach_back.repository.NotificationRepository;
 import ifmo.se.coursach_back.repository.SampleRepository;
 import ifmo.se.coursach_back.repository.StaffProfileRepository;
 import ifmo.se.coursach_back.repository.VisitRepository;
@@ -48,6 +52,8 @@ public class MedicalWorkflowService {
     private final AdverseReactionRepository adverseReactionRepository;
     private final DonorProfileRepository donorProfileRepository;
     private final StaffProfileRepository staffProfileRepository;
+    private final NotificationRepository notificationRepository;
+    private final NotificationDeliveryRepository notificationDeliveryRepository;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
         return bookingRepository.findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
@@ -121,7 +127,26 @@ public class MedicalWorkflowService {
             savedDeferral = deferralRepository.save(deferral);
         }
 
+        if (decision.equals("ADMITTED")) {
+            sendDonationReadyNotification(visit.getBooking().getDonor());
+        }
+
         return new MedicalCheckResult(saved, savedDeferral);
+    }
+    
+    private void sendDonationReadyNotification(DonorProfile donor) {
+        Notification notification = new Notification();
+        notification.setChannel("IN_APP");
+        notification.setTopic("Медосмотр пройден");
+        notification.setBody("Вы успешно прошли медосмотр и можете записаться на донацию.");
+        Notification savedNotification = notificationRepository.save(notification);
+        
+        NotificationDelivery delivery = new NotificationDelivery();
+        delivery.setNotification(savedNotification);
+        delivery.setDonor(donor);
+        delivery.setSentAt(OffsetDateTime.now());
+        delivery.setStatus("SENT");
+        notificationDeliveryRepository.save(delivery);
     }
 
     @Transactional

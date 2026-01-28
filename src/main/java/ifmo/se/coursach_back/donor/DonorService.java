@@ -14,6 +14,7 @@ import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.LabTestResult;
+import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.NotificationDelivery;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Visit;
@@ -24,6 +25,7 @@ import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
 import ifmo.se.coursach_back.repository.LabTestResultRepository;
+import ifmo.se.coursach_back.repository.MedicalCheckRepository;
 import ifmo.se.coursach_back.repository.NotificationDeliveryRepository;
 import ifmo.se.coursach_back.repository.VisitRepository;
 import ifmo.se.coursach_back.util.BloodGroupNormalizer;
@@ -38,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DonorService {
     private static final int REPEAT_DONATION_DAYS = 56;
+    private static final int MEDICAL_CHECK_VALIDITY_MONTHS = 6;
 
     private final AccountRepository accountRepository;
     private final DonorProfileRepository donorProfileRepository;
@@ -48,6 +51,7 @@ public class DonorService {
     private final VisitRepository visitRepository;
     private final NotificationDeliveryRepository notificationDeliveryRepository;
     private final BookingRepository bookingRepository;
+    private final MedicalCheckRepository medicalCheckRepository;
 
     public DonorProfileResponse getProfile(UUID accountId) {
         DonorProfile donor = requireDonor(accountId);
@@ -154,12 +158,25 @@ public class DonorService {
         boolean activeStatus = "ACTIVE".equalsIgnoreCase(donor.getDonorStatus());
         boolean eligibleByDonation = nextEligibleAt == null || !now.isBefore(nextEligibleAt);
         boolean eligible = activeStatus && activeDeferral == null && eligibleByDonation;
+        
+        OffsetDateTime sixMonthsAgo = now.minusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
+        List<MedicalCheck> validChecks = medicalCheckRepository.findValidAdmittedChecksByDonorId(donor.getId(), sixMonthsAgo);
+        boolean hasValidMedicalCheck = !validChecks.isEmpty();
+        OffsetDateTime medicalCheckValidUntil = null;
+        if (hasValidMedicalCheck) {
+            MedicalCheck latestCheck = validChecks.get(0);
+            medicalCheckValidUntil = latestCheck.getDecisionAt().plusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
+        }
+        
+        boolean canBookDonation = eligible && hasValidMedicalCheck;
 
         return new EligibilityResponse(
                 donor.getDonorStatus(),
                 eligible,
+                canBookDonation,
                 lastDonationAt,
                 nextEligibleAt,
+                medicalCheckValidUntil,
                 activeDeferral == null ? null : DeferralStatusResponse.from(activeDeferral)
         );
     }
