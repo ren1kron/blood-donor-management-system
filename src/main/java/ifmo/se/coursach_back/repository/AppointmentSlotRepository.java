@@ -11,4 +11,7 @@ public interface AppointmentSlotRepository extends JpaRepository<AppointmentSlot
 
     List<AppointmentSlot> findByPurposeIgnoreCaseAndStartAtAfterOrderByStartAtAsc(String purpose,
                                                                                    OffsetDateTime startAt);
+    
+    List<AppointmentSlot> findByPurposeIgnoreCaseAndStartAtBetweenOrderByStartAtAsc(
+            String purpose, OffsetDateTime from, OffsetDateTime to);
 }
