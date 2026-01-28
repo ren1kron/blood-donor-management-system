@@ -50,4 +50,10 @@ public class LabWorkflowController {
         LabTestResult result = labWorkflowService.publishResult(principal.getId(), resultId);
         return ResponseEntity.ok(LabTestResultResponse.from(result));
     }
+
+    @GetMapping("/samples/{sampleId}/results")
+    public List<LabTestResultResponse> getResultsBySample(@PathVariable UUID sampleId) {
+        List<LabTestResult> results = labWorkflowService.getResultsBySample(sampleId);
+        return results.stream().map(LabTestResultResponse::from).toList();
+    }
 }

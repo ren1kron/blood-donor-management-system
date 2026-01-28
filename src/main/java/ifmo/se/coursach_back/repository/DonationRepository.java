@@ -44,4 +44,20 @@ public interface DonationRepository extends JpaRepository<Donation, UUID> {
     List<Donation> findByDonorAccountId(@Param("accountId") UUID accountId);
 
     java.util.Optional<Donation> findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(UUID accountId);
+    
+    List<Donation> findByVisit_IdIn(List<UUID> visitIds);
+    
+    @Query("SELECT COUNT(d) FROM Donation d WHERE d.performedAt >= :from AND d.performedAt <= :to")
+    long countByPerformedAtBetween(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+    
+    @Query("""
+            SELECT donor.bloodGroup, donor.rhFactor, SUM(d.volumeMl)
+            FROM Donation d
+            JOIN d.visit v
+            JOIN v.booking b
+            JOIN b.donor donor
+            WHERE d.performedAt >= :from AND d.performedAt <= :to
+            GROUP BY donor.bloodGroup, donor.rhFactor
+            """)
+    List<Object[]> sumVolumeByBloodTypeAndRh(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 }

@@ -8,6 +8,9 @@ import ifmo.se.coursach_back.admin.dto.ExpiredDocumentResponse;
 import ifmo.se.coursach_back.admin.dto.ExpiredDocumentRow;
 import ifmo.se.coursach_back.admin.dto.MarkNotifiedRequest;
 import ifmo.se.coursach_back.admin.dto.NotificationMarkResponse;
+import ifmo.se.coursach_back.admin.dto.ReportsSummaryResponse;
+import ifmo.se.coursach_back.admin.dto.SendReminderRequest;
+import ifmo.se.coursach_back.admin.dto.SendReminderResponse;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
@@ -22,15 +25,19 @@ import ifmo.se.coursach_back.repository.AccountRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
 import ifmo.se.coursach_back.repository.DonorDocumentRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
+import ifmo.se.coursach_back.repository.LabTestResultRepository;
 import ifmo.se.coursach_back.repository.NotificationDeliveryRepository;
 import ifmo.se.coursach_back.repository.NotificationRepository;
 import ifmo.se.coursach_back.repository.RoleRepository;
+import ifmo.se.coursach_back.repository.SampleRepository;
 import ifmo.se.coursach_back.repository.StaffProfileRepository;
 import ifmo.se.coursach_back.util.BloodGroupNormalizer;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,6 +59,8 @@ public class AdminService {
     private final DonorDocumentRepository donorDocumentRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationDeliveryRepository notificationDeliveryRepository;
+    private final SampleRepository sampleRepository;
+    private final LabTestResultRepository labTestResultRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -191,5 +200,85 @@ public class AdminService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    public ReportsSummaryResponse getReportsSummary(OffsetDateTime from, OffsetDateTime to) {
+        OffsetDateTime effectiveFrom = from != null ? from : OffsetDateTime.now().minusMonths(1);
+        OffsetDateTime effectiveTo = to != null ? to : OffsetDateTime.now();
+        
+        long donorsActiveCount = donorProfileRepository.countByDonorStatus("ACTIVE");
+        long donationsCount = donationRepository.countByPerformedAtBetween(effectiveFrom, effectiveTo);
+        long samplesCount = sampleRepository.countByCollectedAtBetween(effectiveFrom, effectiveTo);
+        long publishedResultsCount = labTestResultRepository.countPublishedByTestedAtBetween(effectiveFrom, effectiveTo);
+        
+        // Eligible candidates: donors who haven't donated in 60+ days
+        OffsetDateTime threshold = OffsetDateTime.now().minusDays(60);
+        List<EligibleDonorRow> eligible = donationRepository.findEligibleDonors(threshold);
+        long eligibleCandidatesCount = eligible.size();
+        
+        // Blood units by group and Rh
+        Map<String, Long> bloodUnitsByGroupRh = new HashMap<>();
+        List<Object[]> volumeData = donationRepository.sumVolumeByBloodTypeAndRh(effectiveFrom, effectiveTo);
+        for (Object[] row : volumeData) {
+            String bloodType = row[0] != null ? row[0].toString() : "UNKNOWN";
+            String rhFactor = row[1] != null ? row[1].toString() : "";
+            Long volume = row[2] != null ? ((Number) row[2]).longValue() : 0L;
+            String key = bloodType + (rhFactor.isEmpty() ? "" : rhFactor);
+            bloodUnitsByGroupRh.put(key, volume);
+        }
+        
+        return new ReportsSummaryResponse(
+            donorsActiveCount,
+            donationsCount,
+            samplesCount,
+            publishedResultsCount,
+            eligibleCandidatesCount,
+            bloodUnitsByGroupRh
+        );
+    }
+
+    @Transactional
+    public SendReminderResponse sendReminder(UUID accountId, SendReminderRequest request) {
+        DonorProfile donor = donorProfileRepository.findById(request.donorId())
+                .orElseThrow(() -> new NotFoundException("Donor not found"));
+        
+        String channel = normalize(request.channel());
+        if (channel == null) {
+            channel = DEFAULT_CHANNEL;
+        }
+        
+        String topic = normalize(request.topic());
+        if (topic == null) {
+            topic = "REMINDER";
+        }
+        
+        String body = normalize(request.body());
+        if (body == null) {
+            throw new BadRequestException("Body is required");
+        }
+        
+        Notification notification = new Notification();
+        notification.setChannel(channel);
+        notification.setTopic(topic);
+        notification.setBody(body);
+        Notification savedNotification = notificationRepository.save(notification);
+        
+        StaffProfile staff = staffProfileRepository.findByAccountId(accountId).orElse(null);
+        
+        NotificationDelivery delivery = new NotificationDelivery();
+        delivery.setNotification(savedNotification);
+        delivery.setDonor(donor);
+        delivery.setStaff(staff);
+        delivery.setStatus("SENT");
+        OffsetDateTime sentAt = OffsetDateTime.now();
+        delivery.setSentAt(sentAt);
+        NotificationDelivery savedDelivery = notificationDeliveryRepository.save(delivery);
+        
+        return new SendReminderResponse(
+            savedNotification.getId(),
+            savedDelivery.getId(),
+            "SENT",
+            sentAt
+        );
     }
 }

@@ -13,6 +13,7 @@ import ifmo.se.coursach_back.medical.dto.UpdateDonorStatusRequest;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
+import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.Sample;
 import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.security.AccountPrincipal;
@@ -45,13 +46,23 @@ public class MedicalWorkflowController {
     @GetMapping("/queue")
     public List<ScheduledDonorResponse> listQueue(@RequestParam(value = "from", required = false)
                                                   OffsetDateTime from) {
-        OffsetDateTime start = from == null ? OffsetDateTime.now() : from;
+        OffsetDateTime start = from == null ? OffsetDateTime.now().minusHours(2) : from;
         List<Booking> bookings = medicalWorkflowService.listScheduledBookings(start);
         List<UUID> bookingIds = bookings.stream().map(Booking::getId).toList();
         Map<UUID, Visit> visitsByBooking = medicalWorkflowService.loadVisitsByBookingIds(bookingIds);
+        
+        // Load medical checks and donations for visits
+        List<UUID> visitIds = visitsByBooking.values().stream().map(Visit::getId).toList();
+        Map<UUID, MedicalCheck> checksByVisit = medicalWorkflowService.loadMedicalChecksByVisitIds(visitIds);
+        Map<UUID, Donation> donationsByVisit = medicalWorkflowService.loadDonationsByVisitIds(visitIds);
 
         return bookings.stream()
-                .map(booking -> ScheduledDonorResponse.from(booking, visitsByBooking.get(booking.getId())))
+                .map(booking -> {
+                    Visit visit = visitsByBooking.get(booking.getId());
+                    MedicalCheck check = visit != null ? checksByVisit.get(visit.getId()) : null;
+                    boolean hasDonation = visit != null && donationsByVisit.containsKey(visit.getId());
+                    return ScheduledDonorResponse.from(booking, visit, check, hasDonation);
+                })
                 .toList();
     }
 

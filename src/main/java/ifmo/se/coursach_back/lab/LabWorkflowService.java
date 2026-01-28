@@ -80,6 +80,12 @@ public class LabWorkflowService {
         return result;
     }
 
+    public List<LabTestResult> getResultsBySample(UUID sampleId) {
+        Sample sample = sampleRepository.findById(sampleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sample not found"));
+        return labTestResultRepository.findBySample_Id(sample.getId());
+    }
+
     private StaffProfile requireStaff(UUID accountId) {
         return staffProfileRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Staff profile not found"));

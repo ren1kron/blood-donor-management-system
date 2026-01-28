@@ -61,6 +61,22 @@ public class MedicalWorkflowService {
         return visitRepository.findByBooking_IdIn(bookingIds).stream()
                 .collect(Collectors.toMap(visit -> visit.getBooking().getId(), visit -> visit));
     }
+    
+    public Map<UUID, MedicalCheck> loadMedicalChecksByVisitIds(List<UUID> visitIds) {
+        if (visitIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        return medicalCheckRepository.findByVisit_IdIn(visitIds).stream()
+                .collect(Collectors.toMap(check -> check.getVisit().getId(), check -> check));
+    }
+    
+    public Map<UUID, Donation> loadDonationsByVisitIds(List<UUID> visitIds) {
+        if (visitIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        return donationRepository.findByVisit_IdIn(visitIds).stream()
+                .collect(Collectors.toMap(donation -> donation.getVisit().getId(), donation -> donation));
+    }
 
     public record MedicalCheckResult(MedicalCheck check, Deferral deferral) {
     }
@@ -132,16 +148,24 @@ public class MedicalWorkflowService {
 
     @Transactional
     public Sample registerSample(SampleRequest request) {
-        if (sampleRepository.existsBySampleCode(request.sampleCode())) {
+        Donation donation = donationRepository.findById(request.donationId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donation not found"));
+        
+        // Generate sample code if not provided
+        String sampleCode = request.sampleCode();
+        if (sampleCode == null || sampleCode.isBlank()) {
+            sampleCode = generateSampleCode();
+        } else {
+            sampleCode = sampleCode.trim();
+        }
+        
+        if (sampleRepository.existsBySampleCode(sampleCode)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Sample code already exists");
         }
 
-        Donation donation = donationRepository.findById(request.donationId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donation not found"));
-
         Sample sample = new Sample();
         sample.setDonation(donation);
-        sample.setSampleCode(request.sampleCode());
+        sample.setSampleCode(sampleCode);
         sample.setStatus(normalizeSampleStatus(request.status()));
         sample.setQuarantineReason(request.quarantineReason());
         sample.setRejectionReason(request.rejectionReason());
@@ -221,5 +245,11 @@ public class MedicalWorkflowService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed.toUpperCase();
+    }
+    
+    private String generateSampleCode() {
+        String datePart = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String randomPart = UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        return "SAM-" + datePart + "-" + randomPart;
     }
 }

@@ -6,9 +6,13 @@ import ifmo.se.coursach_back.admin.dto.EligibleDonorResponse;
 import ifmo.se.coursach_back.admin.dto.ExpiredDocumentResponse;
 import ifmo.se.coursach_back.admin.dto.MarkNotifiedRequest;
 import ifmo.se.coursach_back.admin.dto.NotificationMarkResponse;
+import ifmo.se.coursach_back.admin.dto.ReportsSummaryResponse;
+import ifmo.se.coursach_back.admin.dto.SendReminderRequest;
+import ifmo.se.coursach_back.admin.dto.SendReminderResponse;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +67,21 @@ public class AdminController {
             @PathVariable UUID documentId,
             @RequestBody(required = false) MarkNotifiedRequest request) {
         NotificationMarkResponse response = adminService.markExpiredDocumentNotified(principal.getId(), documentId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/reports/summary")
+    public ReportsSummaryResponse getReportsSummary(
+            @RequestParam(value = "from", required = false) OffsetDateTime from,
+            @RequestParam(value = "to", required = false) OffsetDateTime to) {
+        return adminService.getReportsSummary(from, to);
+    }
+
+    @PostMapping("/reminders/send")
+    public ResponseEntity<SendReminderResponse> sendReminder(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody SendReminderRequest request) {
+        SendReminderResponse response = adminService.sendReminder(principal.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
