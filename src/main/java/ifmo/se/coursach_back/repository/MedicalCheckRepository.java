@@ -14,6 +14,8 @@ public interface MedicalCheckRepository extends JpaRepository<MedicalCheck, UUID
     
     List<MedicalCheck> findByVisit_IdIn(List<UUID> visitIds);
     
+    List<MedicalCheck> findByStatusOrderBySubmittedAtAsc(String status);
+    
     @Query("SELECT mc FROM MedicalCheck mc " +
            "WHERE mc.visit.booking.donor.id = :donorId " +
            "AND mc.decision = 'ADMITTED' " +

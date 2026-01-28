@@ -33,8 +33,17 @@ public class MedicalCheck {
     @JoinColumn(name = "visit_id", nullable = false, unique = true)
     private Visit visit;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "performed_by_staff_id", nullable = false)
+    // Lab technician who filled the form
+    @ManyToOne
+    @JoinColumn(name = "submitted_by_lab_id")
+    private StaffProfile submittedByLab;
+    
+    @Column(name = "submitted_at")
+    private OffsetDateTime submittedAt;
+
+    // Doctor who reviewed and made decision
+    @ManyToOne
+    @JoinColumn(name = "performed_by_staff_id")
     private StaffProfile performedBy;
 
     @Column(name = "weight_kg")
@@ -48,6 +57,16 @@ public class MedicalCheck {
 
     @Column(name = "diastolic_mmhg")
     private Integer diastolicMmhg;
+    
+    @Column(name = "pulse_rate")
+    private Integer pulseRate;
+    
+    @Column(name = "body_temperature_c")
+    private BigDecimal bodyTemperatureC;
+
+    // Status: PENDING_REVIEW, ADMITTED, REFUSED
+    @Column(nullable = false)
+    private String status;
 
     @Column(nullable = false)
     private String decision;
@@ -59,6 +78,12 @@ public class MedicalCheck {
     public void prePersist() {
         if (decisionAt == null) {
             decisionAt = OffsetDateTime.now();
+        }
+        if (status == null) {
+            status = "PENDING_REVIEW";
+        }
+        if (decision == null) {
+            decision = "PENDING_REVIEW";
         }
     }
 }

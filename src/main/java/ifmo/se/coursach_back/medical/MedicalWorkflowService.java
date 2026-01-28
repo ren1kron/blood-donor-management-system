@@ -4,6 +4,7 @@ import ifmo.se.coursach_back.medical.dto.AdverseReactionRequest;
 import ifmo.se.coursach_back.medical.dto.DeferralRequest;
 import ifmo.se.coursach_back.medical.dto.DonationRequest;
 import ifmo.se.coursach_back.medical.dto.MedicalCheckRequest;
+import ifmo.se.coursach_back.medical.dto.ReviewExaminationRequest;
 import ifmo.se.coursach_back.medical.dto.SampleRequest;
 import ifmo.se.coursach_back.model.AdverseReaction;
 import ifmo.se.coursach_back.model.Booking;
@@ -83,6 +84,67 @@ public class MedicalWorkflowService {
         return donationRepository.findByVisit_IdIn(visitIds).stream()
                 .collect(Collectors.toMap(donation -> donation.getVisit().getId(), donation -> donation));
     }
+    
+    /**
+     * Get all pending examinations submitted by lab for doctor review
+     */
+    public List<MedicalCheck> listPendingExaminations() {
+        return medicalCheckRepository.findByStatusOrderBySubmittedAtAsc("PENDING_REVIEW");
+    }
+    
+    /**
+     * Doctor reviews examination submitted by lab and makes decision
+     */
+    @Transactional
+    public MedicalCheckResult reviewExamination(UUID accountId, ReviewExaminationRequest request) {
+        StaffProfile doctor = requireStaff(accountId);
+        
+        MedicalCheck check = medicalCheckRepository.findById(request.examinationId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Examination not found"));
+        
+        if (!"PENDING_REVIEW".equals(check.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Examination has already been reviewed");
+        }
+        
+        String decision = normalizeDecision(request.decision());
+        if (!decision.equals("ADMITTED") && !decision.equals("REFUSED")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Decision must be ADMITTED or REFUSED");
+        }
+        if (decision.equals("REFUSED") && request.deferral() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is required when decision is REFUSED");
+        }
+        if (decision.equals("ADMITTED") && request.deferral() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is not allowed when decision is ADMITTED");
+        }
+        
+        check.setPerformedBy(doctor);
+        check.setDecision(decision);
+        check.setStatus(decision);
+        check.setDecisionAt(OffsetDateTime.now());
+        
+        MedicalCheck saved = medicalCheckRepository.save(check);
+        
+        Deferral savedDeferral = null;
+        if (request.deferral() != null) {
+            validateDeferral(request.deferral());
+            Deferral deferral = new Deferral();
+            deferral.setDonor(check.getVisit().getBooking().getDonor());
+            deferral.setCreatedFromCheck(saved);
+            deferral.setDeferralType(request.deferral().deferralType());
+            deferral.setReason(request.deferral().reason());
+            deferral.setEndsAt(request.deferral().endsAt());
+            savedDeferral = deferralRepository.save(deferral);
+        }
+        
+        // Send notification based on decision
+        if (decision.equals("ADMITTED")) {
+            sendDonationReadyNotification(check.getVisit().getBooking().getDonor());
+        } else {
+            sendDeferralNotification(check.getVisit().getBooking().getDonor(), request.deferral());
+        }
+        
+        return new MedicalCheckResult(saved, savedDeferral);
+    }
 
     public record MedicalCheckResult(MedicalCheck check, Deferral deferral) {
     }
@@ -139,6 +201,28 @@ public class MedicalWorkflowService {
         notification.setChannel("IN_APP");
         notification.setTopic("Медосмотр пройден");
         notification.setBody("Вы успешно прошли медосмотр и можете записаться на донацию.");
+        Notification savedNotification = notificationRepository.save(notification);
+        
+        NotificationDelivery delivery = new NotificationDelivery();
+        delivery.setNotification(savedNotification);
+        delivery.setDonor(donor);
+        delivery.setSentAt(OffsetDateTime.now());
+        delivery.setStatus("SENT");
+        notificationDeliveryRepository.save(delivery);
+    }
+    
+    private void sendDeferralNotification(DonorProfile donor, DeferralRequest deferralRequest) {
+        Notification notification = new Notification();
+        notification.setChannel("IN_APP");
+        notification.setTopic("Результат медосмотра");
+        String body = "К сожалению, по результатам медосмотра вы не допущены к донации.";
+        if (deferralRequest != null && deferralRequest.reason() != null) {
+            body += " Причина: " + deferralRequest.reason();
+        }
+        if (deferralRequest != null && deferralRequest.endsAt() != null) {
+            body += " Повторная запись возможна после " + deferralRequest.endsAt().toLocalDate();
+        }
+        notification.setBody(body);
         Notification savedNotification = notificationRepository.save(notification);
         
         NotificationDelivery delivery = new NotificationDelivery();

@@ -6,6 +6,8 @@ import ifmo.se.coursach_back.medical.dto.DonationRequest;
 import ifmo.se.coursach_back.medical.dto.DonationResponse;
 import ifmo.se.coursach_back.medical.dto.MedicalCheckRequest;
 import ifmo.se.coursach_back.medical.dto.MedicalCheckResponse;
+import ifmo.se.coursach_back.medical.dto.PendingExaminationResponse;
+import ifmo.se.coursach_back.medical.dto.ReviewExaminationRequest;
 import ifmo.se.coursach_back.medical.dto.SampleRequest;
 import ifmo.se.coursach_back.medical.dto.SampleResponse;
 import ifmo.se.coursach_back.medical.dto.ScheduledDonorResponse;
@@ -104,5 +106,26 @@ public class MedicalWorkflowController {
                                                   @Valid @RequestBody UpdateDonorStatusRequest request) {
         medicalWorkflowService.updateDonorStatus(donorId, request.donorStatus());
         return ResponseEntity.noContent().build();
+    }
+    
+    @GetMapping("/examinations/pending")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public List<PendingExaminationResponse> listPendingExaminations() {
+        return medicalWorkflowService.listPendingExaminations().stream()
+                .map(PendingExaminationResponse::from)
+                .toList();
+    }
+    
+    @PostMapping("/examinations/review")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<MedicalCheckResponse> reviewExamination(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody ReviewExaminationRequest request) {
+        MedicalWorkflowService.MedicalCheckResult result =
+                medicalWorkflowService.reviewExamination(principal.getId(), request);
+        Booking booking = result.check().getVisit().getBooking();
+        Deferral deferral = result.deferral();
+        MedicalCheckResponse response = MedicalCheckResponse.from(result.check(), booking, deferral);
+        return ResponseEntity.ok(response);
     }
 }
