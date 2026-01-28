@@ -8,6 +8,9 @@ import ifmo.se.coursach_back.admin.dto.ExpiredDocumentResponse;
 import ifmo.se.coursach_back.admin.dto.ExpiredDocumentRow;
 import ifmo.se.coursach_back.admin.dto.MarkNotifiedRequest;
 import ifmo.se.coursach_back.admin.dto.NotificationMarkResponse;
+import ifmo.se.coursach_back.exception.BadRequestException;
+import ifmo.se.coursach_back.exception.ConflictException;
+import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.model.Account;
 import ifmo.se.coursach_back.model.DonorDocument;
 import ifmo.se.coursach_back.model.DonorProfile;
@@ -30,11 +33,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -58,22 +59,23 @@ public class AdminService {
         String phone = normalize(request.phone());
         String email = normalize(request.email());
         if (phone == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phone is required");
+            throw new BadRequestException("Phone is required");
         }
         if (accountRepository.existsByPhone(phone)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone is already in use");
+            throw new ConflictException("Phone is already in use");
         }
         if (email != null && accountRepository.existsByEmailIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use");
+            throw new ConflictException("Email is already in use");
         }
 
         Role donorRole = roleRepository.findByCode("DONOR")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role DONOR is not configured"));
+                .orElseThrow(() -> new BadRequestException("Role DONOR is not configured"));
 
         Account account = new Account();
         account.setPhone(phone);
         account.setEmail(email);
         account.setPasswordHash(passwordEncoder.encode(request.password()));
+        account.setRoles(new java.util.HashSet<>());
         account.getRoles().add(donorRole);
         Account savedAccount = accountRepository.save(account);
 
@@ -90,7 +92,7 @@ public class AdminService {
 
     public List<EligibleDonorResponse> listEligibleDonors(int minDaysSinceDonation) {
         if (minDaysSinceDonation < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "minDaysSinceDonation must be positive");
+            throw new BadRequestException("minDaysSinceDonation must be positive");
         }
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime threshold = now.minusDays(minDaysSinceDonation);
@@ -126,7 +128,7 @@ public class AdminService {
     @Transactional
     public NotificationMarkResponse markDonorRevisitNotified(UUID accountId, UUID donorId, MarkNotifiedRequest request) {
         DonorProfile donor = donorProfileRepository.findById(donorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donor not found"));
+                .orElseThrow(() -> new NotFoundException("Donor not found"));
         String body = normalize(request != null ? request.body() : null);
         if (body == null) {
             body = "You are eligible for repeat donation. Please contact the center to schedule your visit.";
@@ -138,7 +140,7 @@ public class AdminService {
     public NotificationMarkResponse markExpiredDocumentNotified(UUID accountId, UUID documentId,
                                                                 MarkNotifiedRequest request) {
         DonorDocument document = donorDocumentRepository.findById(documentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
+                .orElseThrow(() -> new NotFoundException("Document not found"));
 
         if (document.getExpiresAt() != null && document.getExpiresAt().isBefore(LocalDate.now())) {
             String currentStatus = normalize(document.getStatus());

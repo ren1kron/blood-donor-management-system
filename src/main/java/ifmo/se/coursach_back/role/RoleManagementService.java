@@ -1,5 +1,7 @@
 package ifmo.se.coursach_back.role;
 
+import ifmo.se.coursach_back.exception.BadRequestException;
+import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.model.Account;
 import ifmo.se.coursach_back.model.Role;
 import ifmo.se.coursach_back.repository.AccountRepository;
@@ -11,10 +13,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -31,14 +31,14 @@ public class RoleManagementService {
 
     public AccountRolesResponse getAccountRoles(UUID accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new NotFoundException("Account not found"));
         return toResponse(account);
     }
 
     @Transactional
     public AccountRolesResponse assignRole(UUID accountId, String roleCode) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new NotFoundException("Account not found"));
         Role role = findRole(roleCode);
         account.getRoles().add(role);
         accountRepository.save(account);
@@ -48,11 +48,11 @@ public class RoleManagementService {
     @Transactional
     public AccountRolesResponse removeRole(UUID accountId, String roleCode) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new NotFoundException("Account not found"));
         Role role = findRole(roleCode);
         boolean removed = account.getRoles().remove(role);
         if (!removed) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not assigned to account");
+            throw new NotFoundException("Role not assigned to account");
         }
         accountRepository.save(account);
         return toResponse(account);
@@ -61,10 +61,10 @@ public class RoleManagementService {
     private Role findRole(String roleCode) {
         String normalized = normalizeRoleCode(roleCode);
         if (normalized == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode is required");
+            throw new BadRequestException("roleCode is required");
         }
         return roleRepository.findByCode(normalized)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
+                .orElseThrow(() -> new NotFoundException("Role not found"));
     }
 
     private AccountRolesResponse toResponse(Account account) {

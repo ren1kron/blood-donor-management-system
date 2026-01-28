@@ -5,6 +5,9 @@ import ifmo.se.coursach_back.donor.dto.DeferralStatusResponse;
 import ifmo.se.coursach_back.donor.dto.DonorProfileResponse;
 import ifmo.se.coursach_back.donor.dto.EligibilityResponse;
 import ifmo.se.coursach_back.donor.dto.UpdateDonorProfileRequest;
+import ifmo.se.coursach_back.exception.BadRequestException;
+import ifmo.se.coursach_back.exception.ConflictException;
+import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.model.Account;
 import ifmo.se.coursach_back.model.Consent;
 import ifmo.se.coursach_back.model.Deferral;
@@ -28,10 +31,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -86,20 +87,20 @@ public class DonorService {
         if (request.email() != null) {
             String email = normalizeNullable(request.email());
             if (email != null && accountRepository.existsByEmailIgnoreCaseAndIdNot(email, account.getId())) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use");
+                throw new ConflictException("Email is already in use");
             }
             account.setEmail(email);
         }
         if (request.phone() != null) {
             String phone = normalizeNullable(request.phone());
             if (phone != null && accountRepository.existsByPhoneAndIdNot(phone, account.getId())) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone is already in use");
+                throw new ConflictException("Phone is already in use");
             }
             account.setPhone(phone);
         }
 
         if (account.getEmail() == null && account.getPhone() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email or phone is required");
+            throw new BadRequestException("Email or phone is required");
         }
 
         accountRepository.save(account);
@@ -172,35 +173,35 @@ public class DonorService {
     public void acknowledgeNotification(UUID accountId, UUID deliveryId) {
         DonorProfile donor = requireDonor(accountId);
         NotificationDelivery delivery = notificationDeliveryRepository.findByIdAndDonor_Id(deliveryId, donor.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
+                .orElseThrow(() -> new NotFoundException("Notification not found"));
         delivery.setStatus("ACKED");
         notificationDeliveryRepository.save(delivery);
     }
 
     private DonorProfile requireDonor(UUID accountId) {
         return donorProfileRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donor profile not found"));
+                .orElseThrow(() -> new NotFoundException("Donor profile not found"));
     }
 
     private Visit resolveVisitForConsent(DonorProfile donor, ConsentRequest request) {
         if (request.visitId() != null) {
             Visit visit = visitRepository.findById(request.visitId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found"));
+                    .orElseThrow(() -> new NotFoundException("Visit not found"));
             if (!visit.getBooking().getDonor().getId().equals(donor.getId())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Visit does not belong to donor");
+                throw new BadRequestException("Visit does not belong to donor");
             }
             return visit;
         }
         if (request.bookingId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bookingId or visitId is required");
+            throw new BadRequestException("bookingId or visitId is required");
         }
         Booking booking = bookingRepository.findById(request.bookingId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+                .orElseThrow(() -> new NotFoundException("Booking not found"));
         if (!booking.getDonor().getId().equals(donor.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Booking does not belong to donor");
+            throw new BadRequestException("Booking does not belong to donor");
         }
         if ("CANCELLED".equalsIgnoreCase(booking.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking is cancelled");
+            throw new ConflictException("Booking is cancelled");
         }
         return visitRepository.findByBooking_Id(booking.getId())
                 .orElseGet(() -> visitRepository.save(newVisit(booking)));
@@ -215,7 +216,7 @@ public class DonorService {
     private String normalizeRequired(String value, String fieldName) {
         String trimmed = normalizeNullable(value);
         if (trimmed == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " is required");
+            throw new BadRequestException(fieldName + " is required");
         }
         return trimmed;
     }

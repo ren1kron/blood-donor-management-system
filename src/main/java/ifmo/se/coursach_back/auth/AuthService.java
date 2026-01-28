@@ -4,6 +4,9 @@ import ifmo.se.coursach_back.auth.dto.AccountProfileResponse;
 import ifmo.se.coursach_back.auth.dto.AuthResponse;
 import ifmo.se.coursach_back.auth.dto.LoginRequest;
 import ifmo.se.coursach_back.auth.dto.RegisterRequest;
+import ifmo.se.coursach_back.exception.BadRequestException;
+import ifmo.se.coursach_back.exception.ConflictException;
+import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.model.Account;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.Role;
@@ -17,10 +20,9 @@ import ifmo.se.coursach_back.security.JwtService;
 import ifmo.se.coursach_back.util.BloodGroupNormalizer;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,27 +34,29 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = normalize(request.email());
         String phone = normalize(request.phone());
 
         if (email == null && phone == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email or phone is required");
+            throw new BadRequestException("Email or phone is required");
         }
         if (email != null && accountRepository.existsByEmailIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use");
+            throw new ConflictException("Email is already in use");
         }
         if (phone != null && accountRepository.existsByPhone(phone)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone is already in use");
+            throw new ConflictException("Phone is already in use");
         }
 
         Role donorRole = roleRepository.findByCode("DONOR")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role DONOR is not configured"));
+                .orElseThrow(() -> new BadRequestException("Role DONOR is not configured"));
 
         Account account = new Account();
         account.setEmail(email);
         account.setPhone(phone);
         account.setPasswordHash(passwordEncoder.encode(request.password()));
+        account.setRoles(new java.util.HashSet<>());
         account.getRoles().add(donorRole);
         Account savedAccount = accountRepository.save(account);
 
@@ -70,17 +74,17 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         String identifier = normalize(request.identifier());
         if (identifier == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Identifier is required");
+            throw new BadRequestException("Identifier is required");
         }
 
         Account account = accountRepository.findByEmailIgnoreCaseOrPhone(identifier, identifier)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+                .orElseThrow(() -> new BadRequestException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), account.getPasswordHash())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw new BadRequestException("Invalid credentials");
         }
         if (!account.isActive()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is inactive");
+            throw new BadRequestException("Account is inactive");
         }
 
         return buildAuthResponse(account);
@@ -88,7 +92,7 @@ public class AuthService {
 
     public AccountProfileResponse currentProfile(AccountPrincipal principal) {
         Account account = accountRepository.findById(principal.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new NotFoundException("Account not found"));
 
         String profileType = "NONE";
         String fullName = null;
