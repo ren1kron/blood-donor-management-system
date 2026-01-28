@@ -17,6 +17,12 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     List<Booking> findByStatusAndSlot_StartAtAfterOrderBySlot_StartAtAsc(String status,
                                                                          java.time.OffsetDateTime startAt);
+    
+    /**
+     * Find bookings with any of the given statuses after a certain start time.
+     */
+    List<Booking> findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(List<String> statuses,
+                                                                           java.time.OffsetDateTime startAt);
 
     List<Booking> findByDonor_Account_IdOrderBySlot_StartAtDesc(UUID accountId);
 

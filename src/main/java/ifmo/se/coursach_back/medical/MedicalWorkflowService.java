@@ -7,6 +7,7 @@ import ifmo.se.coursach_back.medical.dto.MedicalCheckRequest;
 import ifmo.se.coursach_back.medical.dto.SampleRequest;
 import ifmo.se.coursach_back.model.AdverseReaction;
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.BookingStatus;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
@@ -49,7 +50,8 @@ public class MedicalWorkflowService {
     private final StaffProfileRepository staffProfileRepository;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusAndSlot_StartAtAfterOrderBySlot_StartAtAsc("BOOKED", from);
+        return bookingRepository.findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+                List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED), from);
     }
 
     public Map<UUID, Visit> loadVisitsByBookingIds(List<UUID> bookingIds) {
