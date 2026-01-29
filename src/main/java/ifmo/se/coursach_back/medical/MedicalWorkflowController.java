@@ -20,6 +20,7 @@ import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.LabExaminationRequest;
 import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.Sample;
+import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
@@ -65,6 +66,9 @@ public class MedicalWorkflowController {
                 .map(booking -> {
                     Visit visit = visitsByBooking.get(booking.getId());
                     MedicalCheck check = visit != null ? checksByVisit.get(visit.getId()) : null;
+                    if (check == null && SlotPurpose.DONATION.equalsIgnoreCase(booking.getSlot().getPurpose())) {
+                        check = medicalWorkflowService.findLatestCheckByDonor(booking.getDonor().getId());
+                    }
                     Donation donation = visit != null ? donationsByVisit.get(visit.getId()) : null;
                     return ScheduledDonorResponse.from(booking, visit, check, donation);
                 })

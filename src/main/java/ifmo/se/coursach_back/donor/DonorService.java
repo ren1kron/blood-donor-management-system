@@ -155,7 +155,8 @@ public class DonorService {
             }
         }
 
-        boolean activeStatus = "ACTIVE".equalsIgnoreCase(donor.getDonorStatus());
+        boolean activeStatus = "ACTIVE".equalsIgnoreCase(donor.getDonorStatus())
+                || "POTENTIAL".equalsIgnoreCase(donor.getDonorStatus());
         boolean eligibleByDonation = nextEligibleAt == null || !now.isBefore(nextEligibleAt);
         boolean eligible = activeStatus && activeDeferral == null && eligibleByDonation;
         

@@ -47,7 +47,7 @@ public class DonorProfile {
     @PrePersist
     public void prePersist() {
         if (donorStatus == null) {
-            donorStatus = "ACTIVE";
+            donorStatus = "POTENTIAL";
         }
     }
 }

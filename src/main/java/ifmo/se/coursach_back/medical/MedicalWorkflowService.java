@@ -107,17 +107,11 @@ public class MedicalWorkflowService {
         return labExaminationRequestRepository.findByVisit_IdIn(visitIds).stream()
                 .collect(Collectors.toMap(request -> request.getVisit().getId(), request -> request));
     }
-    
-    /**
-     * Get all pending examinations submitted by lab for doctor review
-     */
+
     public List<MedicalCheck> listPendingExaminations() {
         return medicalCheckRepository.findByStatusOrderBySubmittedAtAsc("PENDING_REVIEW");
     }
     
-    /**
-     * Doctor reviews examination submitted by lab and makes decision
-     */
     @Transactional
     public MedicalCheckResult reviewExamination(UUID accountId, ReviewExaminationRequest request) {
         StaffProfile doctor = requireStaff(accountId);
@@ -165,7 +159,6 @@ public class MedicalWorkflowService {
             savedDeferral = deferralRepository.save(deferral);
         }
         
-        // Send notification based on decision
         if (decision.equals("ADMITTED")) {
             sendDonationReadyNotification(check.getVisit().getBooking().getDonor());
         } else {
@@ -356,7 +349,9 @@ public class MedicalWorkflowService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Visit is not for donation");
         }
 
-        MedicalCheck check = medicalCheckRepository.findByVisit_Id(visit.getId()).orElse(null);
+        MedicalCheck check = medicalCheckRepository
+                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(booking.getDonor().getId())
+                .orElse(null);
         if (check == null || !"ADMITTED".equalsIgnoreCase(check.getDecision())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Donation not allowed without admission");
         }
@@ -370,7 +365,15 @@ public class MedicalWorkflowService {
         donation.setDonationType(request.donationType());
         donation.setVolumeMl(request.volumeMl());
         donation.setPerformedBy(staff);
-        return donationRepository.save(donation);
+        if (request.performedAt() != null) {
+            donation.setPerformedAt(request.performedAt());
+        }
+        donation.setPublished(true);
+        donation.setPublishedAt(donation.getPerformedAt() != null ? donation.getPerformedAt() : OffsetDateTime.now());
+
+        Donation saved = donationRepository.save(donation);
+        activateDonorIfNeeded(booking.getDonor());
+        return saved;
     }
 
     @Transactional
@@ -435,6 +438,11 @@ public class MedicalWorkflowService {
         return donorProfileRepository.save(donor);
     }
 
+    public MedicalCheck findLatestCheckByDonor(UUID donorId) {
+        return medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donorId)
+                .orElse(null);
+    }
+
     private Visit resolveVisit(UUID bookingId, UUID visitId) {
         if (visitId != null) {
             return visitRepository.findById(visitId)
@@ -468,6 +476,16 @@ public class MedicalWorkflowService {
     private void validateDeferral(DeferralRequest request) {
         if (request.endsAt() != null && request.endsAt().isBefore(OffsetDateTime.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral end time is in the past");
+        }
+    }
+
+    private void activateDonorIfNeeded(DonorProfile donor) {
+        if (donor == null) {
+            return;
+        }
+        if (!"ACTIVE".equalsIgnoreCase(donor.getDonorStatus())) {
+            donor.setDonorStatus("ACTIVE");
+            donorProfileRepository.save(donor);
         }
     }
 
