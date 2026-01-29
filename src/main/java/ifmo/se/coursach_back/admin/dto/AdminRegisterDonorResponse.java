@@ -4,6 +4,7 @@ import java.util.UUID;
 
 public record AdminRegisterDonorResponse(
         UUID accountId,
-        UUID donorId
+        UUID donorId,
+        String tempPassword
 ) {
 }

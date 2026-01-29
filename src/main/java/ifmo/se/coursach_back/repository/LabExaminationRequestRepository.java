@@ -12,4 +12,6 @@ public interface LabExaminationRequestRepository extends JpaRepository<LabExamin
     List<LabExaminationRequest> findByVisit_IdIn(List<UUID> visitIds);
 
     List<LabExaminationRequest> findByStatusInOrderByRequestedAtAsc(List<String> statuses);
+
+    long countByStatusIn(List<String> statuses);
 }

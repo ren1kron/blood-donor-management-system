@@ -15,4 +15,15 @@ public interface SampleRepository extends JpaRepository<Sample, UUID> {
     
     @Query("SELECT COUNT(s) FROM Sample s WHERE s.collectedAt >= :from AND s.collectedAt <= :to")
     long countByCollectedAtBetween(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    @Query("""
+            select sample
+            from Sample sample
+            join sample.donation donation
+            join donation.visit visit
+            join visit.booking booking
+            where booking.donor.id = :donorId
+            order by sample.collectedAt desc
+            """)
+    List<Sample> findByDonorId(@Param("donorId") UUID donorId);
 }

@@ -1,6 +1,8 @@
 package ifmo.se.coursach_back.medical.dto;
 
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.CollectionSession;
+import ifmo.se.coursach_back.model.CollectionSessionStatus;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.Visit;
@@ -23,12 +25,26 @@ public record ScheduledDonorResponse(
         boolean hasDonation,
         boolean canDonate,
         UUID donationId,
-        boolean donationPublished
+        boolean donationPublished,
+        UUID collectionSessionId,
+        String collectionSessionStatus,
+        OffsetDateTime collectionSessionStartedAt,
+        OffsetDateTime collectionSessionEndedAt,
+        String collectionSessionNurseName,
+        String collectionSessionPreVitalsJson,
+        String collectionSessionPostVitalsJson,
+        String collectionSessionNotes,
+        String collectionSessionComplications,
+        String collectionSessionInterruptionReason
 ) {
-    public static ScheduledDonorResponse from(Booking booking, Visit visit, MedicalCheck check, Donation donation) {
+    public static ScheduledDonorResponse from(Booking booking, Visit visit, MedicalCheck check, Donation donation,
+                                              CollectionSession session) {
         String decision = check != null ? check.getDecision() : null;
         boolean hasDonation = donation != null;
-        boolean canDonate = "ADMITTED".equals(decision) && !hasDonation;
+        boolean hasSession = session != null;
+        String sessionStatus = session != null ? session.getStatus() : null;
+        boolean sessionAllows = hasSession && !CollectionSessionStatus.ABORTED.equalsIgnoreCase(sessionStatus);
+        boolean canDonate = "ADMITTED".equals(decision) && !hasDonation && sessionAllows;
         
         return new ScheduledDonorResponse(
                 booking.getId(),
@@ -46,11 +62,21 @@ public record ScheduledDonorResponse(
                 hasDonation,
                 canDonate,
                 donation != null ? donation.getId() : null,
-                donation != null && donation.isPublished()
+                donation != null && donation.isPublished(),
+                session != null ? session.getId() : null,
+                sessionStatus,
+                session != null ? session.getStartedAt() : null,
+                session != null ? session.getEndedAt() : null,
+                session != null && session.getNurse() != null ? session.getNurse().getFullName() : null,
+                session != null ? session.getPreVitalsJson() : null,
+                session != null ? session.getPostVitalsJson() : null,
+                session != null ? session.getNotes() : null,
+                session != null ? session.getComplications() : null,
+                session != null ? session.getInterruptionReason() : null
         );
     }
     
     public static ScheduledDonorResponse from(Booking booking, Visit visit) {
-        return from(booking, visit, null, null);
+        return from(booking, visit, null, null, null);
     }
 }

@@ -15,11 +15,15 @@ import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.CollectionSession;
+import ifmo.se.coursach_back.model.CollectionSessionStatus;
 import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.model.StaffProfile;
 import ifmo.se.coursach_back.model.Visit;
+import ifmo.se.coursach_back.audit.AuditService;
 import ifmo.se.coursach_back.repository.AdverseReactionRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
+import ifmo.se.coursach_back.repository.CollectionSessionRepository;
 import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
@@ -52,6 +56,8 @@ class MedicalWorkflowServiceDonationTest {
     @Mock private LabExaminationRequestRepository labExaminationRequestRepository;
     @Mock private NotificationRepository notificationRepository;
     @Mock private NotificationDeliveryRepository notificationDeliveryRepository;
+    @Mock private CollectionSessionRepository collectionSessionRepository;
+    @Mock private AuditService auditService;
 
     private MedicalWorkflowService service;
 
@@ -70,7 +76,9 @@ class MedicalWorkflowServiceDonationTest {
                 staffProfileRepository,
                 labExaminationRequestRepository,
                 notificationRepository,
-                notificationDeliveryRepository
+                notificationDeliveryRepository,
+                collectionSessionRepository,
+                auditService
         );
     }
 
@@ -104,6 +112,9 @@ class MedicalWorkflowServiceDonationTest {
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
         when(donationRepository.findByVisit_Id(visitId)).thenReturn(Optional.empty());
+        CollectionSession session = new CollectionSession();
+        session.setStatus(CollectionSessionStatus.PREPARED);
+        when(collectionSessionRepository.findByVisit_Id(visitId)).thenReturn(Optional.of(session));
         when(medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId()))
                 .thenReturn(Optional.of(check));
         when(donationRepository.save(any(Donation.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -141,7 +152,44 @@ class MedicalWorkflowServiceDonationTest {
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
         when(medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId()))
                 .thenReturn(Optional.of(check));
+        CollectionSession session = new CollectionSession();
+        session.setStatus(CollectionSessionStatus.PREPARED);
+        when(collectionSessionRepository.findByVisit_Id(visitId)).thenReturn(Optional.of(session));
         when(donationRepository.findByVisit_Id(visitId)).thenReturn(Optional.of(new Donation()));
+
+        DonationRequest request = new DonationRequest(null, visitId, "WHOLE_BLOOD", 450, null);
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> service.recordDonation(accountId, request));
+        assertEquals(409, ex.getStatusCode().value());
+    }
+
+    @Test
+    void registerDonationFailsWithoutCollectionSession() {
+        UUID accountId = UUID.randomUUID();
+        UUID visitId = UUID.randomUUID();
+
+        DonorProfile donor = new DonorProfile();
+        AppointmentSlot slot = new AppointmentSlot();
+        slot.setPurpose(SlotPurpose.DONATION);
+
+        Booking booking = new Booking();
+        booking.setDonor(donor);
+        booking.setSlot(slot);
+
+        Visit visit = new Visit();
+        visit.setId(visitId);
+        visit.setBooking(booking);
+
+        StaffProfile doctor = new StaffProfile();
+        MedicalCheck check = new MedicalCheck();
+        check.setDecision("ADMITTED");
+
+        when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
+        when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
+        when(medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId()))
+                .thenReturn(Optional.of(check));
+        when(donationRepository.findByVisit_Id(visitId)).thenReturn(Optional.empty());
+        when(collectionSessionRepository.findByVisit_Id(visitId)).thenReturn(Optional.empty());
 
         DonationRequest request = new DonationRequest(null, visitId, "WHOLE_BLOOD", 450, null);
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,

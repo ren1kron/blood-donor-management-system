@@ -25,7 +25,9 @@ import ifmo.se.coursach_back.repository.AccountRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
 import ifmo.se.coursach_back.repository.DonorDocumentRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
+import ifmo.se.coursach_back.repository.LabExaminationRequestRepository;
 import ifmo.se.coursach_back.repository.LabTestResultRepository;
+import ifmo.se.coursach_back.repository.MedicalCheckRepository;
 import ifmo.se.coursach_back.repository.NotificationDeliveryRepository;
 import ifmo.se.coursach_back.repository.NotificationRepository;
 import ifmo.se.coursach_back.repository.RoleRepository;
@@ -61,6 +63,8 @@ public class AdminService {
     private final NotificationDeliveryRepository notificationDeliveryRepository;
     private final SampleRepository sampleRepository;
     private final LabTestResultRepository labTestResultRepository;
+    private final MedicalCheckRepository medicalCheckRepository;
+    private final LabExaminationRequestRepository labExaminationRequestRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -96,7 +100,7 @@ public class AdminService {
         profile.setRhFactor(normalize(request.rhFactor()));
         DonorProfile savedProfile = donorProfileRepository.save(profile);
 
-        return new AdminRegisterDonorResponse(savedAccount.getId(), savedProfile.getId());
+        return new AdminRegisterDonorResponse(savedAccount.getId(), savedProfile.getId(), request.password());
     }
 
     public List<EligibleDonorResponse> listEligibleDonors(int minDaysSinceDonation) {
@@ -206,10 +210,18 @@ public class AdminService {
         OffsetDateTime effectiveFrom = from != null ? from : OffsetDateTime.now().minusMonths(1);
         OffsetDateTime effectiveTo = to != null ? to : OffsetDateTime.now();
         
+        long donorsTotalCount = donorProfileRepository.count();
         long donorsActiveCount = donorProfileRepository.countByDonorStatus("ACTIVE");
         long donationsCount = donationRepository.countByPerformedAtBetween(effectiveFrom, effectiveTo);
+        OffsetDateTime weekFrom = OffsetDateTime.now().minusDays(7);
+        OffsetDateTime monthFrom = OffsetDateTime.now().minusMonths(1);
+        long donationsLastWeek = donationRepository.countByPerformedAtBetween(weekFrom, OffsetDateTime.now());
+        long donationsLastMonth = donationRepository.countByPerformedAtBetween(monthFrom, OffsetDateTime.now());
         long samplesCount = sampleRepository.countByCollectedAtBetween(effectiveFrom, effectiveTo);
         long publishedResultsCount = labTestResultRepository.countPublishedByTestedAtBetween(effectiveFrom, effectiveTo);
+        long pendingReviewCount = medicalCheckRepository.countByStatus("PENDING_REVIEW");
+        long labQueueCount = labExaminationRequestRepository
+                .countByStatusIn(List.of("REQUESTED", "IN_PROGRESS"));
         
         // Eligible candidates: donors who haven't donated in 60+ days
         OffsetDateTime threshold = OffsetDateTime.now().minusDays(60);
@@ -228,11 +240,16 @@ public class AdminService {
         }
         
         return new ReportsSummaryResponse(
+            donorsTotalCount,
             donorsActiveCount,
             donationsCount,
+            donationsLastWeek,
+            donationsLastMonth,
             samplesCount,
             publishedResultsCount,
             eligibleCandidatesCount,
+            pendingReviewCount,
+            labQueueCount,
             bloodUnitsByGroupRh
         );
     }

@@ -15,6 +15,7 @@ import ifmo.se.coursach_back.medical.dto.SampleResponse;
 import ifmo.se.coursach_back.medical.dto.ScheduledDonorResponse;
 import ifmo.se.coursach_back.medical.dto.UpdateDonorStatusRequest;
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.CollectionSession;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.LabExaminationRequest;
@@ -45,7 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/medical")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('DOCTOR', 'NURSE')")
+@PreAuthorize("hasRole('DOCTOR')")
 public class MedicalWorkflowController {
     private final MedicalWorkflowService medicalWorkflowService;
 
@@ -61,6 +62,8 @@ public class MedicalWorkflowController {
         List<UUID> visitIds = visitsByBooking.values().stream().map(Visit::getId).toList();
         Map<UUID, MedicalCheck> checksByVisit = medicalWorkflowService.loadMedicalChecksByVisitIds(visitIds);
         Map<UUID, Donation> donationsByVisit = medicalWorkflowService.loadDonationsByVisitIds(visitIds);
+        Map<UUID, CollectionSession> sessionsByVisit =
+                medicalWorkflowService.loadCollectionSessionsByVisitIds(visitIds);
 
         return bookings.stream()
                 .map(booking -> {
@@ -70,12 +73,14 @@ public class MedicalWorkflowController {
                         check = medicalWorkflowService.findLatestCheckByDonor(booking.getDonor().getId());
                     }
                     Donation donation = visit != null ? donationsByVisit.get(visit.getId()) : null;
-                    return ScheduledDonorResponse.from(booking, visit, check, donation);
+                    CollectionSession session = visit != null ? sessionsByVisit.get(visit.getId()) : null;
+                    return ScheduledDonorResponse.from(booking, visit, check, donation, session);
                 })
                 .toList();
     }
 
     @PostMapping("/checks")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<MedicalCheckResponse> recordCheck(@AuthenticationPrincipal AccountPrincipal principal,
                                                             @Valid @RequestBody MedicalCheckRequest request) {
         MedicalWorkflowService.MedicalCheckResult result =

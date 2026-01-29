@@ -29,4 +29,16 @@ public interface LabTestResultRepository extends JpaRepository<LabTestResult, UU
     
     @Query("SELECT COUNT(r) FROM LabTestResult r WHERE r.published = true AND r.testedAt >= :from AND r.testedAt <= :to")
     long countPublishedByTestedAtBetween(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    @Query("""
+            select result
+            from LabTestResult result
+            join result.sample sample
+            join sample.donation donation
+            join donation.visit visit
+            join visit.booking booking
+            where booking.donor.id = :donorId
+            order by result.testedAt desc
+            """)
+    List<LabTestResult> findByDonorId(@Param("donorId") UUID donorId);
 }

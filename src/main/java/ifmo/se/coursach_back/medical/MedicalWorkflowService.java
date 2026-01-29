@@ -10,6 +10,8 @@ import ifmo.se.coursach_back.medical.dto.SampleRequest;
 import ifmo.se.coursach_back.model.AdverseReaction;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.BookingStatus;
+import ifmo.se.coursach_back.model.CollectionSession;
+import ifmo.se.coursach_back.model.CollectionSessionStatus;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
@@ -22,8 +24,10 @@ import ifmo.se.coursach_back.model.Sample;
 import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.model.StaffProfile;
 import ifmo.se.coursach_back.model.Visit;
+import ifmo.se.coursach_back.audit.AuditService;
 import ifmo.se.coursach_back.repository.AdverseReactionRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
+import ifmo.se.coursach_back.repository.CollectionSessionRepository;
 import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
@@ -61,6 +65,8 @@ public class MedicalWorkflowService {
     private final LabExaminationRequestRepository labExaminationRequestRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationDeliveryRepository notificationDeliveryRepository;
+    private final CollectionSessionRepository collectionSessionRepository;
+    private final AuditService auditService;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
         return bookingRepository.findByStatusInAndSlot_PurposeIgnoreCaseAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
@@ -98,6 +104,14 @@ public class MedicalWorkflowService {
         }
         return donationRepository.findByVisit_IdIn(visitIds).stream()
                 .collect(Collectors.toMap(donation -> donation.getVisit().getId(), donation -> donation));
+    }
+
+    public Map<UUID, CollectionSession> loadCollectionSessionsByVisitIds(List<UUID> visitIds) {
+        if (visitIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        return collectionSessionRepository.findByVisit_IdIn(visitIds).stream()
+                .collect(Collectors.toMap(session -> session.getVisit().getId(), session -> session));
     }
 
     public Map<UUID, LabExaminationRequest> loadLabRequestsByVisitIds(List<UUID> visitIds) {
@@ -164,6 +178,9 @@ public class MedicalWorkflowService {
         } else {
             sendDeferralNotification(check.getVisit().getBooking().getDonor(), request.deferral());
         }
+
+        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision));
         
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -220,6 +237,9 @@ public class MedicalWorkflowService {
         if (decision.equals("ADMITTED")) {
             sendDonationReadyNotification(visit.getBooking().getDonor());
         }
+
+        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -300,6 +320,9 @@ public class MedicalWorkflowService {
             sendDeferralNotification(visit.getBooking().getDonor(), request.deferral());
         }
 
+        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision));
+
         return new MedicalCheckResult(saved, savedDeferral);
     }
     
@@ -360,6 +383,15 @@ public class MedicalWorkflowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Donation already registered for this visit");
         }
 
+        CollectionSession session = collectionSessionRepository.findByVisit_Id(visit.getId()).orElse(null);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Collection session is required before donation");
+        }
+        String sessionStatus = session.getStatus() == null ? "" : session.getStatus().toUpperCase();
+        if (CollectionSessionStatus.ABORTED.equals(sessionStatus)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Collection session was aborted");
+        }
+
         Donation donation = new Donation();
         donation.setVisit(visit);
         donation.setDonationType(request.donationType());
@@ -373,6 +405,8 @@ public class MedicalWorkflowService {
 
         Donation saved = donationRepository.save(donation);
         activateDonorIfNeeded(booking.getDonor());
+        auditService.log(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
+                Map.of("visitId", visit.getId()));
         return saved;
     }
 
@@ -385,6 +419,7 @@ public class MedicalWorkflowService {
             donation.setPublished(true);
             donation.setPublishedAt(OffsetDateTime.now());
             donation = donationRepository.save(donation);
+            auditService.log(accountId, "DONATION_PUBLISHED", "Donation", donation.getId(), null);
         }
         return donation;
     }
