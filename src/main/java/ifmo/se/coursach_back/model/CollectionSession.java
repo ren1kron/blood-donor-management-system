@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "collection_session")
@@ -46,9 +48,11 @@ public class CollectionSession {
     @Column(name = "ended_at")
     private OffsetDateTime endedAt;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "pre_vitals_json", columnDefinition = "jsonb")
     private String preVitalsJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "post_vitals_json", columnDefinition = "jsonb")
     private String postVitalsJson;
 
