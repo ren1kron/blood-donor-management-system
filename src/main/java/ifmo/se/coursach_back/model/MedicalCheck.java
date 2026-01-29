@@ -33,7 +33,6 @@ public class MedicalCheck {
     @JoinColumn(name = "visit_id", nullable = false, unique = true)
     private Visit visit;
 
-    // Lab technician who filled the form
     @ManyToOne
     @JoinColumn(name = "submitted_by_lab_id")
     private StaffProfile submittedByLab;
@@ -41,7 +40,6 @@ public class MedicalCheck {
     @Column(name = "submitted_at")
     private OffsetDateTime submittedAt;
 
-    // Doctor who reviewed and made decision
     @ManyToOne
     @JoinColumn(name = "performed_by_staff_id")
     private StaffProfile performedBy;
@@ -51,6 +49,12 @@ public class MedicalCheck {
 
     @Column(name = "hemoglobin_g_l")
     private BigDecimal hemoglobinGl;
+
+    @Column(name = "hematocrit_pct")
+    private BigDecimal hematocritPct;
+
+    @Column(name = "rbc_10e12_l")
+    private BigDecimal rbc10e12L;
 
     @Column(name = "systolic_mmhg")
     private Integer systolicMmhg;

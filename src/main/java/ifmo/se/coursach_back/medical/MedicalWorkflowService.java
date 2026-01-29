@@ -404,6 +404,13 @@ public class MedicalWorkflowService {
         donation.setPublishedAt(donation.getPerformedAt() != null ? donation.getPerformedAt() : OffsetDateTime.now());
 
         Donation saved = donationRepository.save(donation);
+        
+        Sample sample = new Sample();
+        sample.setDonation(saved);
+        sample.setSampleCode(generateSampleCode());
+        sample.setStatus("NEW");
+        sampleRepository.save(sample);
+        
         activateDonorIfNeeded(booking.getDonor());
         auditService.log(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
                 Map.of("visitId", visit.getId()));
@@ -429,7 +436,6 @@ public class MedicalWorkflowService {
         Donation donation = donationRepository.findById(request.donationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donation not found"));
         
-        // Generate sample code if not provided
         String sampleCode = request.sampleCode();
         if (sampleCode == null || sampleCode.isBlank()) {
             sampleCode = generateSampleCode();

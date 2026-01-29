@@ -109,15 +109,16 @@ public class LabWorkflowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab request already completed");
         }
 
+        if (request.hemoglobinGl() == null || request.hematocritPct() == null || request.rbc10e12L() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "All blood analysis values are required");
+        }
+
         requestEntity.setCompletedByLab(labTech);
         requestEntity.setCompletedAt(OffsetDateTime.now());
         requestEntity.setStatus(LabExaminationStatus.COMPLETED);
-        requestEntity.setWeightKg(request.weightKg());
         requestEntity.setHemoglobinGl(request.hemoglobinGl());
-        requestEntity.setSystolicMmhg(request.systolicMmhg());
-        requestEntity.setDiastolicMmhg(request.diastolicMmhg());
-        requestEntity.setPulseRate(request.pulseRate());
-        requestEntity.setBodyTemperatureC(request.bodyTemperatureC());
+        requestEntity.setHematocritPct(request.hematocritPct());
+        requestEntity.setRbc10e12L(request.rbc10e12L());
         LabExaminationRequest savedRequest = labExaminationRequestRepository.save(requestEntity);
 
         MedicalCheck check = medicalCheckRepository.findByVisit_Id(requestEntity.getVisit().getId())
@@ -125,12 +126,9 @@ public class LabWorkflowService {
         check.setVisit(requestEntity.getVisit());
         check.setSubmittedByLab(labTech);
         check.setSubmittedAt(OffsetDateTime.now());
-        check.setWeightKg(request.weightKg());
         check.setHemoglobinGl(request.hemoglobinGl());
-        check.setSystolicMmhg(request.systolicMmhg());
-        check.setDiastolicMmhg(request.diastolicMmhg());
-        check.setPulseRate(request.pulseRate());
-        check.setBodyTemperatureC(request.bodyTemperatureC());
+        check.setHematocritPct(request.hematocritPct());
+        check.setRbc10e12L(request.rbc10e12L());
         check.setStatus("PENDING_REVIEW");
         check.setDecision("PENDING_REVIEW");
         check.setDecisionAt(OffsetDateTime.now());

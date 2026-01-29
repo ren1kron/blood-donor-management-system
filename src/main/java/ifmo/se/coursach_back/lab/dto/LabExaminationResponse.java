@@ -18,12 +18,9 @@ public record LabExaminationResponse(
         OffsetDateTime requestedAt,
         String completedByName,
         OffsetDateTime completedAt,
-        BigDecimal weightKg,
         BigDecimal hemoglobinGl,
-        Integer systolicMmhg,
-        Integer diastolicMmhg,
-        Integer pulseRate,
-        BigDecimal bodyTemperatureC
+        BigDecimal hematocritPct,
+        BigDecimal rbc10e12L
 ) {
     public static LabExaminationResponse from(LabExaminationRequest request) {
         return new LabExaminationResponse(
@@ -39,12 +36,9 @@ public record LabExaminationResponse(
                 request.getRequestedAt(),
                 request.getCompletedByLab() != null ? request.getCompletedByLab().getFullName() : null,
                 request.getCompletedAt(),
-                request.getWeightKg(),
                 request.getHemoglobinGl(),
-                request.getSystolicMmhg(),
-                request.getDiastolicMmhg(),
-                request.getPulseRate(),
-                request.getBodyTemperatureC()
+                request.getHematocritPct(),
+                request.getRbc10e12L()
         );
     }
 }

@@ -56,6 +56,12 @@ public class LabExaminationRequest {
     @Column(name = "hemoglobin_g_l")
     private BigDecimal hemoglobinGl;
 
+    @Column(name = "hematocrit_pct")
+    private BigDecimal hematocritPct;
+
+    @Column(name = "rbc_10e12_l")
+    private BigDecimal rbc10e12L;
+
     @Column(name = "systolic_mmhg")
     private Integer systolicMmhg;
 

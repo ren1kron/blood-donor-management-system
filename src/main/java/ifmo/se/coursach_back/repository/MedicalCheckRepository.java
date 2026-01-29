@@ -28,4 +28,9 @@ public interface MedicalCheckRepository extends JpaRepository<MedicalCheck, UUID
             @Param("since") OffsetDateTime since);
 
     Optional<MedicalCheck> findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(UUID donorId);
+
+    @Query("SELECT mc FROM MedicalCheck mc " +
+           "WHERE mc.visit.booking.donor.id = :donorId " +
+           "ORDER BY mc.decisionAt DESC")
+    List<MedicalCheck> findByDonorId(@Param("donorId") UUID donorId);
 }
