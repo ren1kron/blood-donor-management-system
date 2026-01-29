@@ -5,6 +5,7 @@ import ifmo.se.coursach_back.model.AppointmentSlot;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.repository.AppointmentSlotRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
 import ifmo.se.coursach_back.repository.DeferralRepository;
@@ -70,10 +71,13 @@ public class AppointmentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Slot not found"));
 
         ensureSlotAvailable(donor, slot);
-        
-        if ("DONATION".equalsIgnoreCase(slot.getPurpose())) {
-            ensureDonorHasValidMedicalCheck(donor);
+
+        if (!SlotPurpose.DONATION.equalsIgnoreCase(slot.getPurpose())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only donation slots can be booked via this endpoint.");
         }
+
+        ensureDonorHasValidMedicalCheck(donor);
 
         Booking booking = new Booking();
         booking.setDonor(donor);
