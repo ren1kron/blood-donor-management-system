@@ -411,6 +411,10 @@ public class MedicalWorkflowService {
         sample.setStatus("NEW");
         sampleRepository.save(sample);
         
+        // Mark booking as completed after donation registration
+        booking.setStatus(BookingStatus.COMPLETED);
+        bookingRepository.save(booking);
+        
         activateDonorIfNeeded(booking.getDonor());
         auditService.log(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
                 Map.of("visitId", visit.getId()));

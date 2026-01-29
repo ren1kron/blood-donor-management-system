@@ -5,17 +5,18 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record DonorBookingResponse(
-        UUID bookingId,
+        UUID id,
         UUID slotId,
-        String purpose,
-        OffsetDateTime startAt,
-        OffsetDateTime endAt,
-        String location,
+        String slotPurpose,
+        OffsetDateTime slotStartTime,
+        OffsetDateTime slotEndTime,
+        String slotLocation,
         String status,
         OffsetDateTime createdAt,
-        OffsetDateTime cancelledAt
+        OffsetDateTime cancelledAt,
+        boolean hasVisit
 ) {
-    public static DonorBookingResponse from(Booking booking) {
+    public static DonorBookingResponse from(Booking booking, boolean hasVisit) {
         return new DonorBookingResponse(
                 booking.getId(),
                 booking.getSlot().getId(),
@@ -25,7 +26,8 @@ public record DonorBookingResponse(
                 booking.getSlot().getLocation(),
                 booking.getStatus(),
                 booking.getCreatedAt(),
-                booking.getCancelledAt()
+                booking.getCancelledAt(),
+                hasVisit
         );
     }
 }

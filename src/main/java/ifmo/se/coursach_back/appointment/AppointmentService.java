@@ -1,19 +1,24 @@
 package ifmo.se.coursach_back.appointment;
 
 import ifmo.se.coursach_back.appointment.dto.CreateSlotRequest;
+import ifmo.se.coursach_back.donor.dto.DonorBookingResponse;
 import ifmo.se.coursach_back.model.AppointmentSlot;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.SlotPurpose;
+import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.repository.AppointmentSlotRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
 import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
 import ifmo.se.coursach_back.repository.MedicalCheckRepository;
+import ifmo.se.coursach_back.repository.VisitRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,6 +37,7 @@ public class AppointmentService {
     private final DonorProfileRepository donorProfileRepository;
     private final MedicalCheckRepository medicalCheckRepository;
     private final DeferralRepository deferralRepository;
+    private final VisitRepository visitRepository;
 
     public List<AppointmentSlot> listUpcomingSlots(OffsetDateTime from, String purpose) {
         if (purpose == null || purpose.isBlank()) {
@@ -109,8 +115,17 @@ public class AppointmentService {
         }
     }
 
-    public List<Booking> listDonorBookings(UUID accountId) {
-        return bookingRepository.findByDonor_Account_IdOrderBySlot_StartAtDesc(accountId);
+    public List<DonorBookingResponse> listDonorBookings(UUID accountId) {
+        List<Booking> bookings = bookingRepository.findByDonor_Account_IdOrderBySlot_StartAtDesc(accountId);
+        
+        List<UUID> bookingIds = bookings.stream().map(Booking::getId).toList();
+        Set<UUID> bookingsWithVisit = visitRepository.findByBooking_IdIn(bookingIds).stream()
+                .map(v -> v.getBooking().getId())
+                .collect(Collectors.toSet());
+        
+        return bookings.stream()
+                .map(b -> DonorBookingResponse.from(b, bookingsWithVisit.contains(b.getId())))
+                .toList();
     }
 
     @Transactional

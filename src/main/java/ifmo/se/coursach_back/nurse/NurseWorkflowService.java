@@ -148,10 +148,6 @@ public class NurseWorkflowService {
         applyUpdate(session, request);
         CollectionSession saved = collectionSessionRepository.save(session);
         
-        Booking booking = session.getVisit().getBooking();
-        booking.setStatus(BookingStatus.COMPLETED);
-        bookingRepository.save(booking);
-        
         auditService.log(accountId, "COLLECTION_SESSION_COMPLETED", "CollectionSession", saved.getId(), null);
         return toResponse(saved);
     }

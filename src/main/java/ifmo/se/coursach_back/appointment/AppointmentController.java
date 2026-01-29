@@ -66,9 +66,7 @@ public class AppointmentController {
     @PreAuthorize("hasRole('DONOR')")
     public List<DonorBookingResponse> listMyBookings(
             @AuthenticationPrincipal AccountPrincipal principal) {
-        return appointmentService.listDonorBookings(principal.getId()).stream()
-                .map(DonorBookingResponse::from)
-                .toList();
+        return appointmentService.listDonorBookings(principal.getId());
     }
 
     @PostMapping("/bookings/{bookingId}/cancel")
@@ -87,6 +85,6 @@ public class AppointmentController {
             @Valid @RequestBody RescheduleRequest request) {
         Booking booking = appointmentService.rescheduleBooking(principal.getId(), bookingId, request.newSlotId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(DonorBookingResponse.from(booking));
+                .body(DonorBookingResponse.from(booking, false));
     }
 }

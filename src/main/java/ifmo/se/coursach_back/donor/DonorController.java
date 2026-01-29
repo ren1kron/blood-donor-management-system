@@ -54,9 +54,7 @@ public class DonorController {
 
     @GetMapping("/donations")
     public List<DonationHistoryResponse> donationHistory(@AuthenticationPrincipal AccountPrincipal principal) {
-        return donorService.listDonationHistory(principal.getId()).stream()
-                .map(DonationHistoryResponse::from)
-                .toList();
+        return donorService.listDonationHistory(principal.getId());
     }
 
     @GetMapping("/test-results")

@@ -2,6 +2,7 @@ package ifmo.se.coursach_back.donor;
 
 import ifmo.se.coursach_back.donor.dto.ConsentRequest;
 import ifmo.se.coursach_back.donor.dto.DeferralStatusResponse;
+import ifmo.se.coursach_back.donor.dto.DonationHistoryResponse;
 import ifmo.se.coursach_back.donor.dto.DonorProfileResponse;
 import ifmo.se.coursach_back.donor.dto.EligibilityResponse;
 import ifmo.se.coursach_back.donor.dto.UpdateDonorProfileRequest;
@@ -9,6 +10,7 @@ import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.model.Account;
+import ifmo.se.coursach_back.model.CollectionSession;
 import ifmo.se.coursach_back.model.Consent;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
@@ -20,6 +22,7 @@ import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.repository.AccountRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
+import ifmo.se.coursach_back.repository.CollectionSessionRepository;
 import ifmo.se.coursach_back.repository.ConsentRepository;
 import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
@@ -52,6 +55,7 @@ public class DonorService {
     private final NotificationDeliveryRepository notificationDeliveryRepository;
     private final BookingRepository bookingRepository;
     private final MedicalCheckRepository medicalCheckRepository;
+    private final CollectionSessionRepository collectionSessionRepository;
 
     public DonorProfileResponse getProfile(UUID accountId) {
         DonorProfile donor = requireDonor(accountId);
@@ -124,9 +128,21 @@ public class DonorService {
         return consentRepository.save(consent);
     }
 
-    public List<Donation> listDonationHistory(UUID accountId) {
+    public List<DonationHistoryResponse> listDonationHistory(UUID accountId) {
         requireDonor(accountId);
-        return donationRepository.findPublishedByDonorAccountId(accountId);
+        List<Donation> donations = donationRepository.findPublishedByDonorAccountId(accountId);
+        
+        List<UUID> visitIds = donations.stream()
+                .map(d -> d.getVisit().getId())
+                .toList();
+        
+        java.util.Map<UUID, CollectionSession> sessionMap = collectionSessionRepository.findByVisit_IdIn(visitIds)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(s -> s.getVisit().getId(), s -> s));
+        
+        return donations.stream()
+                .map(d -> DonationHistoryResponse.from(d, sessionMap.get(d.getVisit().getId())))
+                .toList();
     }
 
     public List<LabTestResult> listPublishedResults(UUID accountId) {
