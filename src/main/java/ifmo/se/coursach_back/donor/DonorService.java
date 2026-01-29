@@ -134,6 +134,11 @@ public class DonorService {
         return labTestResultRepository.findPublishedByDonorAccountId(accountId);
     }
 
+    public List<MedicalCheck> listVisitHistory(UUID accountId) {
+        DonorProfile donor = requireDonor(accountId);
+        return medicalCheckRepository.findByDonorId(donor.getId());
+    }
+
     public EligibilityResponse getEligibility(UUID accountId) {
         DonorProfile donor = requireDonor(accountId);
         OffsetDateTime now = OffsetDateTime.now();

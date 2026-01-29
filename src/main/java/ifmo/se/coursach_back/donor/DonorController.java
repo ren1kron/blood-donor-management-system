@@ -8,6 +8,7 @@ import ifmo.se.coursach_back.donor.dto.DonorProfileResponse;
 import ifmo.se.coursach_back.donor.dto.EligibilityResponse;
 import ifmo.se.coursach_back.donor.dto.LabResultResponse;
 import ifmo.se.coursach_back.donor.dto.UpdateDonorProfileRequest;
+import ifmo.se.coursach_back.donor.dto.VisitHistoryResponse;
 import ifmo.se.coursach_back.model.Consent;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
@@ -62,6 +63,13 @@ public class DonorController {
     public List<LabResultResponse> testResults(@AuthenticationPrincipal AccountPrincipal principal) {
         return donorService.listPublishedResults(principal.getId()).stream()
                 .map(LabResultResponse::from)
+                .toList();
+    }
+
+    @GetMapping("/visits")
+    public List<VisitHistoryResponse> visitHistory(@AuthenticationPrincipal AccountPrincipal principal) {
+        return donorService.listVisitHistory(principal.getId()).stream()
+                .map(check -> VisitHistoryResponse.from(check, check.getVisit() != null))
                 .toList();
     }
 
