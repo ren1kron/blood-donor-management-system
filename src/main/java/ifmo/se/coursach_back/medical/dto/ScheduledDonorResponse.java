@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.medical.dto;
 
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.Visit;
 import java.time.OffsetDateTime;
@@ -20,10 +21,13 @@ public record ScheduledDonorResponse(
         String bookingStatus,
         String medicalDecision,
         boolean hasDonation,
-        boolean canDonate
+        boolean canDonate,
+        UUID donationId,
+        boolean donationPublished
 ) {
-    public static ScheduledDonorResponse from(Booking booking, Visit visit, MedicalCheck check, boolean hasDonation) {
+    public static ScheduledDonorResponse from(Booking booking, Visit visit, MedicalCheck check, Donation donation) {
         String decision = check != null ? check.getDecision() : null;
+        boolean hasDonation = donation != null;
         boolean canDonate = "ADMITTED".equals(decision) && !hasDonation;
         
         return new ScheduledDonorResponse(
@@ -40,12 +44,13 @@ public record ScheduledDonorResponse(
                 booking.getStatus(),
                 decision,
                 hasDonation,
-                canDonate
+                canDonate,
+                donation != null ? donation.getId() : null,
+                donation != null && donation.isPublished()
         );
     }
     
-    // Backwards compatible factory method
     public static ScheduledDonorResponse from(Booking booking, Visit visit) {
-        return from(booking, visit, null, false);
+        return from(booking, visit, null, null);
     }
 }

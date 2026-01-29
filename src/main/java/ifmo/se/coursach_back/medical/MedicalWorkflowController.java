@@ -4,6 +4,8 @@ import ifmo.se.coursach_back.medical.dto.AdverseReactionRequest;
 import ifmo.se.coursach_back.medical.dto.AdverseReactionResponse;
 import ifmo.se.coursach_back.medical.dto.DonationRequest;
 import ifmo.se.coursach_back.medical.dto.DonationResponse;
+import ifmo.se.coursach_back.medical.dto.ExaminationDecisionRequest;
+import ifmo.se.coursach_back.medical.dto.ExaminationQueueResponse;
 import ifmo.se.coursach_back.medical.dto.MedicalCheckRequest;
 import ifmo.se.coursach_back.medical.dto.MedicalCheckResponse;
 import ifmo.se.coursach_back.medical.dto.PendingExaminationResponse;
@@ -15,6 +17,7 @@ import ifmo.se.coursach_back.medical.dto.UpdateDonorStatusRequest;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
+import ifmo.se.coursach_back.model.LabExaminationRequest;
 import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.Sample;
 import ifmo.se.coursach_back.model.Visit;
@@ -62,8 +65,8 @@ public class MedicalWorkflowController {
                 .map(booking -> {
                     Visit visit = visitsByBooking.get(booking.getId());
                     MedicalCheck check = visit != null ? checksByVisit.get(visit.getId()) : null;
-                    boolean hasDonation = visit != null && donationsByVisit.containsKey(visit.getId());
-                    return ScheduledDonorResponse.from(booking, visit, check, hasDonation);
+                    Donation donation = visit != null ? donationsByVisit.get(visit.getId()) : null;
+                    return ScheduledDonorResponse.from(booking, visit, check, donation);
                 })
                 .toList();
     }
@@ -80,11 +83,21 @@ public class MedicalWorkflowController {
     }
 
     @PostMapping("/donations")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<DonationResponse> registerDonation(@AuthenticationPrincipal AccountPrincipal principal,
                                                              @Valid @RequestBody DonationRequest request) {
         Donation donation = medicalWorkflowService.recordDonation(principal.getId(), request);
         Booking booking = donation.getVisit().getBooking();
         return ResponseEntity.status(HttpStatus.CREATED).body(DonationResponse.from(donation, booking));
+    }
+
+    @PostMapping("/donations/{donationId}/publish")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<DonationResponse> publishDonation(@AuthenticationPrincipal AccountPrincipal principal,
+                                                            @PathVariable UUID donationId) {
+        Donation donation = medicalWorkflowService.publishDonation(principal.getId(), donationId);
+        Booking booking = donation.getVisit().getBooking();
+        return ResponseEntity.ok(DonationResponse.from(donation, booking));
     }
 
     @PostMapping("/samples")
@@ -114,6 +127,54 @@ public class MedicalWorkflowController {
         return medicalWorkflowService.listPendingExaminations().stream()
                 .map(PendingExaminationResponse::from)
                 .toList();
+    }
+
+    @GetMapping("/examinations/queue")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public List<ExaminationQueueResponse> listExaminationQueue(
+            @RequestParam(value = "from", required = false) OffsetDateTime from) {
+        OffsetDateTime start = from == null ? OffsetDateTime.now().minusHours(8) : from;
+        List<Booking> bookings = medicalWorkflowService.listConfirmedExaminationBookings(start);
+        List<UUID> bookingIds = bookings.stream().map(Booking::getId).toList();
+        Map<UUID, Visit> visitsByBooking = medicalWorkflowService.loadVisitsByBookingIds(bookingIds);
+        List<UUID> visitIds = visitsByBooking.values().stream().map(Visit::getId).toList();
+        Map<UUID, LabExaminationRequest> requestsByVisit = medicalWorkflowService.loadLabRequestsByVisitIds(visitIds);
+        Map<UUID, MedicalCheck> checksByVisit = medicalWorkflowService.loadMedicalChecksByVisitIds(visitIds);
+
+        return bookings.stream()
+                .map(booking -> {
+                    Visit visit = visitsByBooking.get(booking.getId());
+                    if (visit == null) {
+                        return null;
+                    }
+                    LabExaminationRequest request = requestsByVisit.get(visit.getId());
+                    MedicalCheck check = checksByVisit.get(visit.getId());
+                    return ExaminationQueueResponse.from(visit, request, check);
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    @PostMapping("/examinations/{visitId}/lab-request")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<UUID> createLabRequest(@AuthenticationPrincipal AccountPrincipal principal,
+                                                 @PathVariable UUID visitId) {
+        LabExaminationRequest request = medicalWorkflowService.createLabRequest(principal.getId(), visitId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(request.getId());
+    }
+
+    @PostMapping("/examinations/{visitId}/decision")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<MedicalCheckResponse> decideExamination(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable UUID visitId,
+            @Valid @RequestBody ExaminationDecisionRequest request) {
+        MedicalWorkflowService.MedicalCheckResult result =
+                medicalWorkflowService.decideExamination(principal.getId(), visitId, request);
+        Booking booking = result.check().getVisit().getBooking();
+        Deferral deferral = result.deferral();
+        MedicalCheckResponse response = MedicalCheckResponse.from(result.check(), booking, deferral);
+        return ResponseEntity.ok(response);
     }
     
     @PostMapping("/examinations/review")

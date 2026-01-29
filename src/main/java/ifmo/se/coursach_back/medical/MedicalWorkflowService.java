@@ -3,6 +3,7 @@ package ifmo.se.coursach_back.medical;
 import ifmo.se.coursach_back.medical.dto.AdverseReactionRequest;
 import ifmo.se.coursach_back.medical.dto.DeferralRequest;
 import ifmo.se.coursach_back.medical.dto.DonationRequest;
+import ifmo.se.coursach_back.medical.dto.ExaminationDecisionRequest;
 import ifmo.se.coursach_back.medical.dto.MedicalCheckRequest;
 import ifmo.se.coursach_back.medical.dto.ReviewExaminationRequest;
 import ifmo.se.coursach_back.medical.dto.SampleRequest;
@@ -12,10 +13,13 @@ import ifmo.se.coursach_back.model.BookingStatus;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
+import ifmo.se.coursach_back.model.LabExaminationRequest;
+import ifmo.se.coursach_back.model.LabExaminationStatus;
 import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.Notification;
 import ifmo.se.coursach_back.model.NotificationDelivery;
 import ifmo.se.coursach_back.model.Sample;
+import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.model.StaffProfile;
 import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.repository.AdverseReactionRepository;
@@ -23,6 +27,7 @@ import ifmo.se.coursach_back.repository.BookingRepository;
 import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonationRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
+import ifmo.se.coursach_back.repository.LabExaminationRequestRepository;
 import ifmo.se.coursach_back.repository.MedicalCheckRepository;
 import ifmo.se.coursach_back.repository.NotificationDeliveryRepository;
 import ifmo.se.coursach_back.repository.NotificationRepository;
@@ -53,12 +58,22 @@ public class MedicalWorkflowService {
     private final AdverseReactionRepository adverseReactionRepository;
     private final DonorProfileRepository donorProfileRepository;
     private final StaffProfileRepository staffProfileRepository;
+    private final LabExaminationRequestRepository labExaminationRequestRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationDeliveryRepository notificationDeliveryRepository;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
-                List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED), from);
+        return bookingRepository.findByStatusInAndSlot_PurposeIgnoreCaseAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+                List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED),
+                SlotPurpose.DONATION,
+                from);
+    }
+
+    public List<Booking> listConfirmedExaminationBookings(OffsetDateTime from) {
+        return bookingRepository.findByStatusInAndSlot_PurposeIgnoreCaseAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+                List.of(BookingStatus.CONFIRMED),
+                SlotPurpose.EXAMINATION,
+                from);
     }
 
     public Map<UUID, Visit> loadVisitsByBookingIds(List<UUID> bookingIds) {
@@ -84,6 +99,14 @@ public class MedicalWorkflowService {
         return donationRepository.findByVisit_IdIn(visitIds).stream()
                 .collect(Collectors.toMap(donation -> donation.getVisit().getId(), donation -> donation));
     }
+
+    public Map<UUID, LabExaminationRequest> loadLabRequestsByVisitIds(List<UUID> visitIds) {
+        if (visitIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        return labExaminationRequestRepository.findByVisit_IdIn(visitIds).stream()
+                .collect(Collectors.toMap(request -> request.getVisit().getId(), request -> request));
+    }
     
     /**
      * Get all pending examinations submitted by lab for doctor review
@@ -101,6 +124,12 @@ public class MedicalWorkflowService {
         
         MedicalCheck check = medicalCheckRepository.findById(request.examinationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Examination not found"));
+
+        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(check.getVisit().getId())
+                .orElse(null);
+        if (labRequest == null || !LabExaminationStatus.COMPLETED.equals(labRequest.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
+        }
         
         if (!"PENDING_REVIEW".equals(check.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Examination has already been reviewed");
@@ -154,6 +183,12 @@ public class MedicalWorkflowService {
         StaffProfile staff = requireStaff(accountId);
         Visit visit = resolveVisit(request.bookingId(), request.visitId());
 
+        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(visit.getId())
+                .orElse(null);
+        if (labRequest == null || !LabExaminationStatus.COMPLETED.equals(labRequest.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
+        }
+
         String decision = normalizeDecision(request.decision());
         if (!decision.equals("ADMITTED") && !decision.equals("REFUSED")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Decision must be ADMITTED or REFUSED");
@@ -191,6 +226,85 @@ public class MedicalWorkflowService {
 
         if (decision.equals("ADMITTED")) {
             sendDonationReadyNotification(visit.getBooking().getDonor());
+        }
+
+        return new MedicalCheckResult(saved, savedDeferral);
+    }
+
+    @Transactional
+    public LabExaminationRequest createLabRequest(UUID accountId, UUID visitId) {
+        StaffProfile doctor = requireStaff(accountId);
+        Visit visit = visitRepository.findById(visitId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found"));
+
+        Booking booking = visit.getBooking();
+        if (!SlotPurpose.EXAMINATION.equalsIgnoreCase(booking.getSlot().getPurpose())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Visit is not for examination");
+        }
+        if (!BookingStatus.CONFIRMED.equals(booking.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking is not confirmed");
+        }
+
+        LabExaminationRequest existing = labExaminationRequestRepository.findByVisit_Id(visitId).orElse(null);
+        if (existing != null) {
+            return existing;
+        }
+
+        LabExaminationRequest request = new LabExaminationRequest();
+        request.setVisit(visit);
+        request.setRequestedBy(doctor);
+        request.setRequestedAt(OffsetDateTime.now());
+        request.setStatus(LabExaminationStatus.REQUESTED);
+        return labExaminationRequestRepository.save(request);
+    }
+
+    @Transactional
+    public MedicalCheckResult decideExamination(UUID accountId, UUID visitId, ExaminationDecisionRequest request) {
+        StaffProfile doctor = requireStaff(accountId);
+        Visit visit = visitRepository.findById(visitId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found"));
+
+        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(visitId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lab examination request not found"));
+        if (!LabExaminationStatus.COMPLETED.equals(labRequest.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
+        }
+
+        String decision = normalizeDecision(request.decision());
+        if (!decision.equals("ADMITTED") && !decision.equals("REFUSED")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Decision must be ADMITTED or REFUSED");
+        }
+        if (decision.equals("REFUSED") && request.deferral() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is required when decision is REFUSED");
+        }
+        if (decision.equals("ADMITTED") && request.deferral() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is not allowed when decision is ADMITTED");
+        }
+
+        MedicalCheck check = medicalCheckRepository.findByVisit_Id(visit.getId()).orElseGet(MedicalCheck::new);
+        check.setVisit(visit);
+        check.setPerformedBy(doctor);
+        check.setDecision(decision);
+        check.setStatus(decision);
+        check.setDecisionAt(OffsetDateTime.now());
+
+        MedicalCheck saved = medicalCheckRepository.save(check);
+        Deferral savedDeferral = null;
+        if (request.deferral() != null) {
+            validateDeferral(request.deferral());
+            Deferral deferral = new Deferral();
+            deferral.setDonor(visit.getBooking().getDonor());
+            deferral.setCreatedFromCheck(saved);
+            deferral.setDeferralType(request.deferral().deferralType());
+            deferral.setReason(request.deferral().reason());
+            deferral.setEndsAt(request.deferral().endsAt());
+            savedDeferral = deferralRepository.save(deferral);
+        }
+
+        if (decision.equals("ADMITTED")) {
+            sendDonationReadyNotification(visit.getBooking().getDonor());
+        } else {
+            sendDeferralNotification(visit.getBooking().getDonor(), request.deferral());
         }
 
         return new MedicalCheckResult(saved, savedDeferral);
@@ -237,10 +351,14 @@ public class MedicalWorkflowService {
     public Donation recordDonation(UUID accountId, DonationRequest request) {
         StaffProfile staff = requireStaff(accountId);
         Visit visit = resolveVisit(request.bookingId(), request.visitId());
+        Booking booking = visit.getBooking();
+        if (!SlotPurpose.DONATION.equalsIgnoreCase(booking.getSlot().getPurpose())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Visit is not for donation");
+        }
 
         MedicalCheck check = medicalCheckRepository.findByVisit_Id(visit.getId()).orElse(null);
-        if (check != null && "REFUSED".equalsIgnoreCase(check.getDecision())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Donation not allowed after refusal");
+        if (check == null || !"ADMITTED".equalsIgnoreCase(check.getDecision())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Donation not allowed without admission");
         }
 
         if (donationRepository.findByVisit_Id(visit.getId()).isPresent()) {
@@ -253,6 +371,19 @@ public class MedicalWorkflowService {
         donation.setVolumeMl(request.volumeMl());
         donation.setPerformedBy(staff);
         return donationRepository.save(donation);
+    }
+
+    @Transactional
+    public Donation publishDonation(UUID accountId, UUID donationId) {
+        requireStaff(accountId);
+        Donation donation = donationRepository.findById(donationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donation not found"));
+        if (!donation.isPublished()) {
+            donation.setPublished(true);
+            donation.setPublishedAt(OffsetDateTime.now());
+            donation = donationRepository.save(donation);
+        }
+        return donation;
     }
 
     @Transactional

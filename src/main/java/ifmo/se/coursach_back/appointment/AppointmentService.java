@@ -4,8 +4,10 @@ import ifmo.se.coursach_back.appointment.dto.CreateSlotRequest;
 import ifmo.se.coursach_back.model.AppointmentSlot;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.DonorProfile;
+import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.repository.AppointmentSlotRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
+import ifmo.se.coursach_back.repository.DeferralRepository;
 import ifmo.se.coursach_back.repository.DonorProfileRepository;
 import ifmo.se.coursach_back.repository.MedicalCheckRepository;
 import java.time.OffsetDateTime;
@@ -28,6 +30,7 @@ public class AppointmentService {
     private final BookingRepository bookingRepository;
     private final DonorProfileRepository donorProfileRepository;
     private final MedicalCheckRepository medicalCheckRepository;
+    private final DeferralRepository deferralRepository;
 
     public List<AppointmentSlot> listUpcomingSlots(OffsetDateTime from, String purpose) {
         if (purpose == null || purpose.isBlank()) {
@@ -80,12 +83,25 @@ public class AppointmentService {
     }
     
     private void ensureDonorHasValidMedicalCheck(DonorProfile donor) {
-        OffsetDateTime sixMonthsAgo = OffsetDateTime.now().minusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
-        List<?> validChecks = medicalCheckRepository.findValidAdmittedChecksByDonorId(donor.getId(), sixMonthsAgo);
-        if (validChecks.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "Для записи на донацию необходимо пройти медицинский осмотр. " +
-                    "Запишитесь сначала на осмотр.");
+        OffsetDateTime now = OffsetDateTime.now();
+        var activeDeferral = deferralRepository.findActiveDeferral(donor.getId(), now).orElse(null);
+        if (activeDeferral != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Невозможно записаться на донацию при активном отводе.");
+        }
+
+        MedicalCheck lastCheck = medicalCheckRepository
+                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId())
+                .orElse(null);
+        if (lastCheck == null || !"ADMITTED".equalsIgnoreCase(lastCheck.getDecision())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Для записи на донацию необходимо пройти обследование и получить допуск врача.");
+        }
+
+        OffsetDateTime sixMonthsAgo = now.minusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
+        if (lastCheck.getDecisionAt() != null && lastCheck.getDecisionAt().isBefore(sixMonthsAgo)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Срок действия обследования истек. Запишитесь на новое обследование.");
         }
     }
 

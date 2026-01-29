@@ -126,7 +126,7 @@ public class DonorService {
 
     public List<Donation> listDonationHistory(UUID accountId) {
         requireDonor(accountId);
-        return donationRepository.findByDonorAccountId(accountId);
+        return donationRepository.findPublishedByDonorAccountId(accountId);
     }
 
     public List<LabTestResult> listPublishedResults(UUID accountId) {
@@ -159,15 +159,16 @@ public class DonorService {
         boolean eligibleByDonation = nextEligibleAt == null || !now.isBefore(nextEligibleAt);
         boolean eligible = activeStatus && activeDeferral == null && eligibleByDonation;
         
-        OffsetDateTime sixMonthsAgo = now.minusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
-        List<MedicalCheck> validChecks = medicalCheckRepository.findValidAdmittedChecksByDonorId(donor.getId(), sixMonthsAgo);
-        boolean hasValidMedicalCheck = !validChecks.isEmpty();
+        MedicalCheck latestCheck = medicalCheckRepository
+                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId())
+                .orElse(null);
         OffsetDateTime medicalCheckValidUntil = null;
-        if (hasValidMedicalCheck) {
-            MedicalCheck latestCheck = validChecks.get(0);
+        boolean hasValidMedicalCheck = false;
+        if (latestCheck != null && "ADMITTED".equalsIgnoreCase(latestCheck.getDecision())) {
             medicalCheckValidUntil = latestCheck.getDecisionAt().plusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
+            hasValidMedicalCheck = !now.isAfter(medicalCheckValidUntil);
         }
-        
+
         boolean canBookDonation = eligible && hasValidMedicalCheck;
 
         return new EligibilityResponse(

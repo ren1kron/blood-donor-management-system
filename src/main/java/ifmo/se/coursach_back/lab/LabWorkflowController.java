@@ -5,16 +5,11 @@ import ifmo.se.coursach_back.lab.dto.LabExaminationResponse;
 import ifmo.se.coursach_back.lab.dto.LabTestResultRequest;
 import ifmo.se.coursach_back.lab.dto.LabTestResultResponse;
 import ifmo.se.coursach_back.lab.dto.PendingSampleResponse;
-import ifmo.se.coursach_back.medical.dto.ScheduledDonorResponse;
-import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.LabTestResult;
-import ifmo.se.coursach_back.model.MedicalCheck;
 import ifmo.se.coursach_back.model.Sample;
-import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,20 +31,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class LabWorkflowController {
     private final LabWorkflowService labWorkflowService;
 
-    /**
-     * Get donors awaiting examination (checked-in for EXAMINATION slots, not yet examined)
-     */
     @GetMapping("/queue")
-    public List<ScheduledDonorResponse> listAwaitingExamination() {
-        List<Booking> bookings = labWorkflowService.listAwaitingExamination();
-        List<UUID> bookingIds = bookings.stream().map(Booking::getId).toList();
-        Map<UUID, Visit> visitsByBooking = labWorkflowService.loadVisitsByBookingIds(bookingIds);
-        
-        return bookings.stream()
-                .map(booking -> {
-                    Visit visit = visitsByBooking.get(booking.getId());
-                    return ScheduledDonorResponse.from(booking, visit, null, false);
-                })
+    public List<LabExaminationResponse> listAwaitingExamination() {
+        return labWorkflowService.listPendingRequests().stream()
+                .map(LabExaminationResponse::from)
                 .toList();
     }
 
@@ -81,23 +66,26 @@ public class LabWorkflowController {
         return results.stream().map(LabTestResultResponse::from).toList();
     }
     
-    /**
-     * Lab technician submits examination results for doctor review
-     */
-    @PostMapping("/examinations")
+    @PostMapping("/examinations/{requestId}/results")
     public ResponseEntity<LabExaminationResponse> submitExamination(
             @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable UUID requestId,
             @Valid @RequestBody LabExaminationRequest request) {
-        MedicalCheck check = labWorkflowService.submitExamination(principal.getId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(LabExaminationResponse.from(check));
+        var saved = labWorkflowService.submitExamination(principal.getId(), requestId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(LabExaminationResponse.from(saved));
     }
     
-    /**
-     * Get pending examinations for doctor review (accessible by LAB role for tracking)
-     */
     @GetMapping("/examinations/pending")
     public List<LabExaminationResponse> listPendingExaminations() {
-        List<MedicalCheck> checks = labWorkflowService.listPendingExaminations();
-        return checks.stream().map(LabExaminationResponse::from).toList();
+        return labWorkflowService.listPendingRequests().stream()
+                .map(LabExaminationResponse::from)
+                .toList();
+    }
+
+    @GetMapping("/examinations/requests")
+    public List<LabExaminationResponse> listRequests() {
+        return labWorkflowService.listPendingRequests().stream()
+                .map(LabExaminationResponse::from)
+                .toList();
     }
 }

@@ -1,46 +1,50 @@
 package ifmo.se.coursach_back.lab.dto;
 
-import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.LabExaminationRequest;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record LabExaminationResponse(
-        UUID id,
+        UUID requestId,
         UUID visitId,
         UUID bookingId,
         String donorFullName,
+        OffsetDateTime slotStartAt,
+        OffsetDateTime slotEndAt,
+        String location,
+        String status,
+        String requestedByName,
+        OffsetDateTime requestedAt,
+        String completedByName,
+        OffsetDateTime completedAt,
         BigDecimal weightKg,
         BigDecimal hemoglobinGl,
         Integer systolicMmhg,
         Integer diastolicMmhg,
         Integer pulseRate,
-        BigDecimal bodyTemperatureC,
-        String status,
-        String submittedByLabName,
-        OffsetDateTime submittedAt,
-        String reviewedByDoctorName,
-        String decision,
-        OffsetDateTime decisionAt
+        BigDecimal bodyTemperatureC
 ) {
-    public static LabExaminationResponse from(MedicalCheck check) {
+    public static LabExaminationResponse from(LabExaminationRequest request) {
         return new LabExaminationResponse(
-                check.getId(),
-                check.getVisit().getId(),
-                check.getVisit().getBooking().getId(),
-                check.getVisit().getBooking().getDonor().getFullName(),
-                check.getWeightKg(),
-                check.getHemoglobinGl(),
-                check.getSystolicMmhg(),
-                check.getDiastolicMmhg(),
-                check.getPulseRate(),
-                check.getBodyTemperatureC(),
-                check.getStatus(),
-                check.getSubmittedByLab() != null ? check.getSubmittedByLab().getFullName() : null,
-                check.getSubmittedAt(),
-                check.getPerformedBy() != null ? check.getPerformedBy().getFullName() : null,
-                check.getDecision(),
-                check.getDecisionAt()
+                request.getId(),
+                request.getVisit().getId(),
+                request.getVisit().getBooking().getId(),
+                request.getVisit().getBooking().getDonor().getFullName(),
+                request.getVisit().getBooking().getSlot().getStartAt(),
+                request.getVisit().getBooking().getSlot().getEndAt(),
+                request.getVisit().getBooking().getSlot().getLocation(),
+                request.getStatus(),
+                request.getRequestedBy() != null ? request.getRequestedBy().getFullName() : null,
+                request.getRequestedAt(),
+                request.getCompletedByLab() != null ? request.getCompletedByLab().getFullName() : null,
+                request.getCompletedAt(),
+                request.getWeightKg(),
+                request.getHemoglobinGl(),
+                request.getSystolicMmhg(),
+                request.getDiastolicMmhg(),
+                request.getPulseRate(),
+                request.getBodyTemperatureC()
         );
     }
 }

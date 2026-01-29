@@ -45,6 +45,12 @@ public class Donation {
     @Column(name = "performed_at", nullable = false)
     private OffsetDateTime performedAt;
 
+    @Column(name = "is_published", nullable = false)
+    private boolean published;
+
+    @Column(name = "published_at")
+    private OffsetDateTime publishedAt;
+
     @PrePersist
     public void prePersist() {
         if (performedAt == null) {

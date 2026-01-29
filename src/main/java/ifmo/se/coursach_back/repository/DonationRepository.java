@@ -43,6 +43,18 @@ public interface DonationRepository extends JpaRepository<Donation, UUID> {
             """)
     List<Donation> findByDonorAccountId(@Param("accountId") UUID accountId);
 
+    @Query("""
+            select donation
+            from Donation donation
+            join donation.visit visit
+            join visit.booking booking
+            join booking.donor donor
+            where donor.account.id = :accountId
+              and donation.published = true
+            order by donation.performedAt desc
+            """)
+    List<Donation> findPublishedByDonorAccountId(@Param("accountId") UUID accountId);
+
     java.util.Optional<Donation> findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(UUID accountId);
     
     List<Donation> findByVisit_IdIn(List<UUID> visitIds);

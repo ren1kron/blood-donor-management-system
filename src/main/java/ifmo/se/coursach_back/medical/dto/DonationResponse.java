@@ -12,7 +12,9 @@ public record DonationResponse(
         UUID donorId,
         String donationType,
         Integer volumeMl,
-        OffsetDateTime performedAt
+        OffsetDateTime performedAt,
+        boolean published,
+        OffsetDateTime publishedAt
 ) {
     public static DonationResponse from(Donation donation, Booking booking) {
         return new DonationResponse(
@@ -22,7 +24,9 @@ public record DonationResponse(
                 booking.getDonor().getId(),
                 donation.getDonationType(),
                 donation.getVolumeMl(),
-                donation.getPerformedAt()
+                donation.getPerformedAt(),
+                donation.isPublished(),
+                donation.getPublishedAt()
         );
     }
 }

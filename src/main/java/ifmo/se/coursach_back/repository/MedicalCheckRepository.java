@@ -24,4 +24,6 @@ public interface MedicalCheckRepository extends JpaRepository<MedicalCheck, UUID
     List<MedicalCheck> findValidAdmittedChecksByDonorId(
             @Param("donorId") UUID donorId, 
             @Param("since") OffsetDateTime since);
+
+    Optional<MedicalCheck> findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(UUID donorId);
 }

@@ -9,7 +9,8 @@ public record DonationHistoryResponse(
         UUID visitId,
         OffsetDateTime performedAt,
         String donationType,
-        Integer volumeMl
+        Integer volumeMl,
+        OffsetDateTime publishedAt
 ) {
     public static DonationHistoryResponse from(Donation donation) {
         return new DonationHistoryResponse(
@@ -17,7 +18,8 @@ public record DonationHistoryResponse(
                 donation.getVisit().getId(),
                 donation.getPerformedAt(),
                 donation.getDonationType(),
-                donation.getVolumeMl()
+                donation.getVolumeMl(),
+                donation.getPublishedAt()
         );
     }
 }
