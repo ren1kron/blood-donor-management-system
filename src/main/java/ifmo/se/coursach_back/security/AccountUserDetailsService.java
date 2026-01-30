@@ -1,7 +1,7 @@
 package ifmo.se.coursach_back.security;
 
-import ifmo.se.coursach_back.model.Account;
-import ifmo.se.coursach_back.repository.AccountRepository;
+import ifmo.se.coursach_back.shared.domain.Account;
+import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

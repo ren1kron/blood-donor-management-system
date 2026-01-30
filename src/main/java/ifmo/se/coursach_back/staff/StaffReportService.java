@@ -1,11 +1,11 @@
 package ifmo.se.coursach_back.staff;
 
-import ifmo.se.coursach_back.model.Donation;
-import ifmo.se.coursach_back.model.DonorProfile;
-import ifmo.se.coursach_back.model.MedicalCheck;
-import ifmo.se.coursach_back.repository.DonationRepository;
-import ifmo.se.coursach_back.repository.DonorProfileRepository;
-import ifmo.se.coursach_back.repository.MedicalCheckRepository;
+import ifmo.se.coursach_back.medical.domain.Donation;
+import ifmo.se.coursach_back.donor.domain.DonorProfile;
+import ifmo.se.coursach_back.medical.domain.MedicalCheck;
+import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
+import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
+import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
 import ifmo.se.coursach_back.staff.dto.StaffDonorReport;
 import ifmo.se.coursach_back.staff.dto.StaffDonorSummary;
 import java.time.OffsetDateTime;

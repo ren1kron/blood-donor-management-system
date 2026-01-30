@@ -1,7 +1,7 @@
 package ifmo.se.coursach_back.staff.dto;
 
-import ifmo.se.coursach_back.model.DonorStatus;
-import ifmo.se.coursach_back.model.MedicalCheckDecision;
+import ifmo.se.coursach_back.donor.domain.DonorStatus;
+import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;

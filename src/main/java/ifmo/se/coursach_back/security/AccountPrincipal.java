@@ -1,7 +1,7 @@
 package ifmo.se.coursach_back.security;
 
-import ifmo.se.coursach_back.model.Account;
-import ifmo.se.coursach_back.model.Role;
+import ifmo.se.coursach_back.shared.domain.Account;
+import ifmo.se.coursach_back.shared.domain.Role;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;

@@ -2,10 +2,10 @@ package ifmo.se.coursach_back.role;
 
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.NotFoundException;
-import ifmo.se.coursach_back.model.Account;
-import ifmo.se.coursach_back.model.Role;
-import ifmo.se.coursach_back.repository.AccountRepository;
-import ifmo.se.coursach_back.repository.RoleRepository;
+import ifmo.se.coursach_back.shared.domain.Account;
+import ifmo.se.coursach_back.shared.domain.Role;
+import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
+import ifmo.se.coursach_back.shared.infra.jpa.RoleRepository;
 import ifmo.se.coursach_back.role.dto.AccountRolesResponse;
 import ifmo.se.coursach_back.role.dto.RoleResponse;
 import java.util.Comparator;

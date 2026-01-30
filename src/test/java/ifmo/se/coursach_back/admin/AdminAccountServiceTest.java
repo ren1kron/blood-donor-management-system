@@ -1,21 +1,22 @@
 package ifmo.se.coursach_back.admin;
 
+import ifmo.se.coursach_back.admin.application.AdminAccountService;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import ifmo.se.coursach_back.admin.dto.AdminAssignRolesRequest;
-import ifmo.se.coursach_back.admin.dto.AdminCreateAccountRequest;
-import ifmo.se.coursach_back.admin.dto.AdminCreateStaffProfileRequest;
-import ifmo.se.coursach_back.audit.AuditService;
-import ifmo.se.coursach_back.model.Account;
-import ifmo.se.coursach_back.model.Role;
-import ifmo.se.coursach_back.model.StaffProfile;
-import ifmo.se.coursach_back.repository.AccountRepository;
-import ifmo.se.coursach_back.repository.DonorProfileRepository;
-import ifmo.se.coursach_back.repository.RoleRepository;
-import ifmo.se.coursach_back.repository.StaffProfileRepository;
+import ifmo.se.coursach_back.admin.api.dto.AdminAssignRolesRequest;
+import ifmo.se.coursach_back.admin.api.dto.AdminCreateAccountRequest;
+import ifmo.se.coursach_back.admin.api.dto.AdminCreateStaffProfileRequest;
+import ifmo.se.coursach_back.audit.application.AuditService;
+import ifmo.se.coursach_back.shared.domain.Account;
+import ifmo.se.coursach_back.shared.domain.Role;
+import ifmo.se.coursach_back.admin.domain.StaffProfile;
+import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
+import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
+import ifmo.se.coursach_back.shared.infra.jpa.RoleRepository;
+import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
