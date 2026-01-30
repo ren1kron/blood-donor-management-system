@@ -1,9 +1,14 @@
 package ifmo.se.coursach_back.report.api;
-import ifmo.se.coursach_back.report.application.ReportRequestService;
 
 import ifmo.se.coursach_back.report.api.dto.ReportRequestCreateRequest;
 import ifmo.se.coursach_back.report.api.dto.ReportRequestDetailsResponse;
 import ifmo.se.coursach_back.report.api.dto.ReportRequestSummaryResponse;
+import ifmo.se.coursach_back.report.application.command.CreateReportRequestCommand;
+import ifmo.se.coursach_back.report.application.result.ReportRequestDetailsResult;
+import ifmo.se.coursach_back.report.application.result.ReportRequestSummaryResult;
+import ifmo.se.coursach_back.report.application.usecase.CreateReportRequestUseCase;
+import ifmo.se.coursach_back.report.application.usecase.GetReportUseCase;
+import ifmo.se.coursach_back.report.application.usecase.ListMyReportRequestsUseCase;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -25,26 +30,51 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('DOCTOR', 'LAB', 'NURSE')")
 public class ReportRequestController {
-    private final ReportRequestService reportRequestService;
+    private final CreateReportRequestUseCase createReportRequestUseCase;
+    private final ListMyReportRequestsUseCase listMyReportRequestsUseCase;
+    private final GetReportUseCase getReportUseCase;
 
     @PostMapping("/requests")
     public ResponseEntity<ReportRequestSummaryResponse> createRequest(
             @AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody ReportRequestCreateRequest request) {
-        ReportRequestSummaryResponse response = reportRequestService.createRequest(principal.getId(), request);
+        CreateReportRequestCommand command = new CreateReportRequestCommand(
+                principal.getId(), request.donorId(),
+                request.reportType(), request.comment()
+        );
+        ReportRequestSummaryResult result = createReportRequestUseCase.execute(command);
+        ReportRequestSummaryResponse response = mapToSummaryResponse(result);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/requests/mine")
     public List<ReportRequestSummaryResponse> listMyRequests(
             @AuthenticationPrincipal AccountPrincipal principal) {
-        return reportRequestService.listMyRequests(principal.getId());
+        List<ReportRequestSummaryResult> results = listMyReportRequestsUseCase.execute(principal.getId());
+        return results.stream().map(this::mapToSummaryResponse).toList();
     }
 
     @GetMapping("/{requestId}")
     public ReportRequestDetailsResponse getReport(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID requestId) {
-        return reportRequestService.getReport(principal.getId(), requestId);
+        ReportRequestDetailsResult result = getReportUseCase.execute(principal.getId(), requestId);
+        return new ReportRequestDetailsResponse(
+                result.requestId(), result.donorId(), result.donorName(),
+                result.reportType(), result.status(), result.requestedByName(),
+                result.requestedByRole(), result.assignedAdminName(),
+                result.createdAt(), result.updatedAt(), result.generatedAt(),
+                result.message(), result.payload()
+        );
+    }
+
+    private ReportRequestSummaryResponse mapToSummaryResponse(ReportRequestSummaryResult result) {
+        return new ReportRequestSummaryResponse(
+                result.requestId(), result.donorId(), result.donorName(),
+                result.reportType(), result.status(), result.requestedByName(),
+                result.requestedByRole(), result.assignedAdminName(),
+                result.createdAt(), result.updatedAt(), result.generatedAt(),
+                result.message()
+        );
     }
 }

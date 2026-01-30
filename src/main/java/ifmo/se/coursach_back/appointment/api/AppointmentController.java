@@ -1,15 +1,24 @@
 package ifmo.se.coursach_back.appointment.api;
-import ifmo.se.coursach_back.appointment.application.AppointmentService;
 
 import ifmo.se.coursach_back.appointment.api.dto.AppointmentSlotResponse;
 import ifmo.se.coursach_back.appointment.api.dto.BookingResponse;
 import ifmo.se.coursach_back.appointment.api.dto.CreateBookingRequest;
 import ifmo.se.coursach_back.appointment.api.dto.CreateSlotRequest;
+import ifmo.se.coursach_back.appointment.application.command.CreateBookingCommand;
+import ifmo.se.coursach_back.appointment.application.command.CreateSlotCommand;
+import ifmo.se.coursach_back.appointment.application.command.RescheduleBookingCommand;
+import ifmo.se.coursach_back.appointment.application.result.AppointmentSlotResult;
+import ifmo.se.coursach_back.appointment.application.result.BookingResult;
+import ifmo.se.coursach_back.appointment.application.result.DonorBookingResult;
+import ifmo.se.coursach_back.appointment.application.usecase.CancelBookingUseCase;
+import ifmo.se.coursach_back.appointment.application.usecase.CreateAppointmentSlotUseCase;
+import ifmo.se.coursach_back.appointment.application.usecase.CreateBookingUseCase;
+import ifmo.se.coursach_back.appointment.application.usecase.ListAppointmentSlotsUseCase;
+import ifmo.se.coursach_back.appointment.application.usecase.ListDonorBookingsUseCase;
+import ifmo.se.coursach_back.appointment.application.usecase.RescheduleBookingUseCase;
+import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.donor.api.dto.DonorBookingResponse;
 import ifmo.se.coursach_back.donor.api.dto.RescheduleRequest;
-import ifmo.se.coursach_back.appointment.domain.AppointmentSlot;
-import ifmo.se.coursach_back.appointment.domain.Booking;
-import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
@@ -34,16 +43,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j
 public class AppointmentController {
-    private final AppointmentService appointmentService;
+    private final ListAppointmentSlotsUseCase listAppointmentSlotsUseCase;
+    private final CreateAppointmentSlotUseCase createAppointmentSlotUseCase;
+    private final CreateBookingUseCase createBookingUseCase;
+    private final ListDonorBookingsUseCase listDonorBookingsUseCase;
+    private final CancelBookingUseCase cancelBookingUseCase;
+    private final RescheduleBookingUseCase rescheduleBookingUseCase;
 
     @GetMapping("/slots")
     public List<AppointmentSlotResponse> listSlots(@RequestParam(value = "from", required = false)
                                                    OffsetDateTime from,
                                                    @RequestParam(value = "purpose", required = false)
                                                    SlotPurpose purpose) {
-        OffsetDateTime start = from == null ? OffsetDateTime.now() : from;
-        return appointmentService.listUpcomingSlots(start, purpose).stream()
-                .map(slot -> AppointmentSlotResponse.from(slot, appointmentService.getSlotBookedCount(slot.getId())))
+        List<AppointmentSlotResult> results = listAppointmentSlotsUseCase.execute(from, purpose);
+        return results.stream()
+                .map(r -> new AppointmentSlotResponse(
+                        r.id(), r.purpose(), r.startAt(), r.endAt(),
+                        r.location(), r.capacity(), r.bookedCount()
+                ))
                 .toList();
     }
 
@@ -51,31 +68,48 @@ public class AppointmentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR', 'NURSE')")
     public ResponseEntity<AppointmentSlotResponse> createSlot(@Valid @RequestBody CreateSlotRequest request) {
         log.info("POST /api/appointments/slots - Creating slot");
-        AppointmentSlot slot = appointmentService.createSlot(request);
-        log.info("Slot created with id={}", slot.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(AppointmentSlotResponse.from(slot, 0L));
+        CreateSlotCommand command = new CreateSlotCommand(
+                request.purpose(), request.startAt(), request.endAt(),
+                request.location(), request.capacity()
+        );
+        AppointmentSlotResult result = createAppointmentSlotUseCase.execute(command);
+        log.info("Slot created with id={}", result.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(new AppointmentSlotResponse(
+                result.id(), result.purpose(), result.startAt(), result.endAt(),
+                result.location(), result.capacity(), result.bookedCount()
+        ));
     }
 
     @PostMapping("/bookings")
     @PreAuthorize("hasRole('DONOR')")
     public ResponseEntity<BookingResponse> createBooking(@AuthenticationPrincipal AccountPrincipal principal,
                                                          @Valid @RequestBody CreateBookingRequest request) {
-        Booking booking = appointmentService.createBooking(principal.getId(), request.slotId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking));
+        CreateBookingCommand command = new CreateBookingCommand(principal.getId(), request.slotId());
+        BookingResult result = createBookingUseCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new BookingResponse(
+                result.id(), result.slotId(), result.status(), result.createdAt()
+        ));
     }
 
     @GetMapping("/bookings/my")
     @PreAuthorize("hasRole('DONOR')")
     public List<DonorBookingResponse> listMyBookings(
             @AuthenticationPrincipal AccountPrincipal principal) {
-        return appointmentService.listDonorBookings(principal.getId());
+        List<DonorBookingResult> results = listDonorBookingsUseCase.execute(principal.getId());
+        return results.stream()
+                .map(r -> new DonorBookingResponse(
+                        r.id(), r.slotId(), r.slotPurpose(),
+                        r.slotStartTime(), r.slotEndTime(), r.slotLocation(),
+                        r.status(), r.createdAt(), r.cancelledAt(), r.hasVisit()
+                ))
+                .toList();
     }
 
     @PostMapping("/bookings/{bookingId}/cancel")
     @PreAuthorize("hasRole('DONOR')")
     public ResponseEntity<Void> cancelBooking(@AuthenticationPrincipal AccountPrincipal principal,
                                               @PathVariable UUID bookingId) {
-        appointmentService.cancelBooking(principal.getId(), bookingId);
+        cancelBookingUseCase.execute(principal.getId(), bookingId);
         return ResponseEntity.noContent().build();
     }
 
@@ -85,8 +119,14 @@ public class AppointmentController {
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID bookingId,
             @Valid @RequestBody RescheduleRequest request) {
-        Booking booking = appointmentService.rescheduleBooking(principal.getId(), bookingId, request.newSlotId());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(DonorBookingResponse.from(booking, false));
+        RescheduleBookingCommand command = new RescheduleBookingCommand(
+                principal.getId(), bookingId, request.newSlotId()
+        );
+        DonorBookingResult result = rescheduleBookingUseCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new DonorBookingResponse(
+                result.id(), result.slotId(), result.slotPurpose(),
+                result.slotStartTime(), result.slotEndTime(), result.slotLocation(),
+                result.status(), result.createdAt(), result.cancelledAt(), result.hasVisit()
+        ));
     }
 }

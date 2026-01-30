@@ -19,6 +19,7 @@ import ifmo.se.coursach_back.notification.domain.DeliveryStatus;
 import ifmo.se.coursach_back.donor.domain.DocumentStatus;
 import ifmo.se.coursach_back.donor.domain.DonorDocument;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
+import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.notification.domain.Notification;
@@ -214,7 +215,7 @@ public class AdminService {
         OffsetDateTime effectiveTo = to != null ? to : OffsetDateTime.now();
         
         long donorsTotalCount = donorProfileRepository.count();
-        long donorsActiveCount = donorProfileRepository.countByDonorStatus("ACTIVE");
+        long donorsActiveCount = donorProfileRepository.countByDonorStatus(DonorStatus.ACTIVE);
         long donationsCount = donationRepository.countByPerformedAtBetween(effectiveFrom, effectiveTo);
         OffsetDateTime weekFrom = OffsetDateTime.now().minusDays(7);
         OffsetDateTime monthFrom = OffsetDateTime.now().minusMonths(1);

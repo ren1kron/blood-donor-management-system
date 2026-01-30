@@ -2,6 +2,7 @@ package ifmo.se.coursach_back.staff;
 
 import ifmo.se.coursach_back.medical.domain.Donation;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
+import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
 import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
@@ -31,7 +32,12 @@ public class StaffReportService {
     public List<StaffDonorSummary> listDonors(String status) {
         List<DonorProfile> donors;
         if (status != null && !status.isBlank()) {
-            donors = donorProfileRepository.findByDonorStatus(status.toUpperCase());
+            try {
+                DonorStatus donorStatus = DonorStatus.valueOf(status.toUpperCase());
+                donors = donorProfileRepository.findByDonorStatus(donorStatus);
+            } catch (IllegalArgumentException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid donor status: " + status);
+            }
         } else {
             donors = donorProfileRepository.findAll();
         }

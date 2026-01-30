@@ -1,9 +1,17 @@
 package ifmo.se.coursach_back.report.api;
-import ifmo.se.coursach_back.report.application.ReportRequestService;
 
 import ifmo.se.coursach_back.report.api.dto.ReportRequestActionRequest;
 import ifmo.se.coursach_back.report.api.dto.ReportRequestDetailsResponse;
 import ifmo.se.coursach_back.report.api.dto.ReportRequestSummaryResponse;
+import ifmo.se.coursach_back.report.application.command.ProcessReportRequestCommand;
+import ifmo.se.coursach_back.report.application.command.RejectReportRequestCommand;
+import ifmo.se.coursach_back.report.application.command.TakeReportRequestCommand;
+import ifmo.se.coursach_back.report.application.result.ReportRequestDetailsResult;
+import ifmo.se.coursach_back.report.application.result.ReportRequestSummaryResult;
+import ifmo.se.coursach_back.report.application.usecase.ListAllReportRequestsUseCase;
+import ifmo.se.coursach_back.report.application.usecase.ProcessReportRequestUseCase;
+import ifmo.se.coursach_back.report.application.usecase.RejectReportRequestUseCase;
+import ifmo.se.coursach_back.report.application.usecase.TakeReportRequestUseCase;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -26,19 +34,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminReportRequestController {
-    private final ReportRequestService reportRequestService;
+    private final ListAllReportRequestsUseCase listAllReportRequestsUseCase;
+    private final TakeReportRequestUseCase takeReportRequestUseCase;
+    private final ProcessReportRequestUseCase processReportRequestUseCase;
+    private final RejectReportRequestUseCase rejectReportRequestUseCase;
 
     @GetMapping
     public List<ReportRequestSummaryResponse> listRequests(
             @RequestParam(value = "status", required = false) String status) {
-        return reportRequestService.listRequestsForAdmin(status);
+        List<ReportRequestSummaryResult> results = listAllReportRequestsUseCase.execute(status);
+        return results.stream().map(this::mapToSummaryResponse).toList();
     }
 
     @PostMapping("/{requestId}/take")
     public ResponseEntity<ReportRequestSummaryResponse> takeRequest(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID requestId) {
-        ReportRequestSummaryResponse response = reportRequestService.takeRequest(principal.getId(), requestId);
+        TakeReportRequestCommand command = new TakeReportRequestCommand(principal.getId(), requestId);
+        ReportRequestSummaryResult result = takeReportRequestUseCase.execute(command);
+        ReportRequestSummaryResponse response = mapToSummaryResponse(result);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -46,7 +60,17 @@ public class AdminReportRequestController {
     public ResponseEntity<ReportRequestDetailsResponse> generate(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID requestId) {
-        ReportRequestDetailsResponse response = reportRequestService.generateReport(principal.getId(), requestId);
+        ProcessReportRequestCommand command = new ProcessReportRequestCommand(
+                principal.getId(), requestId, null
+        );
+        ReportRequestDetailsResult result = processReportRequestUseCase.execute(command);
+        ReportRequestDetailsResponse response = new ReportRequestDetailsResponse(
+                result.requestId(), result.donorId(), result.donorName(),
+                result.reportType(), result.status(), result.requestedByName(),
+                result.requestedByRole(), result.assignedAdminName(),
+                result.createdAt(), result.updatedAt(), result.generatedAt(),
+                result.message(), result.payload()
+        );
         return ResponseEntity.ok(response);
     }
 
@@ -54,7 +78,18 @@ public class AdminReportRequestController {
     public ResponseEntity<ReportRequestSummaryResponse> send(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID requestId) {
-        ReportRequestSummaryResponse response = reportRequestService.sendReport(principal.getId(), requestId);
+        // Send uses the same process command but marks as sent
+        ProcessReportRequestCommand command = new ProcessReportRequestCommand(
+                principal.getId(), requestId, null
+        );
+        ReportRequestDetailsResult result = processReportRequestUseCase.execute(command);
+        ReportRequestSummaryResponse response = mapToSummaryResponse(new ReportRequestSummaryResult(
+                result.requestId(), result.donorId(), result.donorName(),
+                result.reportType(), result.status(), result.requestedByName(),
+                result.requestedByRole(), result.assignedAdminName(),
+                result.createdAt(), result.updatedAt(), result.generatedAt(),
+                result.message()
+        ));
         return ResponseEntity.ok(response);
     }
 
@@ -63,7 +98,22 @@ public class AdminReportRequestController {
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID requestId,
             @Valid @RequestBody(required = false) ReportRequestActionRequest request) {
-        ReportRequestSummaryResponse response = reportRequestService.rejectReport(principal.getId(), requestId, request);
+        RejectReportRequestCommand command = new RejectReportRequestCommand(
+                principal.getId(), requestId,
+                request != null ? request.message() : null
+        );
+        ReportRequestSummaryResult result = rejectReportRequestUseCase.execute(command);
+        ReportRequestSummaryResponse response = mapToSummaryResponse(result);
         return ResponseEntity.ok(response);
+    }
+
+    private ReportRequestSummaryResponse mapToSummaryResponse(ReportRequestSummaryResult result) {
+        return new ReportRequestSummaryResponse(
+                result.requestId(), result.donorId(), result.donorName(),
+                result.reportType(), result.status(), result.requestedByName(),
+                result.requestedByRole(), result.assignedAdminName(),
+                result.createdAt(), result.updatedAt(), result.generatedAt(),
+                result.message()
+        );
     }
 }

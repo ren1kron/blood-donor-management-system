@@ -1,5 +1,4 @@
 package ifmo.se.coursach_back.admin.api;
-import ifmo.se.coursach_back.admin.application.AdminService;
 
 import ifmo.se.coursach_back.admin.api.dto.AdminRegisterDonorRequest;
 import ifmo.se.coursach_back.admin.api.dto.AdminRegisterDonorResponse;
@@ -10,6 +9,22 @@ import ifmo.se.coursach_back.admin.api.dto.NotificationMarkResponse;
 import ifmo.se.coursach_back.admin.api.dto.ReportsSummaryResponse;
 import ifmo.se.coursach_back.admin.api.dto.SendReminderRequest;
 import ifmo.se.coursach_back.admin.api.dto.SendReminderResponse;
+import ifmo.se.coursach_back.admin.application.command.MarkNotifiedCommand;
+import ifmo.se.coursach_back.admin.application.command.RegisterDonorByPhoneCommand;
+import ifmo.se.coursach_back.admin.application.command.SendReminderCommand;
+import ifmo.se.coursach_back.admin.application.result.EligibleDonorResult;
+import ifmo.se.coursach_back.admin.application.result.ExpiredDocumentResult;
+import ifmo.se.coursach_back.admin.application.result.NotificationMarkResult;
+import ifmo.se.coursach_back.admin.application.result.RegisterDonorResult;
+import ifmo.se.coursach_back.admin.application.result.ReminderSentResult;
+import ifmo.se.coursach_back.admin.application.result.ReportsSummaryResult;
+import ifmo.se.coursach_back.admin.application.usecase.GetReportsSummaryUseCase;
+import ifmo.se.coursach_back.admin.application.usecase.ListEligibleDonorsUseCase;
+import ifmo.se.coursach_back.admin.application.usecase.ListExpiredDocumentsUseCase;
+import ifmo.se.coursach_back.admin.application.usecase.MarkDonorRevisitNotifiedUseCase;
+import ifmo.se.coursach_back.admin.application.usecase.MarkExpiredDocumentNotifiedUseCase;
+import ifmo.se.coursach_back.admin.application.usecase.RegisterDonorByPhoneUseCase;
+import ifmo.se.coursach_back.admin.application.usecase.SendReminderUseCase;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -34,18 +49,38 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
-    private final AdminService adminService;
+    private final RegisterDonorByPhoneUseCase registerDonorByPhoneUseCase;
+    private final ListEligibleDonorsUseCase listEligibleDonorsUseCase;
+    private final MarkDonorRevisitNotifiedUseCase markDonorRevisitNotifiedUseCase;
+    private final ListExpiredDocumentsUseCase listExpiredDocumentsUseCase;
+    private final MarkExpiredDocumentNotifiedUseCase markExpiredDocumentNotifiedUseCase;
+    private final GetReportsSummaryUseCase getReportsSummaryUseCase;
+    private final SendReminderUseCase sendReminderUseCase;
 
     @PostMapping("/donors/phone-registration")
     public ResponseEntity<AdminRegisterDonorResponse> registerDonor(@Valid @RequestBody AdminRegisterDonorRequest request) {
-        AdminRegisterDonorResponse response = adminService.registerDonorByPhone(request);
+        RegisterDonorByPhoneCommand command = new RegisterDonorByPhoneCommand(
+                request.phone(), request.email(), request.password(),
+                request.fullName(), request.birthDate(),
+                request.bloodGroup(), request.rhFactor()
+        );
+        RegisterDonorResult result = registerDonorByPhoneUseCase.execute(command);
+        AdminRegisterDonorResponse response = new AdminRegisterDonorResponse(
+                result.accountId(), result.profileId(), request.password()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/reminders/eligible")
     public List<EligibleDonorResponse> listEligible(@RequestParam(value = "minDaysSinceDonation", defaultValue = "56")
                                                      int minDaysSinceDonation) {
-        return adminService.listEligibleDonors(minDaysSinceDonation);
+        List<EligibleDonorResult> results = listEligibleDonorsUseCase.execute(minDaysSinceDonation);
+        return results.stream()
+                .map(r -> new EligibleDonorResponse(
+                        r.donorId(), r.fullName(), r.phone(), r.email(),
+                        r.lastDonationAt(), r.daysSinceDonation()
+                ))
+                .toList();
     }
 
     @PostMapping("/reminders/eligible/{donorId}/mark-notified")
@@ -53,13 +88,27 @@ public class AdminController {
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID donorId,
             @RequestBody(required = false) MarkNotifiedRequest request) {
-        NotificationMarkResponse response = adminService.markDonorRevisitNotified(principal.getId(), donorId, request);
+        MarkNotifiedCommand command = new MarkNotifiedCommand(
+                principal.getId(), donorId,
+                request != null ? request.channel() : null,
+                request != null ? request.body() : null
+        );
+        NotificationMarkResult result = markDonorRevisitNotifiedUseCase.execute(command);
+        NotificationMarkResponse response = new NotificationMarkResponse(
+                result.notificationId(), result.deliveryId(), result.sentAt()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/documents/expired")
     public List<ExpiredDocumentResponse> listExpiredDocs(@RequestParam(value = "asOf", required = false) LocalDate asOf) {
-        return adminService.listExpiredDocuments(asOf);
+        List<ExpiredDocumentResult> results = listExpiredDocumentsUseCase.execute(asOf);
+        return results.stream()
+                .map(r -> new ExpiredDocumentResponse(
+                        r.documentId(), r.donorId(), r.fullName(),
+                        r.phone(), r.email(), r.docType(), r.expiresAt()
+                ))
+                .toList();
     }
 
     @PostMapping("/documents/expired/{documentId}/mark-notified")
@@ -67,7 +116,15 @@ public class AdminController {
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID documentId,
             @RequestBody(required = false) MarkNotifiedRequest request) {
-        NotificationMarkResponse response = adminService.markExpiredDocumentNotified(principal.getId(), documentId, request);
+        MarkNotifiedCommand command = new MarkNotifiedCommand(
+                principal.getId(), documentId,
+                request != null ? request.channel() : null,
+                request != null ? request.body() : null
+        );
+        NotificationMarkResult result = markExpiredDocumentNotifiedUseCase.execute(command);
+        NotificationMarkResponse response = new NotificationMarkResponse(
+                result.notificationId(), result.deliveryId(), result.sentAt()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -75,14 +132,30 @@ public class AdminController {
     public ReportsSummaryResponse getReportsSummary(
             @RequestParam(value = "from", required = false) OffsetDateTime from,
             @RequestParam(value = "to", required = false) OffsetDateTime to) {
-        return adminService.getReportsSummary(from, to);
+        ReportsSummaryResult result = getReportsSummaryUseCase.execute(from, to);
+        return new ReportsSummaryResponse(
+                result.donorsTotalCount(), result.donorsActiveCount(),
+                result.donationsCount(), result.donationsLastWeek(),
+                result.donationsLastMonth(), result.samplesCount(),
+                result.publishedResultsCount(), result.eligibleCandidatesCount(),
+                result.pendingReviewCount(), result.labQueueCount(),
+                result.bloodUnitsByGroupRh()
+        );
     }
 
     @PostMapping("/reminders/send")
     public ResponseEntity<SendReminderResponse> sendReminder(
             @AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody SendReminderRequest request) {
-        SendReminderResponse response = adminService.sendReminder(principal.getId(), request);
+        SendReminderCommand command = new SendReminderCommand(
+                principal.getId(), request.donorId(),
+                request.topic(), request.body(), request.channel()
+        );
+        ReminderSentResult result = sendReminderUseCase.execute(command);
+        SendReminderResponse response = new SendReminderResponse(
+                result.notificationId(), result.deliveryId(),
+                result.status(), result.sentAt()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

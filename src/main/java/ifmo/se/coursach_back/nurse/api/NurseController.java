@@ -1,10 +1,21 @@
 package ifmo.se.coursach_back.nurse.api;
-import ifmo.se.coursach_back.nurse.application.NurseWorkflowService;
 
 import ifmo.se.coursach_back.medical.api.dto.ScheduledDonorResponse;
 import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionCreateRequest;
 import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionResponse;
 import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionUpdateRequest;
+import ifmo.se.coursach_back.nurse.application.command.AbortCollectionSessionCommand;
+import ifmo.se.coursach_back.nurse.application.command.CompleteCollectionSessionCommand;
+import ifmo.se.coursach_back.nurse.application.command.CreateCollectionSessionCommand;
+import ifmo.se.coursach_back.nurse.application.command.StartCollectionSessionCommand;
+import ifmo.se.coursach_back.nurse.application.result.CollectionSessionResult;
+import ifmo.se.coursach_back.nurse.application.result.DonationQueueResult;
+import ifmo.se.coursach_back.nurse.application.usecase.AbortCollectionSessionUseCase;
+import ifmo.se.coursach_back.nurse.application.usecase.CompleteCollectionSessionUseCase;
+import ifmo.se.coursach_back.nurse.application.usecase.CreateCollectionSessionUseCase;
+import ifmo.se.coursach_back.nurse.application.usecase.GetCollectionSessionUseCase;
+import ifmo.se.coursach_back.nurse.application.usecase.ListDonationQueueUseCase;
+import ifmo.se.coursach_back.nurse.application.usecase.StartCollectionSessionUseCase;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
@@ -28,19 +39,43 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('NURSE')")
 public class NurseController {
-    private final NurseWorkflowService nurseWorkflowService;
+    private final ListDonationQueueUseCase listDonationQueueUseCase;
+    private final CreateCollectionSessionUseCase createCollectionSessionUseCase;
+    private final StartCollectionSessionUseCase startCollectionSessionUseCase;
+    private final CompleteCollectionSessionUseCase completeCollectionSessionUseCase;
+    private final AbortCollectionSessionUseCase abortCollectionSessionUseCase;
+    private final GetCollectionSessionUseCase getCollectionSessionUseCase;
 
     @GetMapping("/donations/queue")
     public List<ScheduledDonorResponse> listDonationQueue(
             @RequestParam(value = "from", required = false) OffsetDateTime from) {
-        return nurseWorkflowService.listDonationQueue(from);
+        DonationQueueResult queueResult = listDonationQueueUseCase.execute(from);
+        return queueResult.items().stream()
+                .map(item -> new ScheduledDonorResponse(
+                        item.bookingId(), item.visitId(), item.donorId(), item.donorFullName(),
+                        item.donorStatus(), item.slotId(), item.purpose(),
+                        item.startAt(), item.endAt(), item.location(), item.bookingStatus(),
+                        item.medicalDecision(), item.hasDonation(), item.canDonate(),
+                        item.donationId(), item.donationPublished(),
+                        item.collectionSessionId(), item.collectionSessionStatus(),
+                        item.collectionSessionStartedAt(), item.collectionSessionEndedAt(),
+                        item.collectionSessionNurseName(), item.collectionSessionPreVitalsJson(),
+                        item.collectionSessionPostVitalsJson(), item.collectionSessionNotes(),
+                        item.collectionSessionComplications(), item.collectionSessionInterruptionReason()
+                ))
+                .toList();
     }
 
     @PostMapping("/collection-sessions")
     public ResponseEntity<CollectionSessionResponse> createSession(
             @AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody CollectionSessionCreateRequest request) {
-        CollectionSessionResponse response = nurseWorkflowService.createSession(principal.getId(), request);
+        CreateCollectionSessionCommand command = new CreateCollectionSessionCommand(
+                principal.getId(), request.visitId(), request.bookingId(),
+                request.preVitals(), request.notes()
+        );
+        CollectionSessionResult result = createCollectionSessionUseCase.execute(command);
+        CollectionSessionResponse response = mapToResponse(result);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -49,8 +84,13 @@ public class NurseController {
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID id,
             @RequestBody(required = false) CollectionSessionUpdateRequest request) {
-        CollectionSessionResponse response = nurseWorkflowService.startSession(principal.getId(), id, request);
-        return ResponseEntity.ok(response);
+        StartCollectionSessionCommand command = new StartCollectionSessionCommand(
+                principal.getId(), id,
+                request != null ? request.preVitals() : null,
+                request != null ? request.notes() : null
+        );
+        CollectionSessionResult result = startCollectionSessionUseCase.execute(command);
+        return ResponseEntity.ok(mapToResponse(result));
     }
 
     @PostMapping("/collection-sessions/{id}/complete")
@@ -58,8 +98,13 @@ public class NurseController {
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID id,
             @RequestBody(required = false) CollectionSessionUpdateRequest request) {
-        CollectionSessionResponse response = nurseWorkflowService.completeSession(principal.getId(), id, request);
-        return ResponseEntity.ok(response);
+        CompleteCollectionSessionCommand command = new CompleteCollectionSessionCommand(
+                principal.getId(), id,
+                request != null ? request.postVitals() : null,
+                request != null ? request.notes() : null
+        );
+        CollectionSessionResult result = completeCollectionSessionUseCase.execute(command);
+        return ResponseEntity.ok(mapToResponse(result));
     }
 
     @PostMapping("/collection-sessions/{id}/abort")
@@ -67,12 +112,28 @@ public class NurseController {
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID id,
             @RequestBody(required = false) CollectionSessionUpdateRequest request) {
-        CollectionSessionResponse response = nurseWorkflowService.abortSession(principal.getId(), id, request);
-        return ResponseEntity.ok(response);
+        AbortCollectionSessionCommand command = new AbortCollectionSessionCommand(
+                principal.getId(), id,
+                request != null ? request.interruptionReason() : null,
+                request != null ? request.notes() : null
+        );
+        CollectionSessionResult result = abortCollectionSessionUseCase.execute(command);
+        return ResponseEntity.ok(mapToResponse(result));
     }
 
     @GetMapping("/collection-sessions/{id}")
     public CollectionSessionResponse getSession(@PathVariable UUID id) {
-        return nurseWorkflowService.getSession(id);
+        CollectionSessionResult result = getCollectionSessionUseCase.execute(id);
+        return mapToResponse(result);
+    }
+
+    private CollectionSessionResponse mapToResponse(CollectionSessionResult result) {
+        return new CollectionSessionResponse(
+                result.sessionId(), result.visitId(), result.nurseId(), result.nurseName(),
+                result.status(), result.startedAt(), result.endedAt(),
+                result.preVitals(), result.postVitals(), result.notes(),
+                result.complications(), result.interruptionReason(),
+                result.createdAt(), result.updatedAt()
+        );
     }
 }

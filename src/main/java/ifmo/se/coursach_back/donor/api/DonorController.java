@@ -1,8 +1,8 @@
 package ifmo.se.coursach_back.donor.api;
-import ifmo.se.coursach_back.donor.application.DonorService;
 
 import ifmo.se.coursach_back.donor.api.dto.ConsentRequest;
 import ifmo.se.coursach_back.donor.api.dto.ConsentResponse;
+import ifmo.se.coursach_back.donor.api.dto.DeferralStatusResponse;
 import ifmo.se.coursach_back.donor.api.dto.DonationHistoryResponse;
 import ifmo.se.coursach_back.donor.api.dto.DonorNotificationResponse;
 import ifmo.se.coursach_back.donor.api.dto.DonorProfileResponse;
@@ -10,7 +10,22 @@ import ifmo.se.coursach_back.donor.api.dto.EligibilityResponse;
 import ifmo.se.coursach_back.donor.api.dto.LabResultResponse;
 import ifmo.se.coursach_back.donor.api.dto.UpdateDonorProfileRequest;
 import ifmo.se.coursach_back.donor.api.dto.VisitHistoryResponse;
-import ifmo.se.coursach_back.donor.domain.Consent;
+import ifmo.se.coursach_back.donor.application.DonorService;
+import ifmo.se.coursach_back.donor.application.command.SubmitConsentCommand;
+import ifmo.se.coursach_back.donor.application.command.UpdateDonorProfileCommand;
+import ifmo.se.coursach_back.donor.application.result.ConsentResult;
+import ifmo.se.coursach_back.donor.application.result.DeferralStatusResult;
+import ifmo.se.coursach_back.donor.application.result.DonationHistoryResult;
+import ifmo.se.coursach_back.donor.application.result.DonorProfileResult;
+import ifmo.se.coursach_back.donor.application.result.EligibilityResult;
+import ifmo.se.coursach_back.donor.application.result.NotificationResult;
+import ifmo.se.coursach_back.donor.application.usecase.AcknowledgeNotificationUseCase;
+import ifmo.se.coursach_back.donor.application.usecase.CheckEligibilityUseCase;
+import ifmo.se.coursach_back.donor.application.usecase.GetDonorProfileUseCase;
+import ifmo.se.coursach_back.donor.application.usecase.ListDonationHistoryUseCase;
+import ifmo.se.coursach_back.donor.application.usecase.ListDonorNotificationsUseCase;
+import ifmo.se.coursach_back.donor.application.usecase.SubmitConsentUseCase;
+import ifmo.se.coursach_back.donor.application.usecase.UpdateDonorProfileUseCase;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -33,29 +48,62 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('DONOR')")
 public class DonorController {
+    private final GetDonorProfileUseCase getDonorProfileUseCase;
+    private final UpdateDonorProfileUseCase updateDonorProfileUseCase;
+    private final SubmitConsentUseCase submitConsentUseCase;
+    private final ListDonationHistoryUseCase listDonationHistoryUseCase;
+    private final CheckEligibilityUseCase checkEligibilityUseCase;
+    private final ListDonorNotificationsUseCase listDonorNotificationsUseCase;
+    private final AcknowledgeNotificationUseCase acknowledgeNotificationUseCase;
+    // Keep DonorService for operations not yet migrated to use cases
     private final DonorService donorService;
 
     @GetMapping("/profile")
     public DonorProfileResponse getProfile(@AuthenticationPrincipal AccountPrincipal principal) {
-        return donorService.getProfile(principal.getId());
+        DonorProfileResult result = getDonorProfileUseCase.execute(principal.getId());
+        return new DonorProfileResponse(
+                result.accountId(), result.donorId(), result.fullName(),
+                result.birthDate(), result.bloodGroup(), result.rhFactor(),
+                result.donorStatus(), result.email(), result.phone()
+        );
     }
 
     @PutMapping("/profile")
     public DonorProfileResponse updateProfile(@AuthenticationPrincipal AccountPrincipal principal,
                                               @Valid @RequestBody UpdateDonorProfileRequest request) {
-        return donorService.updateProfile(principal.getId(), request);
+        UpdateDonorProfileCommand command = new UpdateDonorProfileCommand(
+                principal.getId(), request.fullName(), request.birthDate(),
+                request.bloodGroup(), request.rhFactor(), request.email(), request.phone()
+        );
+        DonorProfileResult result = updateDonorProfileUseCase.execute(command);
+        return new DonorProfileResponse(
+                result.accountId(), result.donorId(), result.fullName(),
+                result.birthDate(), result.bloodGroup(), result.rhFactor(),
+                result.donorStatus(), result.email(), result.phone()
+        );
     }
 
     @PostMapping("/consents")
     public ResponseEntity<ConsentResponse> submitConsent(@AuthenticationPrincipal AccountPrincipal principal,
                                                          @Valid @RequestBody ConsentRequest request) {
-        Consent consent = donorService.createConsent(principal.getId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ConsentResponse.from(consent));
+        SubmitConsentCommand command = new SubmitConsentCommand(
+                principal.getId(), request.visitId(), request.bookingId(), request.consentType()
+        );
+        ConsentResult result = submitConsentUseCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ConsentResponse(
+                result.id(), result.visitId(), result.donorId(), result.consentType(), result.givenAt()
+        ));
     }
 
     @GetMapping("/donations")
     public List<DonationHistoryResponse> donationHistory(@AuthenticationPrincipal AccountPrincipal principal) {
-        return donorService.listDonationHistory(principal.getId());
+        List<DonationHistoryResult> results = listDonationHistoryUseCase.execute(principal.getId());
+        return results.stream()
+                .map(r -> new DonationHistoryResponse(
+                        r.donationId(), r.visitId(), r.performedAt(), r.donationType(),
+                        r.volumeMl(), r.publishedAt(), r.preVitalsJson(), r.postVitalsJson(), r.hasVitals()
+                ))
+                .toList();
     }
 
     @GetMapping("/test-results")
@@ -74,20 +122,33 @@ public class DonorController {
 
     @GetMapping("/eligibility")
     public EligibilityResponse eligibility(@AuthenticationPrincipal AccountPrincipal principal) {
-        return donorService.getEligibility(principal.getId());
+        EligibilityResult result = checkEligibilityUseCase.execute(principal.getId());
+        DeferralStatusResponse deferral = null;
+        if (result.activeDeferral() != null) {
+            DeferralStatusResult d = result.activeDeferral();
+            deferral = new DeferralStatusResponse(d.deferralId(), d.deferralType(), d.reason(), d.startsAt(), d.endsAt());
+        }
+        return new EligibilityResponse(
+                result.donorStatus(), result.eligible(), result.canBookDonation(),
+                result.lastDonationAt(), result.nextEligibleAt(), result.medicalCheckValidUntil(), deferral
+        );
     }
 
     @GetMapping("/notifications")
     public List<DonorNotificationResponse> notifications(@AuthenticationPrincipal AccountPrincipal principal) {
-        return donorService.listNotifications(principal.getId()).stream()
-                .map(DonorNotificationResponse::from)
+        List<NotificationResult> results = listDonorNotificationsUseCase.execute(principal.getId());
+        return results.stream()
+                .map(r -> new DonorNotificationResponse(
+                        r.deliveryId(), r.notificationId(), r.topic(), r.body(),
+                        r.channel(), r.createdAt(), r.sentAt(), r.status()
+                ))
                 .toList();
     }
 
     @PostMapping("/notifications/{deliveryId}/ack")
     public ResponseEntity<Void> acknowledge(@AuthenticationPrincipal AccountPrincipal principal,
                                             @PathVariable UUID deliveryId) {
-        donorService.acknowledgeNotification(principal.getId(), deliveryId);
+        acknowledgeNotificationUseCase.execute(principal.getId(), deliveryId);
         return ResponseEntity.noContent().build();
     }
 }

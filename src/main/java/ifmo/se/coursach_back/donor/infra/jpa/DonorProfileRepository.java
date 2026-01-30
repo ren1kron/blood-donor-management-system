@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.donor.infra.jpa;
 
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
+import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.shared.infra.jpa.projection.DonorSummaryProjection;
 import java.util.List;
 import java.util.Optional;
@@ -11,9 +12,9 @@ import org.springframework.data.jpa.repository.Query;
 public interface DonorProfileRepository extends JpaRepository<DonorProfile, UUID> {
     Optional<DonorProfile> findByAccountId(UUID accountId);
     
-    long countByDonorStatus(String donorStatus);
+    long countByDonorStatus(DonorStatus donorStatus);
     
-    List<DonorProfile> findByDonorStatus(String donorStatus);
+    List<DonorProfile> findByDonorStatus(DonorStatus donorStatus);
 
     /**
      * Returns donor summaries using interface projection.
