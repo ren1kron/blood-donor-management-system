@@ -9,12 +9,12 @@ import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
-import ifmo.se.coursach_back.appointment.infra.jpa.AppointmentSlotRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DeferralRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.VisitRepository;
+import ifmo.se.coursach_back.appointment.application.ports.AppointmentSlotRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DeferralRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
@@ -33,12 +33,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class AppointmentService {
     private static final int MEDICAL_CHECK_VALIDITY_MONTHS = 6;
     
-    private final AppointmentSlotRepository slotRepository;
-    private final BookingRepository bookingRepository;
-    private final DonorProfileRepository donorProfileRepository;
-    private final MedicalCheckRepository medicalCheckRepository;
-    private final DeferralRepository deferralRepository;
-    private final VisitRepository visitRepository;
+    private final AppointmentSlotRepositoryPort slotRepository;
+    private final BookingRepositoryPort bookingRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
+    private final MedicalCheckRepositoryPort medicalCheckRepository;
+    private final DeferralRepositoryPort deferralRepository;
+    private final VisitRepositoryPort visitRepository;
 
     public List<AppointmentSlot> listUpcomingSlots(OffsetDateTime from, SlotPurpose purpose) {
         if (purpose == null) {

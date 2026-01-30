@@ -21,9 +21,9 @@ import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
 import ifmo.se.coursach_back.notification.application.NotificationService;
 import ifmo.se.coursach_back.notification.domain.NotificationTopics;
-import ifmo.se.coursach_back.medical.infra.jpa.DeferralRepository;
-import ifmo.se.coursach_back.lab.infra.jpa.LabExaminationRequestRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
+import ifmo.se.coursach_back.medical.application.ports.DeferralRepositoryPort;
+import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,9 +43,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MedicalCheckService {
 
-    private final MedicalCheckRepository medicalCheckRepository;
-    private final DeferralRepository deferralRepository;
-    private final LabExaminationRequestRepository labExaminationRequestRepository;
+    private final MedicalCheckRepositoryPort medicalCheckRepository;
+    private final DeferralRepositoryPort deferralRepository;
+    private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
     private final EntityResolverService entityResolver;
     private final NotificationService notificationService;
     private final AuditService auditService;

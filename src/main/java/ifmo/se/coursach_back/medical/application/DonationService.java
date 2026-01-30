@@ -21,13 +21,13 @@ import ifmo.se.coursach_back.medical.domain.SampleStatus;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.medical.infra.jpa.AdverseReactionRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.nurse.infra.jpa.CollectionSessionRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.SampleRepository;
+import ifmo.se.coursach_back.medical.application.ports.AdverseReactionRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -50,13 +50,13 @@ public class DonationService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
 
-    private final DonationRepository donationRepository;
-    private final SampleRepository sampleRepository;
-    private final AdverseReactionRepository adverseReactionRepository;
-    private final MedicalCheckRepository medicalCheckRepository;
-    private final CollectionSessionRepository collectionSessionRepository;
-    private final BookingRepository bookingRepository;
-    private final DonorProfileRepository donorProfileRepository;
+    private final DonationRepositoryPort donationRepository;
+    private final SampleRepositoryPort sampleRepository;
+    private final AdverseReactionRepositoryPort adverseReactionRepository;
+    private final MedicalCheckRepositoryPort medicalCheckRepository;
+    private final CollectionSessionRepositoryPort collectionSessionRepository;
+    private final BookingRepositoryPort bookingRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
     private final EntityResolverService entityResolver;
     private final AuditService auditService;
 

@@ -7,9 +7,9 @@ import ifmo.se.coursach_back.appointment.domain.Booking;
 import ifmo.se.coursach_back.appointment.domain.BookingStatus;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.VisitRepository;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +24,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EntityResolverService {
 
-    private final VisitRepository visitRepository;
-    private final BookingRepository bookingRepository;
-    private final StaffProfileRepository staffProfileRepository;
+    private final VisitRepositoryPort visitRepository;
+    private final BookingRepositoryPort bookingRepository;
+    private final StaffProfileRepositoryPort staffProfileRepository;
 
     /**
      * Resolves a visit by visitId or bookingId.

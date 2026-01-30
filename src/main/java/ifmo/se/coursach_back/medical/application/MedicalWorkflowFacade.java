@@ -23,13 +23,13 @@ import ifmo.se.coursach_back.medical.domain.Sample;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.nurse.infra.jpa.CollectionSessionRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.lab.infra.jpa.LabExaminationRequestRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.VisitRepository;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,13 +61,13 @@ public class MedicalWorkflowFacade {
     private final LabExaminationService labExaminationService;
 
     // Repositories for batch operations
-    private final BookingRepository bookingRepository;
-    private final VisitRepository visitRepository;
-    private final MedicalCheckRepository medicalCheckRepository;
-    private final DonationRepository donationRepository;
-    private final CollectionSessionRepository collectionSessionRepository;
-    private final LabExaminationRequestRepository labExaminationRequestRepository;
-    private final DonorProfileRepository donorProfileRepository;
+    private final BookingRepositoryPort bookingRepository;
+    private final VisitRepositoryPort visitRepository;
+    private final MedicalCheckRepositoryPort medicalCheckRepository;
+    private final DonationRepositoryPort donationRepository;
+    private final CollectionSessionRepositoryPort collectionSessionRepository;
+    private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
 
     // === Booking and Visit queries ===
 

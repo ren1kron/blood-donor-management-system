@@ -11,10 +11,10 @@ import ifmo.se.coursach_back.shared.domain.Account;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.shared.domain.Role;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
-import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.shared.infra.jpa.RoleRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
+import ifmo.se.coursach_back.shared.application.ports.AccountRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.shared.application.ports.RoleRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import ifmo.se.coursach_back.security.JwtService;
 import ifmo.se.coursach_back.shared.util.BloodGroupNormalizer;
@@ -27,10 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final AccountRepository accountRepository;
-    private final RoleRepository roleRepository;
-    private final DonorProfileRepository donorProfileRepository;
-    private final StaffProfileRepository staffProfileRepository;
+    private final AccountRepositoryPort accountRepository;
+    private final RoleRepositoryPort roleRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
+    private final StaffProfileRepositoryPort staffProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 

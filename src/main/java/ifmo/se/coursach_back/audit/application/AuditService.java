@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ifmo.se.coursach_back.shared.domain.Account;
 import ifmo.se.coursach_back.audit.domain.AuditEvent;
-import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
-import ifmo.se.coursach_back.audit.infra.jpa.AuditEventRepository;
+import ifmo.se.coursach_back.shared.application.ports.AccountRepositoryPort;
+import ifmo.se.coursach_back.audit.application.ports.AuditEventRepositoryPort;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuditService {
-    private final AuditEventRepository auditEventRepository;
-    private final AccountRepository accountRepository;
+    private final AuditEventRepositoryPort auditEventRepository;
+    private final AccountRepositoryPort accountRepository;
     private final ObjectMapper objectMapper;
 
     public void log(UUID accountId, String action, String entityType, UUID entityId, Map<String, Object> metadata) {

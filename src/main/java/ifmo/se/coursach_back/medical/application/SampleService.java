@@ -8,8 +8,8 @@ import ifmo.se.coursach_back.medical.api.dto.SampleRequest;
 import ifmo.se.coursach_back.medical.domain.Donation;
 import ifmo.se.coursach_back.medical.domain.Sample;
 import ifmo.se.coursach_back.medical.domain.SampleStatus;
-import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.SampleRepository;
+import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,8 +32,8 @@ public class SampleService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
 
-    private final SampleRepository sampleRepository;
-    private final DonationRepository donationRepository;
+    private final SampleRepositoryPort sampleRepository;
+    private final DonationRepositoryPort donationRepository;
 
     /**
      * Registers a new sample for a donation.

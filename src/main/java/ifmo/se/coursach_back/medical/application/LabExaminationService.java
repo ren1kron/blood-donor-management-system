@@ -10,7 +10,7 @@ import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.lab.infra.jpa.LabExaminationRequestRepository;
+import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class LabExaminationService {
 
-    private final LabExaminationRequestRepository labExaminationRequestRepository;
+    private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
     private final EntityResolverService entityResolver;
 
     /**

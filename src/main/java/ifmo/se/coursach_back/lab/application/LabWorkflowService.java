@@ -9,12 +9,12 @@ import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.medical.domain.Sample;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
-import ifmo.se.coursach_back.lab.infra.jpa.LabExaminationRequestRepository;
-import ifmo.se.coursach_back.lab.infra.jpa.LabTestResultRepository;
-import ifmo.se.coursach_back.lab.infra.jpa.LabTestTypeRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.SampleRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
+import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
+import ifmo.se.coursach_back.lab.application.ports.LabTestResultRepositoryPort;
+import ifmo.se.coursach_back.lab.application.ports.LabTestTypeRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
@@ -31,12 +31,12 @@ public class LabWorkflowService {
     private static final List<String> DEFAULT_PENDING_STATUSES = List.of("REGISTERED", "NEW");
     private static final Set<String> ALLOWED_FLAGS = Set.of("OK", "POSITIVE", "NEGATIVE", "INCONCLUSIVE");
 
-    private final SampleRepository sampleRepository;
-    private final LabTestResultRepository labTestResultRepository;
-    private final LabTestTypeRepository labTestTypeRepository;
-    private final StaffProfileRepository staffProfileRepository;
-    private final MedicalCheckRepository medicalCheckRepository;
-    private final LabExaminationRequestRepository labExaminationRequestRepository;
+    private final SampleRepositoryPort sampleRepository;
+    private final LabTestResultRepositoryPort labTestResultRepository;
+    private final LabTestTypeRepositoryPort labTestTypeRepository;
+    private final StaffProfileRepositoryPort staffProfileRepository;
+    private final MedicalCheckRepositoryPort medicalCheckRepository;
+    private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
 
     public List<LabExaminationRequest> listPendingRequests() {
         return labExaminationRequestRepository.findByStatusInOrderByRequestedAtAsc(

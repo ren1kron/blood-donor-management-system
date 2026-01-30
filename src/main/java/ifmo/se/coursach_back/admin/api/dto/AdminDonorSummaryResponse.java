@@ -1,7 +1,7 @@
 package ifmo.se.coursach_back.admin.api.dto;
 
+import ifmo.se.coursach_back.donor.application.ports.DonorSummary;
 import ifmo.se.coursach_back.donor.domain.DonorStatus;
-import ifmo.se.coursach_back.shared.infra.jpa.projection.DonorSummaryProjection;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -15,31 +15,31 @@ public record AdminDonorSummaryResponse(
         OffsetDateTime lastAdmissionAt
 ) {
     /**
-     * Creates response from repository projection.
+     * Creates response from DonorSummary port interface.
      */
-    public static AdminDonorSummaryResponse from(DonorSummaryProjection projection) {
+    public static AdminDonorSummaryResponse from(DonorSummary summary) {
         DonorStatus status = null;
-        if (projection.getDonorStatus() != null) {
+        if (summary.getDonorStatus() != null) {
             try {
-                status = DonorStatus.valueOf(projection.getDonorStatus());
+                status = DonorStatus.valueOf(summary.getDonorStatus());
             } catch (IllegalArgumentException ignored) {
                 // Keep as null if invalid
             }
         }
         
         return new AdminDonorSummaryResponse(
-                projection.getDonorId(),
-                projection.getFullName(),
+                summary.getDonorId(),
+                summary.getFullName(),
                 status,
-                projection.getEmail(),
-                projection.getPhone(),
-                projection.getLastDonationAt(),
-                projection.getLastAdmittedAt()
+                summary.getEmail(),
+                summary.getPhone(),
+                summary.getLastDonationAt(),
+                summary.getLastAdmittedAt()
         );
     }
 
     /**
-     * @deprecated Use {@link #from(DonorSummaryProjection)} instead
+     * @deprecated Use {@link #from(DonorSummary)} instead
      */
     @Deprecated(forRemoval = true)
     public static AdminDonorSummaryResponse from(AdminDonorSummaryRow row) {

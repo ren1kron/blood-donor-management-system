@@ -19,12 +19,12 @@ import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionCreateRequest;
 import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionResponse;
 import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionUpdateRequest;
 import ifmo.se.coursach_back.nurse.api.dto.VitalsPayload;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.nurse.infra.jpa.CollectionSessionRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.VisitRepository;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -40,12 +40,12 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class NurseWorkflowService {
-    private final BookingRepository bookingRepository;
-    private final VisitRepository visitRepository;
-    private final MedicalCheckRepository medicalCheckRepository;
-    private final DonationRepository donationRepository;
-    private final CollectionSessionRepository collectionSessionRepository;
-    private final StaffProfileRepository staffProfileRepository;
+    private final BookingRepositoryPort bookingRepository;
+    private final VisitRepositoryPort visitRepository;
+    private final MedicalCheckRepositoryPort medicalCheckRepository;
+    private final DonationRepositoryPort donationRepository;
+    private final CollectionSessionRepositoryPort collectionSessionRepository;
+    private final StaffProfileRepositoryPort staffProfileRepository;
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
 

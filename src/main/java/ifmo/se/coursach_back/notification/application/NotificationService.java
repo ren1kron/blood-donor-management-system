@@ -5,9 +5,9 @@ import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.notification.domain.Notification;
 import ifmo.se.coursach_back.notification.domain.NotificationDelivery;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
-import ifmo.se.coursach_back.notification.infra.jpa.NotificationDeliveryRepository;
-import ifmo.se.coursach_back.notification.infra.jpa.NotificationRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
+import ifmo.se.coursach_back.notification.application.ports.NotificationDeliveryRepositoryPort;
+import ifmo.se.coursach_back.notification.application.ports.NotificationRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,9 +30,9 @@ public class NotificationService {
 
     private static final String DEFAULT_CHANNEL = "email";
 
-    private final NotificationRepository notificationRepository;
-    private final NotificationDeliveryRepository notificationDeliveryRepository;
-    private final StaffProfileRepository staffProfileRepository;
+    private final NotificationRepositoryPort notificationRepository;
+    private final NotificationDeliveryRepositoryPort notificationDeliveryRepository;
+    private final StaffProfileRepositoryPort staffProfileRepository;
 
     /**
      * Creates and sends a notification to a donor.

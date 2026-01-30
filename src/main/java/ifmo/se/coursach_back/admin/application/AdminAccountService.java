@@ -15,10 +15,10 @@ import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.shared.domain.Account;
 import ifmo.se.coursach_back.shared.domain.Role;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
-import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.shared.infra.jpa.RoleRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
+import ifmo.se.coursach_back.shared.application.ports.AccountRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.shared.application.ports.RoleRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -35,10 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminAccountService {
     private static final Set<String> STAFF_KINDS = Set.of("DOCTOR", "LAB", "NURSE", "ADMIN");
 
-    private final AccountRepository accountRepository;
-    private final RoleRepository roleRepository;
-    private final StaffProfileRepository staffProfileRepository;
-    private final DonorProfileRepository donorProfileRepository;
+    private final AccountRepositoryPort accountRepository;
+    private final RoleRepositoryPort roleRepository;
+    private final StaffProfileRepositoryPort staffProfileRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 

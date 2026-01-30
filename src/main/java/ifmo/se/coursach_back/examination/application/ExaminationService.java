@@ -17,12 +17,12 @@ import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.medical.domain.Questionnaire;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.appointment.infra.jpa.AppointmentSlotRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.ConsentRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.QuestionnaireRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.VisitRepository;
+import ifmo.se.coursach_back.appointment.application.ports.AppointmentSlotRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.ConsentRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.QuestionnaireRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,12 +35,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ExaminationService {
     
-    private final AppointmentSlotRepository slotRepository;
-    private final BookingRepository bookingRepository;
-    private final DonorProfileRepository donorProfileRepository;
-    private final VisitRepository visitRepository;
-    private final ConsentRepository consentRepository;
-    private final QuestionnaireRepository questionnaireRepository;
+    private final AppointmentSlotRepositoryPort slotRepository;
+    private final BookingRepositoryPort bookingRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
+    private final VisitRepositoryPort visitRepository;
+    private final ConsentRepositoryPort consentRepository;
+    private final QuestionnaireRepositoryPort questionnaireRepository;
     private final ObjectMapper objectMapper;
     
     public List<ExaminationSlotResponse> listAvailableSlots(OffsetDateTime from, OffsetDateTime to) {
