@@ -71,13 +71,14 @@ public class AuthService {
         return buildAuthResponse(savedAccount);
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         String identifier = normalize(request.identifier());
         if (identifier == null) {
             throw new BadRequestException("Identifier is required");
         }
 
-        Account account = accountRepository.findByEmailIgnoreCaseOrPhone(identifier, identifier)
+        Account account = accountRepository.findByEmailIgnoreCaseOrPhoneWithRoles(identifier)
                 .orElseThrow(() -> new BadRequestException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), account.getPasswordHash())) {
@@ -90,8 +91,9 @@ public class AuthService {
         return buildAuthResponse(account);
     }
 
+    @Transactional(readOnly = true)
     public AccountProfileResponse currentProfile(AccountPrincipal principal) {
-        Account account = accountRepository.findById(principal.getId())
+        Account account = accountRepository.findByIdWithRoles(principal.getId())
                 .orElseThrow(() -> new NotFoundException("Account not found"));
 
         String profileType = "NONE";

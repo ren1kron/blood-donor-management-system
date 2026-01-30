@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ifmo.se.coursach_back.audit.application.AuditService;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
 import ifmo.se.coursach_back.shared.domain.Account;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.notification.domain.Notification;
@@ -18,17 +18,17 @@ import ifmo.se.coursach_back.report.domain.ReportType;
 import ifmo.se.coursach_back.shared.domain.Role;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.report.api.dto.ReportRequestCreateRequest;
-import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DeferralRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.lab.infra.jpa.LabTestResultRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.notification.infra.jpa.NotificationDeliveryRepository;
-import ifmo.se.coursach_back.notification.infra.jpa.NotificationRepository;
-import ifmo.se.coursach_back.report.infra.jpa.ReportRequestRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.SampleRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
+import ifmo.se.coursach_back.shared.application.ports.AccountRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DeferralRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.lab.application.ports.LabTestResultRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.notification.application.ports.NotificationDeliveryRepositoryPort;
+import ifmo.se.coursach_back.notification.application.ports.NotificationRepositoryPort;
+import ifmo.se.coursach_back.report.application.ports.ReportRequestRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -39,18 +39,18 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 class ReportRequestServiceTest {
-    @Mock private ReportRequestRepository reportRequestRepository;
-    @Mock private DonorProfileRepository donorProfileRepository;
-    @Mock private StaffProfileRepository staffProfileRepository;
-    @Mock private AccountRepository accountRepository;
-    @Mock private DonationRepository donationRepository;
-    @Mock private MedicalCheckRepository medicalCheckRepository;
-    @Mock private DeferralRepository deferralRepository;
-    @Mock private SampleRepository sampleRepository;
-    @Mock private LabTestResultRepository labTestResultRepository;
-    @Mock private NotificationRepository notificationRepository;
-    @Mock private NotificationDeliveryRepository notificationDeliveryRepository;
-    @Mock private AuditService auditService;
+    @Mock private ReportRequestRepositoryPort reportRequestRepository;
+    @Mock private DonorProfileRepositoryPort donorProfileRepository;
+    @Mock private StaffProfileRepositoryPort staffProfileRepository;
+    @Mock private AccountRepositoryPort accountRepository;
+    @Mock private DonationRepositoryPort donationRepository;
+    @Mock private MedicalCheckRepositoryPort medicalCheckRepository;
+    @Mock private DeferralRepositoryPort deferralRepository;
+    @Mock private SampleRepositoryPort sampleRepository;
+    @Mock private LabTestResultRepositoryPort labTestResultRepository;
+    @Mock private NotificationRepositoryPort notificationRepository;
+    @Mock private NotificationDeliveryRepositoryPort notificationDeliveryRepository;
+    @Mock private DomainEventPublisher eventPublisher;
 
     private ReportRequestService service;
 
@@ -70,7 +70,7 @@ class ReportRequestServiceTest {
                 notificationRepository,
                 notificationDeliveryRepository,
                 new ObjectMapper(),
-                auditService
+                eventPublisher
         );
     }
 

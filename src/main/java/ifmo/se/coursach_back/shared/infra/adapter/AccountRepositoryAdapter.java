@@ -34,6 +34,26 @@ public class AccountRepositoryAdapter implements AccountRepositoryPort {
     }
 
     @Override
+    public Optional<Account> findByEmailWithRoles(String email) {
+        return jpaRepository.findByEmailWithRoles(email);
+    }
+
+    @Override
+    public Optional<Account> findByPhoneWithRoles(String phone) {
+        return jpaRepository.findByPhoneWithRoles(phone);
+    }
+
+    @Override
+    public Optional<Account> findByIdWithRoles(UUID id) {
+        return jpaRepository.findByIdWithRoles(id);
+    }
+
+    @Override
+    public Optional<Account> findByEmailIgnoreCaseOrPhoneWithRoles(String identifier) {
+        return jpaRepository.findByEmailIgnoreCaseOrPhoneWithRoles(identifier);
+    }
+
+    @Override
     public boolean existsByEmailIgnoreCase(String email) {
         return jpaRepository.existsByEmailIgnoreCase(email);
     }

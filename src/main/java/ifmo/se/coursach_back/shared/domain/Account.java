@@ -44,7 +44,7 @@ public class Account {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "account_role",
             joinColumns = @JoinColumn(name = "account_id"),

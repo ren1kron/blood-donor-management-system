@@ -41,7 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String subject = jwtService.extractSubject(token);
             UUID accountId = parseAccountId(subject);
             if (accountId != null) {
-                Account account = accountRepository.findById(accountId).orElse(null);
+                // Use EntityGraph method to load account with roles in single query
+                Account account = accountRepository.findByIdWithRoles(accountId).orElse(null);
                 if (account != null && account.isActive()) {
                     AccountPrincipal principal = AccountPrincipal.from(account);
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(

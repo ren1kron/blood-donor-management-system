@@ -19,12 +19,12 @@ import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionCreateRequest;
 import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionResponse;
 import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionUpdateRequest;
 import ifmo.se.coursach_back.nurse.api.dto.VitalsPayload;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.nurse.infra.jpa.CollectionSessionRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.VisitRepository;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,12 +33,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 class NurseWorkflowServiceTest {
-    @Mock private BookingRepository bookingRepository;
-    @Mock private VisitRepository visitRepository;
-    @Mock private MedicalCheckRepository medicalCheckRepository;
-    @Mock private DonationRepository donationRepository;
-    @Mock private CollectionSessionRepository collectionSessionRepository;
-    @Mock private StaffProfileRepository staffProfileRepository;
+    @Mock private BookingRepositoryPort bookingRepository;
+    @Mock private VisitRepositoryPort visitRepository;
+    @Mock private MedicalCheckRepositoryPort medicalCheckRepository;
+    @Mock private DonationRepositoryPort donationRepository;
+    @Mock private CollectionSessionRepositoryPort collectionSessionRepository;
+    @Mock private StaffProfileRepositoryPort staffProfileRepository;
     @Mock private AuditService auditService;
 
     private NurseWorkflowService service;

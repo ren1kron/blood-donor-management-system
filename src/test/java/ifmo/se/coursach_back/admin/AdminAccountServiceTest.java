@@ -9,14 +9,14 @@ import static org.mockito.Mockito.when;
 import ifmo.se.coursach_back.admin.api.dto.AdminAssignRolesRequest;
 import ifmo.se.coursach_back.admin.api.dto.AdminCreateAccountRequest;
 import ifmo.se.coursach_back.admin.api.dto.AdminCreateStaffProfileRequest;
-import ifmo.se.coursach_back.audit.application.AuditService;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
 import ifmo.se.coursach_back.shared.domain.Account;
 import ifmo.se.coursach_back.shared.domain.Role;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
-import ifmo.se.coursach_back.shared.infra.jpa.AccountRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.shared.infra.jpa.RoleRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
+import ifmo.se.coursach_back.shared.application.ports.AccountRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.shared.application.ports.RoleRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -27,12 +27,12 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 class AdminAccountServiceTest {
-    @Mock private AccountRepository accountRepository;
-    @Mock private RoleRepository roleRepository;
-    @Mock private StaffProfileRepository staffProfileRepository;
-    @Mock private DonorProfileRepository donorProfileRepository;
+    @Mock private AccountRepositoryPort accountRepository;
+    @Mock private RoleRepositoryPort roleRepository;
+    @Mock private StaffProfileRepositoryPort staffProfileRepository;
+    @Mock private DonorProfileRepositoryPort donorProfileRepository;
     @Mock private PasswordEncoder passwordEncoder;
-    @Mock private AuditService auditService;
+    @Mock private DomainEventPublisher eventPublisher;
 
     private AdminAccountService service;
 
@@ -45,7 +45,7 @@ class AdminAccountServiceTest {
                 staffProfileRepository,
                 donorProfileRepository,
                 passwordEncoder,
-                auditService
+                eventPublisher
         );
     }
 

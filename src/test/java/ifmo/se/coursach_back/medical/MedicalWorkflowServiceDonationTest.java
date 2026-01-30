@@ -23,20 +23,18 @@ import ifmo.se.coursach_back.nurse.domain.CollectionSessionStatus;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.audit.application.AuditService;
-import ifmo.se.coursach_back.medical.infra.jpa.AdverseReactionRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.BookingRepository;
-import ifmo.se.coursach_back.nurse.infra.jpa.CollectionSessionRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DeferralRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.DonationRepository;
-import ifmo.se.coursach_back.donor.infra.jpa.DonorProfileRepository;
-import ifmo.se.coursach_back.lab.infra.jpa.LabExaminationRequestRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.MedicalCheckRepository;
-import ifmo.se.coursach_back.notification.infra.jpa.NotificationDeliveryRepository;
-import ifmo.se.coursach_back.notification.infra.jpa.NotificationRepository;
-import ifmo.se.coursach_back.medical.infra.jpa.SampleRepository;
-import ifmo.se.coursach_back.admin.infra.jpa.StaffProfileRepository;
-import ifmo.se.coursach_back.appointment.infra.jpa.VisitRepository;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
+import ifmo.se.coursach_back.medical.application.ports.AdverseReactionRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
+import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DeferralRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
+import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
+import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
+import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,20 +45,18 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.web.server.ResponseStatusException;
 
 class MedicalWorkflowServiceDonationTest {
-    @Mock private BookingRepository bookingRepository;
-    @Mock private VisitRepository visitRepository;
-    @Mock private MedicalCheckRepository medicalCheckRepository;
-    @Mock private DeferralRepository deferralRepository;
-    @Mock private DonationRepository donationRepository;
-    @Mock private SampleRepository sampleRepository;
-    @Mock private AdverseReactionRepository adverseReactionRepository;
-    @Mock private DonorProfileRepository donorProfileRepository;
-    @Mock private StaffProfileRepository staffProfileRepository;
-    @Mock private LabExaminationRequestRepository labExaminationRequestRepository;
-    @Mock private NotificationRepository notificationRepository;
-    @Mock private NotificationDeliveryRepository notificationDeliveryRepository;
-    @Mock private CollectionSessionRepository collectionSessionRepository;
-    @Mock private AuditService auditService;
+    @Mock private BookingRepositoryPort bookingRepository;
+    @Mock private VisitRepositoryPort visitRepository;
+    @Mock private MedicalCheckRepositoryPort medicalCheckRepository;
+    @Mock private DeferralRepositoryPort deferralRepository;
+    @Mock private DonationRepositoryPort donationRepository;
+    @Mock private SampleRepositoryPort sampleRepository;
+    @Mock private AdverseReactionRepositoryPort adverseReactionRepository;
+    @Mock private DonorProfileRepositoryPort donorProfileRepository;
+    @Mock private StaffProfileRepositoryPort staffProfileRepository;
+    @Mock private LabExaminationRequestRepositoryPort labExaminationRequestRepository;
+    @Mock private CollectionSessionRepositoryPort collectionSessionRepository;
+    @Mock private DomainEventPublisher eventPublisher;
 
     private MedicalWorkflowService service;
 
@@ -78,10 +74,8 @@ class MedicalWorkflowServiceDonationTest {
                 donorProfileRepository,
                 staffProfileRepository,
                 labExaminationRequestRepository,
-                notificationRepository,
-                notificationDeliveryRepository,
                 collectionSessionRepository,
-                auditService
+                eventPublisher
         );
     }
 
