@@ -18,11 +18,23 @@ import org.springframework.stereotype.Service;
 public class JwtService {
     private final SecretKey key;
     private final long expirationMinutes;
+    private final String secretValue;
 
     public JwtService(@Value("${security.jwt.secret}") String secret,
                       @Value("${security.jwt.expiration-minutes}") long expirationMinutes) {
+        this.secretValue = secret == null ? "" : secret;
+        validateSecret();
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMinutes = expirationMinutes;
+    }
+
+    private void validateSecret() {
+        if (secretValue.isBlank()) {
+            throw new IllegalStateException("JWT secret must be provided via security.jwt.secret");
+        }
+        if (secretValue.length() < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 characters");
+        }
     }
 
     public String generateToken(Account account) {

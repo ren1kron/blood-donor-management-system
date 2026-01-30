@@ -21,6 +21,6 @@ services:
       - 'DB_URL=jdbc:postgresql://postgres:5432/blood_donation'
       - 'DB_USER=postgres'
       - 'DB_PASSWORD=postgres'
-      - 'JWT_SECRET=dev-secret-please-change-dev-secret-please-change-123456'
+      - 'SECURITY_JWT_SECRET=your-super-secret-jwt-key-that-should-be-at-least-256-bits-long'
     ports:
       - '8080:8080'
