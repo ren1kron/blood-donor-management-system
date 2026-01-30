@@ -1,50 +1,33 @@
 package ifmo.se.coursach_back.auth.infra;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Bucket4j;
+import io.github.bucket4j.Refill;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AuthRateLimiter {
-    private static final Duration LOGIN_WINDOW = Duration.ofMinutes(1);
-    private static final int LOGIN_LIMIT = 10;
-    private static final Duration REGISTER_WINDOW = Duration.ofMinutes(5);
-    private static final int REGISTER_LIMIT = 5;
+    private static final Bandwidth LOGIN_LIMIT = Bandwidth.classic(
+            5, Refill.intervally(5, Duration.ofMinutes(1)));
+    private static final Bandwidth REGISTER_LIMIT = Bandwidth.classic(
+            3, Refill.intervally(3, Duration.ofMinutes(1)));
 
-    private final Map<String, Window> windows = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> loginBuckets = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> registerBuckets = new ConcurrentHashMap<>();
 
     public boolean allowLogin(String clientKey) {
-        return allow("login:" + clientKey, LOGIN_LIMIT, LOGIN_WINDOW);
+        return resolveBucket(loginBuckets, clientKey, LOGIN_LIMIT).tryConsume(1);
     }
 
     public boolean allowRegister(String clientKey) {
-        return allow("register:" + clientKey, REGISTER_LIMIT, REGISTER_WINDOW);
+        return resolveBucket(registerBuckets, clientKey, REGISTER_LIMIT).tryConsume(1);
     }
 
-    private boolean allow(String key, int limit, Duration window) {
-        Instant now = Instant.now();
-        Window state = windows.compute(key, (k, existing) -> {
-            if (existing == null || existing.windowStart.plus(window).isBefore(now)) {
-                return new Window(now, 1);
-            }
-            if (existing.count < limit) {
-                existing.count += 1;
-            }
-            return existing;
-        });
-
-        return state.count <= limit;
-    }
-
-    private static final class Window {
-        private final Instant windowStart;
-        private int count;
-
-        private Window(Instant windowStart, int count) {
-            this.windowStart = windowStart;
-            this.count = count;
-        }
+    private Bucket resolveBucket(Map<String, Bucket> buckets, String key, Bandwidth limit) {
+        return buckets.computeIfAbsent(key, k -> Bucket4j.builder().addLimit(limit).build());
     }
 }

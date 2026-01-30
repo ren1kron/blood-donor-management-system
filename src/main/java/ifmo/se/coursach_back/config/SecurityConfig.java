@@ -1,5 +1,6 @@
 package ifmo.se.coursach_back.config;
 
+import ifmo.se.coursach_back.auth.infra.AuthRateLimitFilter;
 import ifmo.se.coursach_back.security.AccountUserDetailsService;
 import ifmo.se.coursach_back.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
 
     @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
     private String corsAllowedOrigins;
@@ -53,6 +55,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
 
+        http.addFilterBefore(authRateLimitFilter, JwtAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

@@ -11,9 +11,7 @@ import ifmo.se.coursach_back.auth.application.result.ProfileResult;
 import ifmo.se.coursach_back.auth.application.usecase.GetCurrentProfileUseCase;
 import ifmo.se.coursach_back.auth.application.usecase.LoginUserUseCase;
 import ifmo.se.coursach_back.auth.application.usecase.RegisterUserUseCase;
-import ifmo.se.coursach_back.auth.infra.AuthRateLimiter;
 import ifmo.se.coursach_back.security.AccountPrincipal;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -33,15 +30,9 @@ public class AuthController {
     private final RegisterUserUseCase registerUserUseCase;
     private final LoginUserUseCase loginUserUseCase;
     private final GetCurrentProfileUseCase getCurrentProfileUseCase;
-    private final AuthRateLimiter authRateLimiter;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(HttpServletRequest httpRequest,
-                                                 @Valid @RequestBody RegisterRequest request) {
-        String clientKey = resolveClientKey(httpRequest);
-        if (!authRateLimiter.allowRegister(clientKey)) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many registration attempts");
-        }
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         RegisterUserCommand command = new RegisterUserCommand(
                 request.email(), request.phone(), request.password(),
                 request.fullName(), request.birthDate(), request.bloodGroup(), request.rhFactor()
@@ -52,12 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public AuthResponse login(HttpServletRequest httpRequest,
-                              @Valid @RequestBody LoginRequest request) {
-        String clientKey = resolveClientKey(httpRequest);
-        if (!authRateLimiter.allowLogin(clientKey)) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts");
-        }
+    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         LoginUserCommand command = new LoginUserCommand(request.identifier(), request.password());
         AuthResult result = loginUserUseCase.execute(command);
         return new AuthResponse(result.token(), result.accountId(), result.roles());
@@ -72,11 +58,4 @@ public class AuthController {
         );
     }
 
-    private String resolveClientKey(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
-    }
 }
