@@ -22,7 +22,7 @@ public class PublishDonationService implements PublishDonationUseCase {
         return new DonationResult(
                 donation.getId(),
                 donation.getVisit().getId(),
-                donation.getDonationType(),
+                donation.getDonationType() != null ? donation.getDonationType().getValue() : null,
                 donation.getVolumeMl(),
                 donation.isPublished(),
                 donation.getPerformedAt(),

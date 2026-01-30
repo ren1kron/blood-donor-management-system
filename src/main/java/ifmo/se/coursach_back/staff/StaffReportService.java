@@ -70,8 +70,8 @@ public class StaffReportService {
         return new StaffDonorSummary(
                 donor.getId(),
                 donor.getFullName(),
-                donor.getBloodGroup(),
-                donor.getRhFactor(),
+                donor.getBloodGroup() != null ? donor.getBloodGroup().getDisplayValue() : null,
+                donor.getRhFactor() != null ? donor.getRhFactor().getDisplayValue() : null,
                 donor.getDonorStatus(),
                 donor.getAccount().getEmail(),
                 donor.getAccount().getPhone(),
@@ -110,7 +110,7 @@ public class StaffReportService {
                 .map(d -> new StaffDonorReport.DonationRecord(
                         d.getId(),
                         d.getPerformedAt(),
-                        d.getDonationType(),
+                        d.getDonationType() != null ? d.getDonationType().getValue() : null,
                         d.getVolumeMl(),
                         d.isPublished()
                 ))
@@ -135,8 +135,8 @@ public class StaffReportService {
                 donor.getId(),
                 donor.getFullName(),
                 donor.getBirthDate(),
-                donor.getBloodGroup(),
-                donor.getRhFactor(),
+                donor.getBloodGroup() != null ? donor.getBloodGroup().getDisplayValue() : null,
+                donor.getRhFactor() != null ? donor.getRhFactor().getDisplayValue() : null,
                 donor.getDonorStatus(),
                 donor.getAccount().getEmail(),
                 donor.getAccount().getPhone(),

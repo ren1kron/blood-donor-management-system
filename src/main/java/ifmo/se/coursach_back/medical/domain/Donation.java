@@ -4,6 +4,8 @@ import ifmo.se.coursach_back.appointment.domain.Visit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,7 +37,8 @@ public class Donation {
     private Visit visit;
 
     @Column(name = "donation_type", nullable = false)
-    private String donationType;
+    @Enumerated(EnumType.STRING)
+    private DonationType donationType;
 
     @Column(name = "volume_ml")
     private Integer volumeMl;

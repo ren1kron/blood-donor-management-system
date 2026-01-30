@@ -6,6 +6,9 @@ import ifmo.se.coursach_back.donor.api.dto.DonationHistoryResponse;
 import ifmo.se.coursach_back.donor.api.dto.DonorProfileResponse;
 import ifmo.se.coursach_back.donor.api.dto.EligibilityResponse;
 import ifmo.se.coursach_back.donor.api.dto.UpdateDonorProfileRequest;
+import ifmo.se.coursach_back.donor.domain.BloodGroup;
+import ifmo.se.coursach_back.donor.domain.ConsentType;
+import ifmo.se.coursach_back.donor.domain.RhFactor;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
@@ -35,7 +38,6 @@ import ifmo.se.coursach_back.lab.application.ports.LabTestResultRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
 import ifmo.se.coursach_back.notification.application.ports.NotificationDeliveryRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
-import ifmo.se.coursach_back.shared.util.BloodGroupNormalizer;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -69,8 +71,8 @@ public class DonorService {
                 donor.getId(),
                 donor.getFullName(),
                 donor.getBirthDate(),
-                donor.getBloodGroup(),
-                donor.getRhFactor(),
+                donor.getBloodGroup() != null ? donor.getBloodGroup().getDisplayValue() : null,
+                donor.getRhFactor() != null ? donor.getRhFactor().getDisplayValue() : null,
                 donor.getDonorStatus(),
                 account.getEmail(),
                 account.getPhone()
@@ -90,10 +92,10 @@ public class DonorService {
             donor.setBirthDate(request.birthDate());
         }
         if (request.bloodGroup() != null) {
-            donor.setBloodGroup(BloodGroupNormalizer.normalizeNullable(request.bloodGroup()));
+            donor.setBloodGroup(BloodGroup.fromStringOrNull(request.bloodGroup()));
         }
         if (request.rhFactor() != null) {
-            donor.setRhFactor(normalizeNullable(request.rhFactor()));
+            donor.setRhFactor(RhFactor.fromStringOrNull(request.rhFactor()));
         }
 
         if (request.email() != null) {
@@ -128,7 +130,7 @@ public class DonorService {
         Consent consent = new Consent();
         consent.setVisit(visit);
         consent.setDonor(donor);
-        consent.setConsentType(normalizeRequired(request.consentType(), "consentType"));
+        consent.setConsentType(ConsentType.fromString(request.consentType()));
         return consentRepository.save(consent);
     }
 

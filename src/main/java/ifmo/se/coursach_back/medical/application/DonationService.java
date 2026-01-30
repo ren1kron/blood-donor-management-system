@@ -13,6 +13,8 @@ import ifmo.se.coursach_back.appointment.domain.BookingStatus;
 import ifmo.se.coursach_back.nurse.domain.CollectionSession;
 import ifmo.se.coursach_back.nurse.domain.CollectionSessionStatus;
 import ifmo.se.coursach_back.medical.domain.Donation;
+import ifmo.se.coursach_back.medical.domain.DonationType;
+import ifmo.se.coursach_back.medical.domain.ReactionSeverity;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
@@ -125,13 +127,13 @@ public class DonationService {
         reaction.setDonation(donation);
         reaction.setReportedBy(staff);
         reaction.setOccurredAt(request.occurredAt());
-        reaction.setSeverity(request.severity());
+        reaction.setSeverity(ReactionSeverity.fromString(request.severity()));
         reaction.setDescription(request.description());
 
         AdverseReaction saved = adverseReactionRepository.save(reaction);
 
         eventPublisher.publish(AuditDomainEvent.of(accountId, "ADVERSE_REACTION_REGISTERED", "AdverseReaction", saved.getId(),
-                Map.of("donationId", donation.getId(), "severity", request.severity())));
+                Map.of("donationId", donation.getId(), "severity", request.severity() != null ? request.severity() : "")));
 
         log.warn("Adverse reaction registered: reactionId={}, donationId={}, severity={}",
                 saved.getId(), donation.getId(), request.severity());
@@ -173,7 +175,7 @@ public class DonationService {
     private Donation createDonation(Visit visit, StaffProfile staff, DonationRequest request) {
         Donation donation = new Donation();
         donation.setVisit(visit);
-        donation.setDonationType(request.donationType());
+        donation.setDonationType(DonationType.fromString(request.donationType()));
         donation.setVolumeMl(request.volumeMl());
         donation.setPerformedBy(staff);
 

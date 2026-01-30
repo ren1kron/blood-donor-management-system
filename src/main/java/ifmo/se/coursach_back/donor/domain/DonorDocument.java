@@ -34,7 +34,8 @@ public class DonorDocument {
     private DonorProfile donor;
 
     @Column(name = "doc_type", nullable = false)
-    private String docType;
+    @Enumerated(EnumType.STRING)
+    private DocumentType docType;
 
     @Column(name = "issued_at")
     private LocalDate issuedAt;

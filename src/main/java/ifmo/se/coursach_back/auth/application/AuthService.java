@@ -17,7 +17,8 @@ import ifmo.se.coursach_back.shared.application.ports.RoleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import ifmo.se.coursach_back.security.JwtService;
-import ifmo.se.coursach_back.shared.util.BloodGroupNormalizer;
+import ifmo.se.coursach_back.donor.domain.BloodGroup;
+import ifmo.se.coursach_back.donor.domain.RhFactor;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -64,8 +65,8 @@ public class AuthService {
         profile.setAccount(savedAccount);
         profile.setFullName(request.fullName());
         profile.setBirthDate(request.birthDate());
-        profile.setBloodGroup(BloodGroupNormalizer.normalizeNullable(request.bloodGroup()));
-        profile.setRhFactor(normalize(request.rhFactor()));
+        profile.setBloodGroup(BloodGroup.fromStringOrNull(request.bloodGroup()));
+        profile.setRhFactor(RhFactor.fromStringOrNull(request.rhFactor()));
         donorProfileRepository.save(profile);
 
         return buildAuthResponse(savedAccount);

@@ -13,6 +13,7 @@ import ifmo.se.coursach_back.appointment.domain.AppointmentSlot;
 import ifmo.se.coursach_back.appointment.domain.Booking;
 import ifmo.se.coursach_back.appointment.domain.BookingStatus;
 import ifmo.se.coursach_back.donor.domain.Consent;
+import ifmo.se.coursach_back.donor.domain.ConsentType;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.medical.domain.Questionnaire;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
@@ -127,7 +128,7 @@ public class ExaminationService {
         Consent consent = new Consent();
         consent.setVisit(savedVisit);
         consent.setDonor(donor);
-        consent.setConsentType(request.consentType());
+        consent.setConsentType(ConsentType.fromString(request.consentType()));
         consent.setGivenAt(now);
         consentRepository.save(consent);
         

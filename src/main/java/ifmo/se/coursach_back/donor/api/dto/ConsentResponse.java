@@ -16,7 +16,7 @@ public record ConsentResponse(
                 consent.getId(),
                 consent.getVisit().getId(),
                 consent.getDonor().getId(),
-                consent.getConsentType(),
+                consent.getConsentType() != null ? consent.getConsentType().getValue() : null,
                 consent.getGivenAt()
         );
     }

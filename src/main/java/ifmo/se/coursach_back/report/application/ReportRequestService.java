@@ -348,7 +348,7 @@ public class ReportRequestService {
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("id", donation.getId());
                     item.put("performedAt", donation.getPerformedAt());
-                    item.put("donationType", donation.getDonationType());
+                    item.put("donationType", donation.getDonationType() != null ? donation.getDonationType().getValue() : null);
                     item.put("volumeMl", donation.getVolumeMl());
                     item.put("published", donation.isPublished());
                     return item;

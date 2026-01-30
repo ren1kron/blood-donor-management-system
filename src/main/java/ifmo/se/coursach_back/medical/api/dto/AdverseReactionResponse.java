@@ -16,7 +16,7 @@ public record AdverseReactionResponse(
                 reaction.getId(),
                 reaction.getDonation().getId(),
                 reaction.getOccurredAt(),
-                reaction.getSeverity(),
+                reaction.getSeverity() != null ? reaction.getSeverity().getValue() : null,
                 reaction.getDescription()
         );
     }

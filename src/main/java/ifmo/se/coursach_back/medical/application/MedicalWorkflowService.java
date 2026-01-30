@@ -15,6 +15,8 @@ import ifmo.se.coursach_back.nurse.domain.CollectionSessionStatus;
 import ifmo.se.coursach_back.medical.domain.Deferral;
 import ifmo.se.coursach_back.medical.domain.DeferralType;
 import ifmo.se.coursach_back.medical.domain.Donation;
+import ifmo.se.coursach_back.medical.domain.DonationType;
+import ifmo.se.coursach_back.medical.domain.ReactionSeverity;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
@@ -381,7 +383,7 @@ public class MedicalWorkflowService {
 
         Donation donation = new Donation();
         donation.setVisit(visit);
-        donation.setDonationType(request.donationType());
+        donation.setDonationType(DonationType.fromString(request.donationType()));
         donation.setVolumeMl(request.volumeMl());
         donation.setPerformedBy(staff);
         if (request.performedAt() != null) {
@@ -457,7 +459,7 @@ public class MedicalWorkflowService {
         reaction.setDonation(donation);
         reaction.setReportedBy(staff);
         reaction.setOccurredAt(request.occurredAt());
-        reaction.setSeverity(request.severity());
+        reaction.setSeverity(ReactionSeverity.fromString(request.severity()));
         reaction.setDescription(request.description());
         return adverseReactionRepository.save(reaction);
     }

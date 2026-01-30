@@ -25,7 +25,7 @@ public record DonationHistoryResponse(
                 donation.getId(),
                 donation.getVisit().getId(),
                 donation.getPerformedAt(),
-                donation.getDonationType(),
+                donation.getDonationType() != null ? donation.getDonationType().getValue() : null,
                 donation.getVolumeMl(),
                 donation.getPublishedAt(),
                 preVitals,

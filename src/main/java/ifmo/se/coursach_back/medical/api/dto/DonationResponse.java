@@ -22,7 +22,7 @@ public record DonationResponse(
                 donation.getVisit().getId(),
                 booking.getId(),
                 booking.getDonor().getId(),
-                donation.getDonationType(),
+                donation.getDonationType() != null ? donation.getDonationType().getValue() : null,
                 donation.getVolumeMl(),
                 donation.getPerformedAt(),
                 donation.isPublished(),

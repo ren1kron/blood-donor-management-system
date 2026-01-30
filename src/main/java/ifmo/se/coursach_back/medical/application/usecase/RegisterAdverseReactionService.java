@@ -30,7 +30,7 @@ public class RegisterAdverseReactionService implements RegisterAdverseReactionUs
         return new ReactionResult(
                 reaction.getId(),
                 reaction.getDonation().getId(),
-                reaction.getSeverity(),
+                reaction.getSeverity() != null ? reaction.getSeverity().getValue() : null,
                 reaction.getDescription(),
                 reaction.getOccurredAt()
         );

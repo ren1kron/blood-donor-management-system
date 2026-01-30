@@ -39,10 +39,12 @@ public class DonorProfile {
     private LocalDate birthDate;
 
     @Column(name = "blood_group")
-    private String bloodGroup;
+    @Enumerated(EnumType.STRING)
+    private BloodGroup bloodGroup;
 
     @Column(name = "rh_factor")
-    private String rhFactor;
+    @Enumerated(EnumType.STRING)
+    private RhFactor rhFactor;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "donor_status", nullable = false)

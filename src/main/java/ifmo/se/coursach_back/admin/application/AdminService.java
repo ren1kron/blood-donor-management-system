@@ -38,7 +38,8 @@ import ifmo.se.coursach_back.notification.application.ports.NotificationReposito
 import ifmo.se.coursach_back.shared.application.ports.RoleRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
-import ifmo.se.coursach_back.shared.util.BloodGroupNormalizer;
+import ifmo.se.coursach_back.donor.domain.BloodGroup;
+import ifmo.se.coursach_back.donor.domain.RhFactor;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -101,8 +102,8 @@ public class AdminService {
         profile.setAccount(savedAccount);
         profile.setFullName(request.fullName());
         profile.setBirthDate(request.birthDate());
-        profile.setBloodGroup(BloodGroupNormalizer.normalizeNullable(request.bloodGroup()));
-        profile.setRhFactor(normalize(request.rhFactor()));
+        profile.setBloodGroup(BloodGroup.fromStringOrNull(request.bloodGroup()));
+        profile.setRhFactor(RhFactor.fromStringOrNull(request.rhFactor()));
         DonorProfile savedProfile = donorProfileRepository.save(profile);
 
         return new AdminRegisterDonorResponse(savedAccount.getId(), savedProfile.getId(), request.password());
@@ -137,7 +138,7 @@ public class AdminService {
                         row.fullName(),
                         row.phone(),
                         row.email(),
-                        row.docType(),
+                        row.docType() != null ? row.docType().getValue() : null,
                         row.expiresAt()
                 ))
                 .toList();
@@ -170,7 +171,9 @@ public class AdminService {
         DonorProfile donor = document.getDonor();
         String body = normalize(request != null ? request.body() : null);
         if (body == null) {
-            body = "Your document %s is expired. Please update your information.".formatted(document.getDocType());
+            body = "Your document %s is expired. Please update your information.".formatted(
+                    document.getDocType() != null ? document.getDocType().getValue() : "UNKNOWN"
+            );
         }
         return createNotification(accountId, donor, TOPIC_EXPIRED_DOCS, request, body);
     }

@@ -3,6 +3,8 @@ import ifmo.se.coursach_back.admin.domain.StaffProfile;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,7 +42,8 @@ public class AdverseReaction {
     private OffsetDateTime occurredAt;
 
     @Column
-    private String severity;
+    @Enumerated(EnumType.STRING)
+    private ReactionSeverity severity;
 
     @Column
     private String description;
