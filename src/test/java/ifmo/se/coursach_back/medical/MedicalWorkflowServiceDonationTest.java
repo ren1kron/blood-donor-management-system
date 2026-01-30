@@ -14,7 +14,9 @@ import ifmo.se.coursach_back.model.AppointmentSlot;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
+import ifmo.se.coursach_back.model.DonorStatus;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import ifmo.se.coursach_back.model.CollectionSession;
 import ifmo.se.coursach_back.model.CollectionSessionStatus;
 import ifmo.se.coursach_back.model.SlotPurpose;
@@ -89,7 +91,7 @@ class MedicalWorkflowServiceDonationTest {
 
         DonorProfile donor = new DonorProfile();
         donor.setId(UUID.randomUUID());
-        donor.setDonorStatus("POTENTIAL");
+        donor.setDonorStatus(DonorStatus.POTENTIAL);
 
         AppointmentSlot slot = new AppointmentSlot();
         slot.setPurpose(SlotPurpose.DONATION);
@@ -106,7 +108,7 @@ class MedicalWorkflowServiceDonationTest {
         doctor.setId(UUID.randomUUID());
 
         MedicalCheck check = new MedicalCheck();
-        check.setDecision("ADMITTED");
+        check.setDecision(MedicalCheckDecision.ADMITTED);
         check.setDecisionAt(OffsetDateTime.now());
 
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
@@ -124,7 +126,7 @@ class MedicalWorkflowServiceDonationTest {
 
         assertTrue(saved.isPublished());
         assertNotNull(saved.getPublishedAt());
-        verify(donorProfileRepository).save(argThat(p -> "ACTIVE".equalsIgnoreCase(p.getDonorStatus())));
+        verify(donorProfileRepository).save(argThat(p -> p.getDonorStatus() == DonorStatus.ACTIVE));
     }
 
     @Test
@@ -146,7 +148,7 @@ class MedicalWorkflowServiceDonationTest {
 
         StaffProfile doctor = new StaffProfile();
         MedicalCheck check = new MedicalCheck();
-        check.setDecision("ADMITTED");
+        check.setDecision(MedicalCheckDecision.ADMITTED);
 
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
@@ -182,7 +184,7 @@ class MedicalWorkflowServiceDonationTest {
 
         StaffProfile doctor = new StaffProfile();
         MedicalCheck check = new MedicalCheck();
-        check.setDecision("ADMITTED");
+        check.setDecision(MedicalCheckDecision.ADMITTED);
 
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));

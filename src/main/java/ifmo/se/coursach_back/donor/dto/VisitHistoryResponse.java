@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.donor.dto;
 
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -9,7 +10,7 @@ public record VisitHistoryResponse(
         UUID visitId,
         UUID bookingId,
         OffsetDateTime visitDate,
-        String medicalDecision,
+        MedicalCheckDecision medicalDecision,
         OffsetDateTime decisionAt,
         BigDecimal hemoglobinGl,
         BigDecimal hematocritPct,

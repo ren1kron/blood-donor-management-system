@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,8 +39,9 @@ public class Sample {
     @Column(name = "collected_at", nullable = false)
     private OffsetDateTime collectedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private SampleStatus status;
 
     @Column(name = "quarantine_reason")
     private String quarantineReason;
@@ -52,7 +55,7 @@ public class Sample {
             collectedAt = OffsetDateTime.now();
         }
         if (status == null) {
-            status = "NEW";
+            status = SampleStatus.NEW;
         }
     }
 }

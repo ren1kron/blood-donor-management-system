@@ -3,6 +3,7 @@ package ifmo.se.coursach_back.medical.dto;
 import ifmo.se.coursach_back.model.Booking;
 import ifmo.se.coursach_back.model.Deferral;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -11,7 +12,7 @@ public record MedicalCheckResponse(
         UUID visitId,
         UUID bookingId,
         UUID donorId,
-        String decision,
+        MedicalCheckDecision decision,
         OffsetDateTime decisionAt,
         UUID deferralId
 ) {

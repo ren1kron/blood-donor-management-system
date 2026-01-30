@@ -8,6 +8,7 @@ import ifmo.se.coursach_back.donor.dto.DonorBookingResponse;
 import ifmo.se.coursach_back.donor.dto.RescheduleRequest;
 import ifmo.se.coursach_back.model.AppointmentSlot;
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
@@ -38,7 +39,7 @@ public class AppointmentController {
     public List<AppointmentSlotResponse> listSlots(@RequestParam(value = "from", required = false)
                                                    OffsetDateTime from,
                                                    @RequestParam(value = "purpose", required = false)
-                                                   String purpose) {
+                                                   SlotPurpose purpose) {
         OffsetDateTime start = from == null ? OffsetDateTime.now() : from;
         return appointmentService.listUpcomingSlots(start, purpose).stream()
                 .map(slot -> AppointmentSlotResponse.from(slot, appointmentService.getSlotBookedCount(slot.getId())))

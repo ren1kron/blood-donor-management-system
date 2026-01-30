@@ -41,15 +41,14 @@ public class ExaminationService {
     private final VisitRepository visitRepository;
     private final ConsentRepository consentRepository;
     private final QuestionnaireRepository questionnaireRepository;
-    
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     
     public List<ExaminationSlotResponse> listAvailableSlots(OffsetDateTime from, OffsetDateTime to) {
         OffsetDateTime start = from != null ? from : OffsetDateTime.now();
         OffsetDateTime end = to != null ? to : start.plusDays(30);
         
         List<AppointmentSlot> slots = slotRepository
-                .findByPurposeIgnoreCaseAndStartAtBetweenOrderByStartAtAsc(SlotPurpose.EXAMINATION, start, end);
+                .findByPurposeAndStartAtBetweenOrderByStartAtAsc(SlotPurpose.EXAMINATION, start, end);
         
         return slots.stream()
                 .map(slot -> {
@@ -66,7 +65,7 @@ public class ExaminationService {
         AppointmentSlot slot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new NotFoundException("Slot not found"));
         
-        if (!SlotPurpose.EXAMINATION.equalsIgnoreCase(slot.getPurpose())) {
+        if (slot.getPurpose() != SlotPurpose.EXAMINATION) {
             throw new BadRequestException("Slot is not for examination");
         }
         

@@ -6,6 +6,7 @@ import ifmo.se.coursach_back.model.LabExaminationStatus;
 import ifmo.se.coursach_back.model.LabTestResult;
 import ifmo.se.coursach_back.model.LabTestType;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import ifmo.se.coursach_back.model.Sample;
 import ifmo.se.coursach_back.model.StaffProfile;
 import ifmo.se.coursach_back.repository.LabExaminationRequestRepository;
@@ -129,8 +130,8 @@ public class LabWorkflowService {
         check.setHemoglobinGl(request.hemoglobinGl());
         check.setHematocritPct(request.hematocritPct());
         check.setRbc10e12L(request.rbc10e12L());
-        check.setStatus("PENDING_REVIEW");
-        check.setDecision("PENDING_REVIEW");
+        check.setStatus(MedicalCheckDecision.PENDING_REVIEW);
+        check.setDecision(MedicalCheckDecision.PENDING_REVIEW);
         check.setDecisionAt(OffsetDateTime.now());
         
         medicalCheckRepository.save(check);

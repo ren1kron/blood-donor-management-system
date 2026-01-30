@@ -1,10 +1,14 @@
 package ifmo.se.coursach_back.medical.dto;
 
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.BookingStatus;
 import ifmo.se.coursach_back.model.CollectionSession;
 import ifmo.se.coursach_back.model.CollectionSessionStatus;
 import ifmo.se.coursach_back.model.Donation;
+import ifmo.se.coursach_back.model.DonorStatus;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
+import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.model.Visit;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -14,20 +18,20 @@ public record ScheduledDonorResponse(
         UUID visitId,
         UUID donorId,
         String donorFullName,
-        String donorStatus,
+        DonorStatus donorStatus,
         UUID slotId,
-        String purpose,
+        SlotPurpose purpose,
         OffsetDateTime startAt,
         OffsetDateTime endAt,
         String location,
-        String bookingStatus,
-        String medicalDecision,
+        BookingStatus bookingStatus,
+        MedicalCheckDecision medicalDecision,
         boolean hasDonation,
         boolean canDonate,
         UUID donationId,
         boolean donationPublished,
         UUID collectionSessionId,
-        String collectionSessionStatus,
+        CollectionSessionStatus collectionSessionStatus,
         OffsetDateTime collectionSessionStartedAt,
         OffsetDateTime collectionSessionEndedAt,
         String collectionSessionNurseName,
@@ -39,12 +43,12 @@ public record ScheduledDonorResponse(
 ) {
     public static ScheduledDonorResponse from(Booking booking, Visit visit, MedicalCheck check, Donation donation,
                                               CollectionSession session) {
-        String decision = check != null ? check.getDecision() : null;
+        MedicalCheckDecision decision = check != null ? check.getDecision() : null;
         boolean hasDonation = donation != null;
         boolean hasSession = session != null;
-        String sessionStatus = session != null ? session.getStatus() : null;
-        boolean sessionAllows = hasSession && !CollectionSessionStatus.ABORTED.equalsIgnoreCase(sessionStatus);
-        boolean canDonate = "ADMITTED".equals(decision) && !hasDonation && sessionAllows;
+        CollectionSessionStatus sessionStatus = session != null ? session.getStatus() : null;
+        boolean sessionAllows = hasSession && sessionStatus != CollectionSessionStatus.ABORTED;
+        boolean canDonate = decision == MedicalCheckDecision.ADMITTED && !hasDonation && sessionAllows;
         
         return new ScheduledDonorResponse(
                 booking.getId(),

@@ -69,7 +69,7 @@ public class MedicalWorkflowController {
                 .map(booking -> {
                     Visit visit = visitsByBooking.get(booking.getId());
                     MedicalCheck check = visit != null ? checksByVisit.get(visit.getId()) : null;
-                    if (check == null && SlotPurpose.DONATION.equalsIgnoreCase(booking.getSlot().getPurpose())) {
+                    if (check == null && booking.getSlot().getPurpose() == SlotPurpose.DONATION) {
                         check = medicalWorkflowService.findLatestCheckByDonor(booking.getDonor().getId());
                     }
                     Donation donation = visit != null ? donationsByVisit.get(visit.getId()) : null;

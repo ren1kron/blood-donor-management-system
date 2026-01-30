@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.repository;
 
 import ifmo.se.coursach_back.model.LabExaminationRequest;
+import ifmo.se.coursach_back.model.LabExaminationStatus;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,7 +12,7 @@ public interface LabExaminationRequestRepository extends JpaRepository<LabExamin
 
     List<LabExaminationRequest> findByVisit_IdIn(List<UUID> visitIds);
 
-    List<LabExaminationRequest> findByStatusInOrderByRequestedAtAsc(List<String> statuses);
+    List<LabExaminationRequest> findByStatusInOrderByRequestedAtAsc(List<LabExaminationStatus> statuses);
 
-    long countByStatusIn(List<String> statuses);
+    long countByStatusIn(List<LabExaminationStatus> statuses);
 }

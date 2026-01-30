@@ -1,5 +1,6 @@
 package ifmo.se.coursach_back.donor.dto;
 
+import ifmo.se.coursach_back.model.DonorStatus;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -10,7 +11,7 @@ public record DonorProfileResponse(
         LocalDate birthDate,
         String bloodGroup,
         String rhFactor,
-        String donorStatus,
+        DonorStatus donorStatus,
         String email,
         String phone
 ) {

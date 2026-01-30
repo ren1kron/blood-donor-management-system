@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -41,13 +43,14 @@ public class DonorProfile {
     @Column(name = "rh_factor")
     private String rhFactor;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "donor_status", nullable = false)
-    private String donorStatus;
+    private DonorStatus donorStatus;
 
     @PrePersist
     public void prePersist() {
         if (donorStatus == null) {
-            donorStatus = "POTENTIAL";
+            donorStatus = DonorStatus.POTENTIAL;
         }
     }
 }

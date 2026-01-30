@@ -1,5 +1,8 @@
 package ifmo.se.coursach_back.report.dto;
 
+import ifmo.se.coursach_back.model.ReportType;
+import ifmo.se.coursach_back.model.ReportRequestStatus;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -7,8 +10,8 @@ public record ReportRequestDetailsResponse(
         UUID id,
         UUID donorId,
         String donorName,
-        String reportType,
-        String status,
+        ReportType reportType,
+        ReportRequestStatus status,
         String requestedByName,
         String requestedByRole,
         String assignedAdminName,

@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.repository;
 
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -14,17 +15,18 @@ public interface MedicalCheckRepository extends JpaRepository<MedicalCheck, UUID
     
     List<MedicalCheck> findByVisit_IdIn(List<UUID> visitIds);
     
-    List<MedicalCheck> findByStatusOrderBySubmittedAtAsc(String status);
+    List<MedicalCheck> findByStatusOrderBySubmittedAtAsc(MedicalCheckDecision status);
 
-    long countByStatus(String status);
+    long countByStatus(MedicalCheckDecision status);
     
     @Query("SELECT mc FROM MedicalCheck mc " +
            "WHERE mc.visit.booking.donor.id = :donorId " +
-           "AND mc.decision = 'ADMITTED' " +
+           "AND mc.decision = :decision " +
            "AND mc.decisionAt >= :since " +
            "ORDER BY mc.decisionAt DESC")
     List<MedicalCheck> findValidAdmittedChecksByDonorId(
-            @Param("donorId") UUID donorId, 
+            @Param("donorId") UUID donorId,
+            @Param("decision") MedicalCheckDecision decision,
             @Param("since") OffsetDateTime since);
 
     Optional<MedicalCheck> findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(UUID donorId);

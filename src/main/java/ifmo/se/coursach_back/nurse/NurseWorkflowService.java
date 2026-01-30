@@ -51,7 +51,7 @@ public class NurseWorkflowService {
 
     public List<ScheduledDonorResponse> listDonationQueue(OffsetDateTime from) {
         OffsetDateTime start = from == null ? OffsetDateTime.now().minusHours(2) : from;
-        List<Booking> bookings = bookingRepository.findByStatusInAndSlot_PurposeIgnoreCaseAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        List<Booking> bookings = bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
                 List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED),
                 SlotPurpose.DONATION,
                 start);
@@ -84,7 +84,7 @@ public class NurseWorkflowService {
         StaffProfile nurse = requireStaff(accountId);
         Visit visit = resolveVisit(request.visitId(), request.bookingId());
         Booking booking = visit.getBooking();
-        if (!SlotPurpose.DONATION.equalsIgnoreCase(booking.getSlot().getPurpose())) {
+        if (booking.getSlot().getPurpose() != SlotPurpose.DONATION) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Visit is not for donation");
         }
 
@@ -111,10 +111,10 @@ public class NurseWorkflowService {
         StaffProfile nurse = requireStaff(accountId);
         CollectionSession session = collectionSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new NotFoundException("Collection session not found"));
-        if (CollectionSessionStatus.COMPLETED.equalsIgnoreCase(session.getStatus())) {
+        if (session.getStatus() == CollectionSessionStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Session already completed");
         }
-        if (CollectionSessionStatus.ABORTED.equalsIgnoreCase(session.getStatus())) {
+        if (session.getStatus() == CollectionSessionStatus.ABORTED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Session is aborted");
         }
         session.setNurse(nurse);
@@ -133,10 +133,10 @@ public class NurseWorkflowService {
         StaffProfile nurse = requireStaff(accountId);
         CollectionSession session = collectionSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new NotFoundException("Collection session not found"));
-        if (CollectionSessionStatus.COMPLETED.equalsIgnoreCase(session.getStatus())) {
+        if (session.getStatus() == CollectionSessionStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Session already completed");
         }
-        if (CollectionSessionStatus.ABORTED.equalsIgnoreCase(session.getStatus())) {
+        if (session.getStatus() == CollectionSessionStatus.ABORTED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Session is aborted");
         }
         session.setNurse(nurse);
@@ -157,7 +157,7 @@ public class NurseWorkflowService {
         StaffProfile nurse = requireStaff(accountId);
         CollectionSession session = collectionSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new NotFoundException("Collection session not found"));
-        if (CollectionSessionStatus.COMPLETED.equalsIgnoreCase(session.getStatus())) {
+        if (session.getStatus() == CollectionSessionStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Session already completed");
         }
         session.setNurse(nurse);

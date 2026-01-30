@@ -15,8 +15,12 @@ import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.model.Account;
+import ifmo.se.coursach_back.model.DeliveryStatus;
+import ifmo.se.coursach_back.model.DocumentStatus;
 import ifmo.se.coursach_back.model.DonorDocument;
 import ifmo.se.coursach_back.model.DonorProfile;
+import ifmo.se.coursach_back.model.LabExaminationStatus;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import ifmo.se.coursach_back.model.Notification;
 import ifmo.se.coursach_back.model.NotificationDelivery;
 import ifmo.se.coursach_back.model.Role;
@@ -156,9 +160,8 @@ public class AdminService {
                 .orElseThrow(() -> new NotFoundException("Document not found"));
 
         if (document.getExpiresAt() != null && document.getExpiresAt().isBefore(LocalDate.now())) {
-            String currentStatus = normalize(document.getStatus());
-            if (currentStatus == null || !"EXPIRED".equalsIgnoreCase(currentStatus)) {
-                document.setStatus("EXPIRED");
+            if (document.getStatus() != DocumentStatus.EXPIRED) {
+                document.setStatus(DocumentStatus.EXPIRED);
                 donorDocumentRepository.save(document);
             }
         }
@@ -190,7 +193,7 @@ public class AdminService {
         delivery.setNotification(savedNotification);
         delivery.setDonor(donor);
         delivery.setStaff(staff);
-        delivery.setStatus("SENT");
+        delivery.setStatus(DeliveryStatus.SENT);
         OffsetDateTime sentAt = OffsetDateTime.now();
         delivery.setSentAt(sentAt);
         NotificationDelivery savedDelivery = notificationDeliveryRepository.save(delivery);
@@ -219,9 +222,9 @@ public class AdminService {
         long donationsLastMonth = donationRepository.countByPerformedAtBetween(monthFrom, OffsetDateTime.now());
         long samplesCount = sampleRepository.countByCollectedAtBetween(effectiveFrom, effectiveTo);
         long publishedResultsCount = labTestResultRepository.countPublishedByTestedAtBetween(effectiveFrom, effectiveTo);
-        long pendingReviewCount = medicalCheckRepository.countByStatus("PENDING_REVIEW");
+        long pendingReviewCount = medicalCheckRepository.countByStatus(MedicalCheckDecision.PENDING_REVIEW);
         long labQueueCount = labExaminationRequestRepository
-                .countByStatusIn(List.of("REQUESTED", "IN_PROGRESS"));
+                .countByStatusIn(List.of(LabExaminationStatus.REQUESTED, LabExaminationStatus.IN_PROGRESS));
         
         // Eligible candidates: donors who haven't donated in 60+ days
         OffsetDateTime threshold = OffsetDateTime.now().minusDays(60);
@@ -286,7 +289,7 @@ public class AdminService {
         delivery.setNotification(savedNotification);
         delivery.setDonor(donor);
         delivery.setStaff(staff);
-        delivery.setStatus("SENT");
+        delivery.setStatus(DeliveryStatus.SENT);
         OffsetDateTime sentAt = OffsetDateTime.now();
         delivery.setSentAt(sentAt);
         NotificationDelivery savedDelivery = notificationDeliveryRepository.save(delivery);

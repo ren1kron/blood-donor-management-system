@@ -1,17 +1,19 @@
 package ifmo.se.coursach_back.donor.dto;
 
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.BookingStatus;
+import ifmo.se.coursach_back.model.SlotPurpose;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record DonorBookingResponse(
         UUID id,
         UUID slotId,
-        String slotPurpose,
+        SlotPurpose slotPurpose,
         OffsetDateTime slotStartTime,
         OffsetDateTime slotEndTime,
         String slotLocation,
-        String status,
+        BookingStatus status,
         OffsetDateTime createdAt,
         OffsetDateTime cancelledAt,
         boolean hasVisit

@@ -1,7 +1,9 @@
 package ifmo.se.coursach_back.medical.dto;
 
 import ifmo.se.coursach_back.model.LabExaminationRequest;
+import ifmo.se.coursach_back.model.LabExaminationStatus;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import ifmo.se.coursach_back.model.Visit;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -16,7 +18,7 @@ public record ExaminationQueueResponse(
         OffsetDateTime slotEndAt,
         String location,
         UUID labRequestId,
-        String labStatus,
+        LabExaminationStatus labStatus,
         OffsetDateTime labRequestedAt,
         OffsetDateTime labCompletedAt,
         BigDecimal weightKg,
@@ -25,7 +27,7 @@ public record ExaminationQueueResponse(
         Integer diastolicMmhg,
         Integer pulseRate,
         BigDecimal bodyTemperatureC,
-        String decision,
+        MedicalCheckDecision decision,
         OffsetDateTime decisionAt
 ) {
     public static ExaminationQueueResponse from(Visit visit, LabExaminationRequest request, MedicalCheck check) {

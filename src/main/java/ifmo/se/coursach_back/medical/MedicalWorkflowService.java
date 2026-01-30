@@ -13,14 +13,19 @@ import ifmo.se.coursach_back.model.BookingStatus;
 import ifmo.se.coursach_back.model.CollectionSession;
 import ifmo.se.coursach_back.model.CollectionSessionStatus;
 import ifmo.se.coursach_back.model.Deferral;
+import ifmo.se.coursach_back.model.DeferralType;
+import ifmo.se.coursach_back.model.DeliveryStatus;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
+import ifmo.se.coursach_back.model.DonorStatus;
 import ifmo.se.coursach_back.model.LabExaminationRequest;
 import ifmo.se.coursach_back.model.LabExaminationStatus;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import ifmo.se.coursach_back.model.Notification;
 import ifmo.se.coursach_back.model.NotificationDelivery;
 import ifmo.se.coursach_back.model.Sample;
+import ifmo.se.coursach_back.model.SampleStatus;
 import ifmo.se.coursach_back.model.SlotPurpose;
 import ifmo.se.coursach_back.model.StaffProfile;
 import ifmo.se.coursach_back.model.Visit;
@@ -69,14 +74,14 @@ public class MedicalWorkflowService {
     private final AuditService auditService;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusInAndSlot_PurposeIgnoreCaseAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        return bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
                 List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED),
                 SlotPurpose.DONATION,
                 from);
     }
 
     public List<Booking> listConfirmedExaminationBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusInAndSlot_PurposeIgnoreCaseAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        return bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
                 List.of(BookingStatus.CONFIRMED),
                 SlotPurpose.EXAMINATION,
                 from);
@@ -123,7 +128,7 @@ public class MedicalWorkflowService {
     }
 
     public List<MedicalCheck> listPendingExaminations() {
-        return medicalCheckRepository.findByStatusOrderBySubmittedAtAsc("PENDING_REVIEW");
+        return medicalCheckRepository.findByStatusOrderBySubmittedAtAsc(MedicalCheckDecision.PENDING_REVIEW);
     }
     
     @Transactional
@@ -139,18 +144,18 @@ public class MedicalWorkflowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
         }
         
-        if (!"PENDING_REVIEW".equals(check.getStatus())) {
+        if (check.getStatus() != MedicalCheckDecision.PENDING_REVIEW) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Examination has already been reviewed");
         }
         
-        String decision = normalizeDecision(request.decision());
-        if (!decision.equals("ADMITTED") && !decision.equals("REFUSED")) {
+        MedicalCheckDecision decision = parseDecision(request.decision());
+        if (decision != MedicalCheckDecision.ADMITTED && decision != MedicalCheckDecision.REFUSED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Decision must be ADMITTED or REFUSED");
         }
-        if (decision.equals("REFUSED") && request.deferral() == null) {
+        if (decision == MedicalCheckDecision.REFUSED && request.deferral() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is required when decision is REFUSED");
         }
-        if (decision.equals("ADMITTED") && request.deferral() != null) {
+        if (decision == MedicalCheckDecision.ADMITTED && request.deferral() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is not allowed when decision is ADMITTED");
         }
         
@@ -167,20 +172,20 @@ public class MedicalWorkflowService {
             Deferral deferral = new Deferral();
             deferral.setDonor(check.getVisit().getBooking().getDonor());
             deferral.setCreatedFromCheck(saved);
-            deferral.setDeferralType(request.deferral().deferralType());
+            deferral.setDeferralType(parseDeferralType(request.deferral().deferralType()));
             deferral.setReason(request.deferral().reason());
             deferral.setEndsAt(request.deferral().endsAt());
             savedDeferral = deferralRepository.save(deferral);
         }
         
-        if (decision.equals("ADMITTED")) {
+        if (decision == MedicalCheckDecision.ADMITTED) {
             sendDonationReadyNotification(check.getVisit().getBooking().getDonor());
         } else {
             sendDeferralNotification(check.getVisit().getBooking().getDonor(), request.deferral());
         }
 
         auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision));
+                Map.of("decision", decision.name()));
         
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -195,18 +200,18 @@ public class MedicalWorkflowService {
 
         LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(visit.getId())
                 .orElse(null);
-        if (labRequest == null || !LabExaminationStatus.COMPLETED.equals(labRequest.getStatus())) {
+        if (labRequest == null || labRequest.getStatus() != LabExaminationStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
         }
 
-        String decision = normalizeDecision(request.decision());
-        if (!decision.equals("ADMITTED") && !decision.equals("REFUSED")) {
+        MedicalCheckDecision decision = parseDecision(request.decision());
+        if (decision != MedicalCheckDecision.ADMITTED && decision != MedicalCheckDecision.REFUSED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Decision must be ADMITTED or REFUSED");
         }
-        if (decision.equals("REFUSED") && request.deferral() == null) {
+        if (decision == MedicalCheckDecision.REFUSED && request.deferral() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is required when decision is REFUSED");
         }
-        if (decision.equals("ADMITTED") && request.deferral() != null) {
+        if (decision == MedicalCheckDecision.ADMITTED && request.deferral() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is not allowed when decision is ADMITTED");
         }
 
@@ -218,6 +223,7 @@ public class MedicalWorkflowService {
         check.setSystolicMmhg(request.systolicMmhg());
         check.setDiastolicMmhg(request.diastolicMmhg());
         check.setDecision(decision);
+        check.setStatus(decision);
         check.setDecisionAt(OffsetDateTime.now());
 
         MedicalCheck saved = medicalCheckRepository.save(check);
@@ -228,18 +234,18 @@ public class MedicalWorkflowService {
             Deferral deferral = new Deferral();
             deferral.setDonor(visit.getBooking().getDonor());
             deferral.setCreatedFromCheck(saved);
-            deferral.setDeferralType(deferralRequest.deferralType());
+            deferral.setDeferralType(parseDeferralType(deferralRequest.deferralType()));
             deferral.setReason(deferralRequest.reason());
             deferral.setEndsAt(deferralRequest.endsAt());
             savedDeferral = deferralRepository.save(deferral);
         }
 
-        if (decision.equals("ADMITTED")) {
+        if (decision == MedicalCheckDecision.ADMITTED) {
             sendDonationReadyNotification(visit.getBooking().getDonor());
         }
 
         auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision));
+                Map.of("decision", decision.name()));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -251,7 +257,7 @@ public class MedicalWorkflowService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found"));
 
         Booking booking = visit.getBooking();
-        if (!SlotPurpose.EXAMINATION.equalsIgnoreCase(booking.getSlot().getPurpose())) {
+        if (booking.getSlot().getPurpose() != SlotPurpose.EXAMINATION) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Visit is not for examination");
         }
         if (!BookingStatus.CONFIRMED.equals(booking.getStatus())) {
@@ -279,18 +285,18 @@ public class MedicalWorkflowService {
 
         LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(visitId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lab examination request not found"));
-        if (!LabExaminationStatus.COMPLETED.equals(labRequest.getStatus())) {
+        if (labRequest.getStatus() != LabExaminationStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
         }
 
-        String decision = normalizeDecision(request.decision());
-        if (!decision.equals("ADMITTED") && !decision.equals("REFUSED")) {
+        MedicalCheckDecision decision = parseDecision(request.decision());
+        if (decision != MedicalCheckDecision.ADMITTED && decision != MedicalCheckDecision.REFUSED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Decision must be ADMITTED or REFUSED");
         }
-        if (decision.equals("REFUSED") && request.deferral() == null) {
+        if (decision == MedicalCheckDecision.REFUSED && request.deferral() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is required when decision is REFUSED");
         }
-        if (decision.equals("ADMITTED") && request.deferral() != null) {
+        if (decision == MedicalCheckDecision.ADMITTED && request.deferral() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is not allowed when decision is ADMITTED");
         }
 
@@ -308,20 +314,20 @@ public class MedicalWorkflowService {
             Deferral deferral = new Deferral();
             deferral.setDonor(visit.getBooking().getDonor());
             deferral.setCreatedFromCheck(saved);
-            deferral.setDeferralType(request.deferral().deferralType());
+            deferral.setDeferralType(parseDeferralType(request.deferral().deferralType()));
             deferral.setReason(request.deferral().reason());
             deferral.setEndsAt(request.deferral().endsAt());
             savedDeferral = deferralRepository.save(deferral);
         }
 
-        if (decision.equals("ADMITTED")) {
+        if (decision == MedicalCheckDecision.ADMITTED) {
             sendDonationReadyNotification(visit.getBooking().getDonor());
         } else {
             sendDeferralNotification(visit.getBooking().getDonor(), request.deferral());
         }
 
         auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision));
+                Map.of("decision", decision.name()));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -337,7 +343,7 @@ public class MedicalWorkflowService {
         delivery.setNotification(savedNotification);
         delivery.setDonor(donor);
         delivery.setSentAt(OffsetDateTime.now());
-        delivery.setStatus("SENT");
+        delivery.setStatus(DeliveryStatus.SENT);
         notificationDeliveryRepository.save(delivery);
     }
     
@@ -359,7 +365,7 @@ public class MedicalWorkflowService {
         delivery.setNotification(savedNotification);
         delivery.setDonor(donor);
         delivery.setSentAt(OffsetDateTime.now());
-        delivery.setStatus("SENT");
+        delivery.setStatus(DeliveryStatus.SENT);
         notificationDeliveryRepository.save(delivery);
     }
 
@@ -368,14 +374,14 @@ public class MedicalWorkflowService {
         StaffProfile staff = requireStaff(accountId);
         Visit visit = resolveVisit(request.bookingId(), request.visitId());
         Booking booking = visit.getBooking();
-        if (!SlotPurpose.DONATION.equalsIgnoreCase(booking.getSlot().getPurpose())) {
+        if (booking.getSlot().getPurpose() != SlotPurpose.DONATION) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Visit is not for donation");
         }
 
         MedicalCheck check = medicalCheckRepository
                 .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(booking.getDonor().getId())
                 .orElse(null);
-        if (check == null || !"ADMITTED".equalsIgnoreCase(check.getDecision())) {
+        if (check == null || check.getDecision() != MedicalCheckDecision.ADMITTED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Donation not allowed without admission");
         }
 
@@ -387,8 +393,7 @@ public class MedicalWorkflowService {
         if (session == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Collection session is required before donation");
         }
-        String sessionStatus = session.getStatus() == null ? "" : session.getStatus().toUpperCase();
-        if (CollectionSessionStatus.ABORTED.equals(sessionStatus)) {
+        if (session.getStatus() == CollectionSessionStatus.ABORTED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Collection session was aborted");
         }
 
@@ -408,7 +413,7 @@ public class MedicalWorkflowService {
         Sample sample = new Sample();
         sample.setDonation(saved);
         sample.setSampleCode(generateSampleCode());
-        sample.setStatus("NEW");
+        sample.setStatus(SampleStatus.NEW);
         sampleRepository.save(sample);
         
         // Mark booking as completed after donation registration
@@ -454,7 +459,7 @@ public class MedicalWorkflowService {
         Sample sample = new Sample();
         sample.setDonation(donation);
         sample.setSampleCode(sampleCode);
-        sample.setStatus(normalizeSampleStatus(request.status()));
+        sample.setStatus(parseSampleStatus(request.status()));
         sample.setQuarantineReason(request.quarantineReason());
         sample.setRejectionReason(request.rejectionReason());
         return sampleRepository.save(sample);
@@ -479,7 +484,7 @@ public class MedicalWorkflowService {
     public DonorProfile updateDonorStatus(UUID donorId, String donorStatus) {
         DonorProfile donor = donorProfileRepository.findById(donorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donor not found"));
-        donor.setDonorStatus(donorStatus);
+        donor.setDonorStatus(DonorStatus.valueOf(donorStatus.trim().toUpperCase()));
         return donorProfileRepository.save(donor);
     }
 
@@ -499,7 +504,7 @@ public class MedicalWorkflowService {
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
-        if ("CANCELLED".equalsIgnoreCase(booking.getStatus())) {
+        if (BookingStatus.CANCELLED.equals(booking.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking is cancelled");
         }
 
@@ -528,26 +533,43 @@ public class MedicalWorkflowService {
         if (donor == null) {
             return;
         }
-        if (!"ACTIVE".equalsIgnoreCase(donor.getDonorStatus())) {
-            donor.setDonorStatus("ACTIVE");
+        if (donor.getDonorStatus() != DonorStatus.ACTIVE) {
+            donor.setDonorStatus(DonorStatus.ACTIVE);
             donorProfileRepository.save(donor);
         }
     }
 
-    private String normalizeDecision(String value) {
-        String trimmed = value == null ? "" : value.trim();
-        if (trimmed.isEmpty()) {
-            return "";
+    private MedicalCheckDecision parseDecision(String value) {
+        if (value == null || value.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Decision is required");
         }
-        return trimmed.toUpperCase();
+        try {
+            return MedicalCheckDecision.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid decision: " + value);
+        }
     }
 
-    private String normalizeSampleStatus(String value) {
-        if (value == null) {
+    private DeferralType parseDeferralType(String value) {
+        if (value == null || value.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral type is required");
+        }
+        try {
+            return DeferralType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid deferral type: " + value);
+        }
+    }
+
+    private SampleStatus parseSampleStatus(String value) {
+        if (value == null || value.isBlank()) {
             return null;
         }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed.toUpperCase();
+        try {
+            return SampleStatus.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid sample status: " + value);
+        }
     }
     
     private String generateSampleCode() {

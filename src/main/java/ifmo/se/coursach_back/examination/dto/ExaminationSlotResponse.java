@@ -1,12 +1,13 @@
 package ifmo.se.coursach_back.examination.dto;
 
 import ifmo.se.coursach_back.model.AppointmentSlot;
+import ifmo.se.coursach_back.model.SlotPurpose;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record ExaminationSlotResponse(
         UUID slotId,
-        String purpose,
+        SlotPurpose purpose,
         OffsetDateTime startAt,
         OffsetDateTime endAt,
         String location,

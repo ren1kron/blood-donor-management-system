@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.lab.dto;
 
 import ifmo.se.coursach_back.model.LabExaminationRequest;
+import ifmo.se.coursach_back.model.LabExaminationStatus;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -13,7 +14,7 @@ public record LabExaminationResponse(
         OffsetDateTime slotStartAt,
         OffsetDateTime slotEndAt,
         String location,
-        String status,
+        LabExaminationStatus status,
         String requestedByName,
         OffsetDateTime requestedAt,
         String completedByName,

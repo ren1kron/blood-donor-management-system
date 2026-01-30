@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -45,11 +47,13 @@ public class ReportRequest {
     @JoinColumn(name = "assigned_admin_id")
     private StaffProfile assignedAdmin;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "report_type", nullable = false)
-    private String reportType;
+    private ReportType reportType;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private ReportRequestStatus status;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload_json", columnDefinition = "jsonb")

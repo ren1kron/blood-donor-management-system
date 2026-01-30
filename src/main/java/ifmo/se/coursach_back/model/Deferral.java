@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,8 +37,9 @@ public class Deferral {
     @JoinColumn(name = "created_from_check_id")
     private MedicalCheck createdFromCheck;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "deferral_type", nullable = false)
-    private String deferralType;
+    private DeferralType deferralType;
 
     @Column(nullable = false)
     private String reason;

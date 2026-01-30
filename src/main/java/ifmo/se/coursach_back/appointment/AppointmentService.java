@@ -4,10 +4,11 @@ import ifmo.se.coursach_back.appointment.dto.CreateSlotRequest;
 import ifmo.se.coursach_back.donor.dto.DonorBookingResponse;
 import ifmo.se.coursach_back.model.AppointmentSlot;
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.BookingStatus;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import ifmo.se.coursach_back.model.SlotPurpose;
-import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.repository.AppointmentSlotRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
 import ifmo.se.coursach_back.repository.DeferralRepository;
@@ -39,15 +40,15 @@ public class AppointmentService {
     private final DeferralRepository deferralRepository;
     private final VisitRepository visitRepository;
 
-    public List<AppointmentSlot> listUpcomingSlots(OffsetDateTime from, String purpose) {
-        if (purpose == null || purpose.isBlank()) {
+    public List<AppointmentSlot> listUpcomingSlots(OffsetDateTime from, SlotPurpose purpose) {
+        if (purpose == null) {
             return slotRepository.findByStartAtAfterOrderByStartAtAsc(from);
         }
-        return slotRepository.findByPurposeIgnoreCaseAndStartAtAfterOrderByStartAtAsc(purpose.trim(), from);
+        return slotRepository.findByPurposeAndStartAtAfterOrderByStartAtAsc(purpose, from);
     }
 
     public long getSlotBookedCount(UUID slotId) {
-        return bookingRepository.countBySlot_IdAndStatus(slotId, "BOOKED");
+        return bookingRepository.countBySlot_IdAndStatus(slotId, BookingStatus.BOOKED);
     }
 
     public AppointmentSlot createSlot(CreateSlotRequest request) {
@@ -78,7 +79,7 @@ public class AppointmentService {
 
         ensureSlotAvailable(donor, slot);
 
-        if (!SlotPurpose.DONATION.equalsIgnoreCase(slot.getPurpose())) {
+        if (slot.getPurpose() != SlotPurpose.DONATION) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Only donation slots can be booked via this endpoint.");
         }
@@ -88,7 +89,7 @@ public class AppointmentService {
         Booking booking = new Booking();
         booking.setDonor(donor);
         booking.setSlot(slot);
-        booking.setStatus("BOOKED");
+        booking.setStatus(BookingStatus.BOOKED);
         return bookingRepository.save(booking);
     }
     
@@ -103,7 +104,7 @@ public class AppointmentService {
         MedicalCheck lastCheck = medicalCheckRepository
                 .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId())
                 .orElse(null);
-        if (lastCheck == null || !"ADMITTED".equalsIgnoreCase(lastCheck.getDecision())) {
+        if (lastCheck == null || lastCheck.getDecision() != MedicalCheckDecision.ADMITTED) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Для записи на донацию необходимо пройти обследование и получить допуск врача.");
         }
@@ -132,10 +133,10 @@ public class AppointmentService {
     public Booking cancelBooking(UUID accountId, UUID bookingId) {
         Booking booking = bookingRepository.findByIdAndDonor_Account_Id(bookingId, accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
-        if (!"BOOKED".equalsIgnoreCase(booking.getStatus())) {
+        if (!BookingStatus.BOOKED.equals(booking.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only booked appointments can be cancelled");
         }
-        booking.setStatus("CANCELLED");
+        booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(OffsetDateTime.now());
         return bookingRepository.save(booking);
     }
@@ -144,7 +145,7 @@ public class AppointmentService {
     public Booking rescheduleBooking(UUID accountId, UUID bookingId, UUID newSlotId) {
         Booking booking = bookingRepository.findByIdAndDonor_Account_Id(bookingId, accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
-        if (!"BOOKED".equalsIgnoreCase(booking.getStatus())) {
+        if (!BookingStatus.BOOKED.equals(booking.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only booked appointments can be rescheduled");
         }
         if (booking.getSlot().getId().equals(newSlotId)) {
@@ -156,14 +157,14 @@ public class AppointmentService {
         DonorProfile donor = booking.getDonor();
         ensureSlotAvailable(donor, newSlot);
 
-        booking.setStatus("CANCELLED");
+        booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(OffsetDateTime.now());
         bookingRepository.save(booking);
 
         Booking newBooking = new Booking();
         newBooking.setDonor(donor);
         newBooking.setSlot(newSlot);
-        newBooking.setStatus("BOOKED");
+        newBooking.setStatus(BookingStatus.BOOKED);
         return bookingRepository.save(newBooking);
     }
 
@@ -172,7 +173,7 @@ public class AppointmentService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking already exists for this slot");
         }
 
-        long bookedCount = bookingRepository.countBySlot_IdAndStatus(slot.getId(), "BOOKED");
+        long bookedCount = bookingRepository.countBySlot_IdAndStatus(slot.getId(), BookingStatus.BOOKED);
         if (bookedCount >= slot.getCapacity()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Slot capacity exceeded");
         }

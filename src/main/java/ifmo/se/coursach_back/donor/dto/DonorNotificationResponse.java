@@ -1,5 +1,6 @@
 package ifmo.se.coursach_back.donor.dto;
 
+import ifmo.se.coursach_back.model.DeliveryStatus;
 import ifmo.se.coursach_back.model.NotificationDelivery;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -12,7 +13,7 @@ public record DonorNotificationResponse(
         String channel,
         OffsetDateTime createdAt,
         OffsetDateTime sentAt,
-        String status
+        DeliveryStatus status
 ) {
     public static DonorNotificationResponse from(NotificationDelivery delivery) {
         return new DonorNotificationResponse(

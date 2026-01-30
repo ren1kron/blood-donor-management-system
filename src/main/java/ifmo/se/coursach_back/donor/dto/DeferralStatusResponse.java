@@ -1,12 +1,13 @@
 package ifmo.se.coursach_back.donor.dto;
 
 import ifmo.se.coursach_back.model.Deferral;
+import ifmo.se.coursach_back.model.DeferralType;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record DeferralStatusResponse(
         UUID deferralId,
-        String deferralType,
+        DeferralType deferralType,
         String reason,
         OffsetDateTime startsAt,
         OffsetDateTime endsAt

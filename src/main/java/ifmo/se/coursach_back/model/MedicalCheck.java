@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -68,12 +70,13 @@ public class MedicalCheck {
     @Column(name = "body_temperature_c")
     private BigDecimal bodyTemperatureC;
 
-    // Status: PENDING_REVIEW, ADMITTED, REFUSED
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private MedicalCheckDecision status;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String decision;
+    private MedicalCheckDecision decision;
 
     @Column(name = "decision_at", nullable = false)
     private OffsetDateTime decisionAt;
@@ -84,10 +87,10 @@ public class MedicalCheck {
             decisionAt = OffsetDateTime.now();
         }
         if (status == null) {
-            status = "PENDING_REVIEW";
+            status = MedicalCheckDecision.PENDING_REVIEW;
         }
         if (decision == null) {
-            decision = "PENDING_REVIEW";
+            decision = MedicalCheckDecision.PENDING_REVIEW;
         }
     }
 }

@@ -1,5 +1,7 @@
 package ifmo.se.coursach_back.staff.dto;
 
+import ifmo.se.coursach_back.model.DonorStatus;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -15,7 +17,7 @@ public record StaffDonorReport(
         LocalDate birthDate,
         String bloodGroup,
         String rhFactor,
-        String donorStatus,
+        DonorStatus donorStatus,
         String email,
         String phone,
         DonorStats stats,
@@ -41,8 +43,8 @@ public record StaffDonorReport(
     public record MedicalCheckRecord(
             UUID checkId,
             OffsetDateTime decisionAt,
-            String decision,
-            String status,
+            MedicalCheckDecision decision,
+            MedicalCheckDecision status,
             BigDecimal hemoglobinGl,
             BigDecimal hematocritPct,
             BigDecimal rbc10e12L,

@@ -8,6 +8,7 @@ import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.model.Account;
 import ifmo.se.coursach_back.model.Deferral;
+import ifmo.se.coursach_back.model.DeliveryStatus;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
 import ifmo.se.coursach_back.model.LabTestResult;
@@ -53,7 +54,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class ReportRequestService {
-    private static final Set<String> SUPPORTED_TYPES = Set.of(
+    private static final Set<ReportType> SUPPORTED_TYPES = Set.of(
             ReportType.DONOR_SUMMARY,
             ReportType.LAB_OVERVIEW,
             ReportType.ELIGIBILITY
@@ -79,7 +80,7 @@ public class ReportRequestService {
         DonorProfile donor = donorProfileRepository.findById(request.donorId())
                 .orElseThrow(() -> new NotFoundException("Donor not found"));
 
-        String reportType = normalizeType(request.reportType());
+        ReportType reportType = request.reportType();
         if (reportType == null) {
             throw new BadRequestException("reportType is required");
         }
@@ -97,7 +98,7 @@ public class ReportRequestService {
         ReportRequest saved = reportRequestRepository.save(reportRequest);
 
         auditService.log(accountId, "REPORT_REQUEST_CREATED", "ReportRequest", saved.getId(),
-                Map.of("reportType", reportType, "donorId", donor.getId()));
+                Map.of("reportType", reportType.name(), "donorId", donor.getId()));
         return toSummary(saved);
     }
 
@@ -126,7 +127,12 @@ public class ReportRequestService {
         if (status == null || status.isBlank()) {
             requests = reportRequestRepository.findAll();
         } else {
-            requests = reportRequestRepository.findByStatusOrderByCreatedAtAsc(status.trim().toUpperCase(Locale.ROOT));
+            try {
+                ReportRequestStatus statusEnum = ReportRequestStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+                requests = reportRequestRepository.findByStatusOrderByCreatedAtAsc(statusEnum);
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Invalid status: " + status);
+            }
         }
         return requests.stream().map(this::toSummary).toList();
     }
@@ -171,7 +177,7 @@ public class ReportRequestService {
         ReportRequest request = reportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Report request not found"));
         ensureAssigned(admin, request);
-        if (!ReportRequestStatus.READY.equalsIgnoreCase(request.getStatus())) {
+        if (request.getStatus() != ReportRequestStatus.READY) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Report is not ready to send");
         }
 
@@ -184,7 +190,7 @@ public class ReportRequestService {
         NotificationDelivery delivery = new NotificationDelivery();
         delivery.setNotification(savedNotification);
         delivery.setStaff(request.getRequestedBy());
-        delivery.setStatus("SENT");
+        delivery.setStatus(DeliveryStatus.SENT);
         delivery.setSentAt(OffsetDateTime.now());
         notificationDeliveryRepository.save(delivery);
 
@@ -273,15 +279,15 @@ public class ReportRequestService {
     }
 
     private Map<String, Object> buildPayload(ReportRequest request) {
-        String type = request.getReportType();
+        ReportType type = request.getReportType();
         DonorProfile donor = request.getDonor();
-        if (ReportType.DONOR_SUMMARY.equals(type)) {
+        if (type == ReportType.DONOR_SUMMARY) {
             return buildDonorSummary(donor);
         }
-        if (ReportType.LAB_OVERVIEW.equals(type)) {
+        if (type == ReportType.LAB_OVERVIEW) {
             return buildLabOverview(donor);
         }
-        if (ReportType.ELIGIBILITY.equals(type)) {
+        if (type == ReportType.ELIGIBILITY) {
             return buildEligibility(donor);
         }
         throw new BadRequestException("Unsupported report type");
@@ -462,13 +468,6 @@ public class ReportRequestService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private String normalizeType(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed.toUpperCase(Locale.ROOT);
-    }
 
     private String toJson(Object value) {
         try {

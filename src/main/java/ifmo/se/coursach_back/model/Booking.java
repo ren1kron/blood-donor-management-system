@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,8 +37,9 @@ public class Booking {
     @JoinColumn(name = "slot_id", nullable = false)
     private AppointmentSlot slot;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private BookingStatus status;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -50,7 +53,7 @@ public class Booking {
             createdAt = OffsetDateTime.now();
         }
         if (status == null) {
-            status = "BOOKED";
+            status = BookingStatus.BOOKED;
         }
     }
 }

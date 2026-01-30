@@ -13,12 +13,16 @@ import ifmo.se.coursach_back.model.Account;
 import ifmo.se.coursach_back.model.CollectionSession;
 import ifmo.se.coursach_back.model.Consent;
 import ifmo.se.coursach_back.model.Deferral;
+import ifmo.se.coursach_back.model.DeliveryStatus;
 import ifmo.se.coursach_back.model.Donation;
 import ifmo.se.coursach_back.model.DonorProfile;
+import ifmo.se.coursach_back.model.DonorStatus;
 import ifmo.se.coursach_back.model.LabTestResult;
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import ifmo.se.coursach_back.model.NotificationDelivery;
 import ifmo.se.coursach_back.model.Booking;
+import ifmo.se.coursach_back.model.BookingStatus;
 import ifmo.se.coursach_back.model.Visit;
 import ifmo.se.coursach_back.repository.AccountRepository;
 import ifmo.se.coursach_back.repository.BookingRepository;
@@ -176,8 +180,8 @@ public class DonorService {
             }
         }
 
-        boolean activeStatus = "ACTIVE".equalsIgnoreCase(donor.getDonorStatus())
-                || "POTENTIAL".equalsIgnoreCase(donor.getDonorStatus());
+        boolean activeStatus = (donor.getDonorStatus() == DonorStatus.ACTIVE)
+                || (donor.getDonorStatus() == DonorStatus.POTENTIAL);
         boolean eligibleByDonation = nextEligibleAt == null || !now.isBefore(nextEligibleAt);
         boolean eligible = activeStatus && activeDeferral == null && eligibleByDonation;
         
@@ -186,7 +190,7 @@ public class DonorService {
                 .orElse(null);
         OffsetDateTime medicalCheckValidUntil = null;
         boolean hasValidMedicalCheck = false;
-        if (latestCheck != null && "ADMITTED".equalsIgnoreCase(latestCheck.getDecision())) {
+        if (latestCheck != null && latestCheck.getDecision() == MedicalCheckDecision.ADMITTED) {
             medicalCheckValidUntil = latestCheck.getDecisionAt().plusMonths(MEDICAL_CHECK_VALIDITY_MONTHS);
             hasValidMedicalCheck = !now.isAfter(medicalCheckValidUntil);
         }
@@ -214,7 +218,7 @@ public class DonorService {
         DonorProfile donor = requireDonor(accountId);
         NotificationDelivery delivery = notificationDeliveryRepository.findByIdAndDonor_Id(deliveryId, donor.getId())
                 .orElseThrow(() -> new NotFoundException("Notification not found"));
-        delivery.setStatus("ACKED");
+        delivery.setStatus(DeliveryStatus.ACKED);
         notificationDeliveryRepository.save(delivery);
     }
 
@@ -240,7 +244,7 @@ public class DonorService {
         if (!booking.getDonor().getId().equals(donor.getId())) {
             throw new BadRequestException("Booking does not belong to donor");
         }
-        if ("CANCELLED".equalsIgnoreCase(booking.getStatus())) {
+        if (BookingStatus.CANCELLED.equals(booking.getStatus())) {
             throw new ConflictException("Booking is cancelled");
         }
         return visitRepository.findByBooking_Id(booking.getId())

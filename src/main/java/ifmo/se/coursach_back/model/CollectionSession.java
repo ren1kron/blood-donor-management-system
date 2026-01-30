@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -39,8 +41,9 @@ public class CollectionSession {
     @JoinColumn(name = "nurse_staff_id")
     private StaffProfile nurse;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private CollectionSessionStatus status;
 
     @Column(name = "started_at")
     private OffsetDateTime startedAt;

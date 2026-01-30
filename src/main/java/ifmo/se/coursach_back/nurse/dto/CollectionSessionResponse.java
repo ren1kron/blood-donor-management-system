@@ -1,5 +1,6 @@
 package ifmo.se.coursach_back.nurse.dto;
 
+import ifmo.se.coursach_back.model.CollectionSessionStatus;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -8,7 +9,7 @@ public record CollectionSessionResponse(
         UUID visitId,
         UUID nurseId,
         String nurseName,
-        String status,
+        CollectionSessionStatus status,
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
         VitalsPayload preVitals,

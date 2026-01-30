@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.medical.dto;
 
 import ifmo.se.coursach_back.model.MedicalCheck;
+import ifmo.se.coursach_back.model.MedicalCheckDecision;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -18,7 +19,7 @@ public record PendingExaminationResponse(
         Integer diastolicMmhg,
         Integer pulseRate,
         BigDecimal bodyTemperatureC,
-        String status,
+        MedicalCheckDecision status,
         String submittedByLabName,
         OffsetDateTime submittedAt
 ) {
