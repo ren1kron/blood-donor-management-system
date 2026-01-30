@@ -23,12 +23,30 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(List<BookingStatus> statuses,
                                                                            OffsetDateTime startAt);
 
+    @Query("""
+            select b
+            from Booking b
+            join fetch b.donor donor
+            join fetch b.slot slot
+            where b.status in :statuses
+              and slot.purpose = :purpose
+              and slot.startAt > :startAt
+            order by slot.startAt asc
+            """)
     List<Booking> findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
-            List<BookingStatus> statuses,
-            SlotPurpose purpose,
-            OffsetDateTime startAt);
+            @Param("statuses") List<BookingStatus> statuses,
+            @Param("purpose") SlotPurpose purpose,
+            @Param("startAt") OffsetDateTime startAt);
 
-    List<Booking> findByDonor_Account_IdOrderBySlot_StartAtDesc(UUID accountId);
+    @Query("""
+            select b
+            from Booking b
+            join fetch b.slot slot
+            join fetch b.donor donor
+            where donor.account.id = :accountId
+            order by slot.startAt desc
+            """)
+    List<Booking> findByDonor_Account_IdOrderBySlot_StartAtDesc(@Param("accountId") UUID accountId);
 
     Optional<Booking> findByIdAndDonor_Account_Id(UUID bookingId, UUID accountId);
     
