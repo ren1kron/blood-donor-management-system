@@ -23,39 +23,39 @@ public class BookingRepositoryAdapter implements BookingRepositoryPort {
     }
 
     @Override
-    public long countBySlot_IdAndStatus(UUID slotId, BookingStatus status) {
-        return jpaRepository.countBySlot_IdAndStatus(slotId, status);
+    public long countBySlotIdAndStatus(UUID slotId, BookingStatus status) {
+        return jpaRepository.countBySlotIdAndStatus(slotId, status);
     }
 
     @Override
-    public boolean existsByDonor_IdAndSlot_Id(UUID donorId, UUID slotId) {
-        return jpaRepository.existsByDonor_IdAndSlot_Id(donorId, slotId);
+    public boolean existsByDonorIdAndSlotId(UUID donorId, UUID slotId) {
+        return jpaRepository.existsByDonorIdAndSlotId(donorId, slotId);
     }
 
     @Override
-    public List<Booking> findByStatusAndSlot_StartAtAfterOrderBySlot_StartAtAsc(BookingStatus status, OffsetDateTime startAt) {
-        return jpaRepository.findByStatusAndSlot_StartAtAfterOrderBySlot_StartAtAsc(status, startAt);
+    public List<Booking> findByStatusAfter(BookingStatus status, OffsetDateTime startAt) {
+        return jpaRepository.findByStatusAfter(status, startAt);
     }
 
     @Override
-    public List<Booking> findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(List<BookingStatus> statuses, OffsetDateTime startAt) {
-        return jpaRepository.findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(statuses, startAt);
+    public List<Booking> findByStatusesAfter(List<BookingStatus> statuses, OffsetDateTime startAt) {
+        return jpaRepository.findByStatusesAfter(statuses, startAt);
     }
 
     @Override
-    public List<Booking> findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+    public List<Booking> findByStatusesAndPurposeAfter(
             List<BookingStatus> statuses, SlotPurpose purpose, OffsetDateTime startAt) {
-        return jpaRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(statuses, purpose, startAt);
+        return jpaRepository.findByStatusesAndPurposeAfter(statuses, purpose, startAt);
     }
 
     @Override
-    public List<Booking> findByDonor_Account_IdOrderBySlot_StartAtDesc(UUID accountId) {
-        return jpaRepository.findByDonor_Account_IdOrderBySlot_StartAtDesc(accountId);
+    public List<Booking> findRecentByDonorAccountId(UUID accountId) {
+        return jpaRepository.findRecentByDonorAccountId(accountId);
     }
 
     @Override
-    public Optional<Booking> findByIdAndDonor_Account_Id(UUID bookingId, UUID accountId) {
-        return jpaRepository.findByIdAndDonor_Account_Id(bookingId, accountId);
+    public Optional<Booking> findByIdAndDonorAccountId(UUID bookingId, UUID accountId) {
+        return jpaRepository.findByIdAndDonorAccountId(bookingId, accountId);
     }
 
     @Override
@@ -64,14 +64,14 @@ public class BookingRepositoryAdapter implements BookingRepositoryPort {
     }
 
     @Override
-    public Optional<Booking> findByDonor_IdAndSlot_IdAndStatusAndCancelledAtIsNull(
+    public Optional<Booking> findPendingBookingByDonorAndSlot(
             UUID donorId, UUID slotId, BookingStatus status) {
-        return jpaRepository.findByDonor_IdAndSlot_IdAndStatusAndCancelledAtIsNull(donorId, slotId, status);
+        return jpaRepository.findPendingBookingByDonorAndSlot(donorId, slotId, status);
     }
 
     @Override
-    public Optional<Booking> findByIdAndDonor_Id(UUID bookingId, UUID donorId) {
-        return jpaRepository.findByIdAndDonor_Id(bookingId, donorId);
+    public Optional<Booking> findByIdAndDonorId(UUID bookingId, UUID donorId) {
+        return jpaRepository.findByIdAndDonorId(bookingId, donorId);
     }
 
     @Override

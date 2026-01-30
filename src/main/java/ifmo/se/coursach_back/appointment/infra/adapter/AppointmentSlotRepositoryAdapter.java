@@ -22,18 +22,18 @@ public class AppointmentSlotRepositoryAdapter implements AppointmentSlotReposito
     }
 
     @Override
-    public List<AppointmentSlot> findByStartAtAfterOrderByStartAtAsc(OffsetDateTime startAt) {
-        return jpaRepository.findByStartAtAfterOrderByStartAtAsc(startAt);
+    public List<AppointmentSlot> findSlotsStartingAfter(OffsetDateTime startAt) {
+        return jpaRepository.findSlotsStartingAfter(startAt);
     }
 
     @Override
-    public List<AppointmentSlot> findByPurposeAndStartAtAfterOrderByStartAtAsc(SlotPurpose purpose, OffsetDateTime startAt) {
-        return jpaRepository.findByPurposeAndStartAtAfterOrderByStartAtAsc(purpose, startAt);
+    public List<AppointmentSlot> findByPurposeStartingAfter(SlotPurpose purpose, OffsetDateTime startAt) {
+        return jpaRepository.findByPurposeStartingAfter(purpose, startAt);
     }
 
     @Override
-    public List<AppointmentSlot> findByPurposeAndStartAtBetweenOrderByStartAtAsc(SlotPurpose purpose, OffsetDateTime from, OffsetDateTime to) {
-        return jpaRepository.findByPurposeAndStartAtBetweenOrderByStartAtAsc(purpose, from, to);
+    public List<AppointmentSlot> findByPurposeAndTimeRange(SlotPurpose purpose, OffsetDateTime from, OffsetDateTime to) {
+        return jpaRepository.findByPurposeAndTimeRange(purpose, from, to);
     }
 
     @Override

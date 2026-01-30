@@ -10,7 +10,7 @@ import java.util.UUID;
  */
 public interface QuestionnaireRepositoryPort {
     Optional<Questionnaire> findById(UUID id);
-    Optional<Questionnaire> findByVisit_Id(UUID visitId);
-    boolean existsByVisit_Id(UUID visitId);
+    Optional<Questionnaire> findByVisitId(UUID visitId);
+    boolean existsByVisitId(UUID visitId);
     Questionnaire save(Questionnaire questionnaire);
 }

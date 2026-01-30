@@ -13,9 +13,9 @@ import java.util.UUID;
  */
 public interface AppointmentSlotRepositoryPort {
     Optional<AppointmentSlot> findById(UUID id);
-    List<AppointmentSlot> findByStartAtAfterOrderByStartAtAsc(OffsetDateTime startAt);
-    List<AppointmentSlot> findByPurposeAndStartAtAfterOrderByStartAtAsc(SlotPurpose purpose, OffsetDateTime startAt);
-    List<AppointmentSlot> findByPurposeAndStartAtBetweenOrderByStartAtAsc(SlotPurpose purpose, OffsetDateTime from, OffsetDateTime to);
+    List<AppointmentSlot> findSlotsStartingAfter(OffsetDateTime startAt);
+    List<AppointmentSlot> findByPurposeStartingAfter(SlotPurpose purpose, OffsetDateTime startAt);
+    List<AppointmentSlot> findByPurposeAndTimeRange(SlotPurpose purpose, OffsetDateTime from, OffsetDateTime to);
     AppointmentSlot save(AppointmentSlot slot);
     void deleteById(UUID id);
 }

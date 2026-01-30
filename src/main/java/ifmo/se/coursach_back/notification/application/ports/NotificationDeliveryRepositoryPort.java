@@ -10,7 +10,7 @@ import java.util.UUID;
  * Application layer depends on this interface, not on JPA repository.
  */
 public interface NotificationDeliveryRepositoryPort {
-    List<NotificationDelivery> findByDonor_IdOrderBySentAtDesc(UUID donorId);
-    Optional<NotificationDelivery> findByIdAndDonor_Id(UUID deliveryId, UUID donorId);
+    List<NotificationDelivery> findRecentByDonorId(UUID donorId);
+    Optional<NotificationDelivery> findByIdAndDonorId(UUID deliveryId, UUID donorId);
     NotificationDelivery save(NotificationDelivery delivery);
 }

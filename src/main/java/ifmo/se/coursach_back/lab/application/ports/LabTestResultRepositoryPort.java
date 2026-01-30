@@ -12,8 +12,8 @@ import java.util.UUID;
  */
 public interface LabTestResultRepositoryPort {
     Optional<LabTestResult> findById(UUID id);
-    Optional<LabTestResult> findBySample_IdAndTestType_Id(UUID sampleId, Short testTypeId);
-    List<LabTestResult> findBySample_Id(UUID sampleId);
+    Optional<LabTestResult> findBySampleAndTestType(UUID sampleId, Short testTypeId);
+    List<LabTestResult> findBySampleId(UUID sampleId);
     List<LabTestResult> findPublishedByDonorAccountId(UUID accountId);
     long countPublishedByTestedAtBetween(OffsetDateTime from, OffsetDateTime to);
     List<LabTestResult> findByDonorId(UUID donorId);

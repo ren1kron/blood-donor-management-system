@@ -56,7 +56,7 @@ public class EntityResolverService {
             throw ConflictException.alreadyInState("Booking", "CANCELLED");
         }
 
-        return visitRepository.findByBooking_Id(bookingId)
+        return visitRepository.findByBookingId(bookingId)
                 .orElseGet(() -> createVisit(booking));
     }
 

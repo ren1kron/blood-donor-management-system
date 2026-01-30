@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface QuestionnaireRepository extends JpaRepository<Questionnaire, UUID> {
-    Optional<Questionnaire> findByVisit_Id(UUID visitId);
+    Optional<Questionnaire> findByVisitId(UUID visitId);
     
-    boolean existsByVisit_Id(UUID visitId);
+    boolean existsByVisitId(UUID visitId);
 }

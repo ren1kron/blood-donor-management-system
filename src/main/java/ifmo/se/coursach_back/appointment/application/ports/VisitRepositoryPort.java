@@ -12,7 +12,7 @@ import java.util.UUID;
  */
 public interface VisitRepositoryPort {
     Optional<Visit> findById(UUID id);
-    Optional<Visit> findByBooking_Id(UUID bookingId);
-    List<Visit> findByBooking_IdIn(Collection<UUID> bookingIds);
+    Optional<Visit> findByBookingId(UUID bookingId);
+    List<Visit> findByBookingIds(Collection<UUID> bookingIds);
     Visit save(Visit visit);
 }

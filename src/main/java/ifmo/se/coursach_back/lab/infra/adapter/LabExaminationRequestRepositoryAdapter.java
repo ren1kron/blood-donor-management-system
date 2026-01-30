@@ -21,18 +21,18 @@ public class LabExaminationRequestRepositoryAdapter implements LabExaminationReq
     }
 
     @Override
-    public Optional<LabExaminationRequest> findByVisit_Id(UUID visitId) {
-        return jpaRepository.findByVisit_Id(visitId);
+    public Optional<LabExaminationRequest> findByVisitId(UUID visitId) {
+        return jpaRepository.findByVisitId(visitId);
     }
 
     @Override
-    public List<LabExaminationRequest> findByVisit_IdIn(List<UUID> visitIds) {
-        return jpaRepository.findByVisit_IdIn(visitIds);
+    public List<LabExaminationRequest> findByVisitIds(List<UUID> visitIds) {
+        return jpaRepository.findByVisitIds(visitIds);
     }
 
     @Override
-    public List<LabExaminationRequest> findByStatusInOrderByRequestedAtAsc(List<LabExaminationStatus> statuses) {
-        return jpaRepository.findByStatusInOrderByRequestedAtAsc(statuses);
+    public List<LabExaminationRequest> findByStatuses(List<LabExaminationStatus> statuses) {
+        return jpaRepository.findByStatuses(statuses);
     }
 
     @Override

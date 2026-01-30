@@ -20,13 +20,13 @@ public class CollectionSessionRepositoryAdapter implements CollectionSessionRepo
     }
 
     @Override
-    public Optional<CollectionSession> findByVisit_Id(UUID visitId) {
-        return jpaRepository.findByVisit_Id(visitId);
+    public Optional<CollectionSession> findByVisitId(UUID visitId) {
+        return jpaRepository.findByVisitId(visitId);
     }
 
     @Override
-    public List<CollectionSession> findByVisit_IdIn(List<UUID> visitIds) {
-        return jpaRepository.findByVisit_IdIn(visitIds);
+    public List<CollectionSession> findByVisitIds(List<UUID> visitIds) {
+        return jpaRepository.findByVisitIds(visitIds);
     }
 
     @Override

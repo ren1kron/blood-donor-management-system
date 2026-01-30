@@ -10,9 +10,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface LabExaminationRequestRepository extends JpaRepository<LabExaminationRequest, UUID> {
-    Optional<LabExaminationRequest> findByVisit_Id(UUID visitId);
+    @Query("select r from LabExaminationRequest r where r.visit.id = :visitId")
+    Optional<LabExaminationRequest> findByVisitId(@Param("visitId") UUID visitId);
 
-    List<LabExaminationRequest> findByVisit_IdIn(List<UUID> visitIds);
+    @Query("select r from LabExaminationRequest r where r.visit.id in :visitIds")
+    List<LabExaminationRequest> findByVisitIds(@Param("visitIds") List<UUID> visitIds);
 
     @Query("""
             select distinct r
@@ -24,7 +26,7 @@ public interface LabExaminationRequestRepository extends JpaRepository<LabExamin
             where r.status in :statuses
             order by r.requestedAt asc
             """)
-    List<LabExaminationRequest> findByStatusInOrderByRequestedAtAsc(
+    List<LabExaminationRequest> findByStatuses(
             @Param("statuses") List<LabExaminationStatus> statuses);
 
     long countByStatusIn(List<LabExaminationStatus> statuses);

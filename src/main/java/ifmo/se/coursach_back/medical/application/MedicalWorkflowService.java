@@ -72,14 +72,14 @@ public class MedicalWorkflowService {
     private final DomainEventPublisher eventPublisher;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        return bookingRepository.findByStatusesAndPurposeAfter(
                 List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED),
                 SlotPurpose.DONATION,
                 from);
     }
 
     public List<Booking> listConfirmedExaminationBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        return bookingRepository.findByStatusesAndPurposeAfter(
                 List.of(BookingStatus.CONFIRMED),
                 SlotPurpose.EXAMINATION,
                 from);
@@ -89,7 +89,7 @@ public class MedicalWorkflowService {
         if (bookingIds.isEmpty()) {
             return new HashMap<>();
         }
-        return visitRepository.findByBooking_IdIn(bookingIds).stream()
+        return visitRepository.findByBookingIds(bookingIds).stream()
                 .collect(Collectors.toMap(visit -> visit.getBooking().getId(), visit -> visit));
     }
     
@@ -97,7 +97,7 @@ public class MedicalWorkflowService {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return medicalCheckRepository.findByVisit_IdIn(visitIds).stream()
+        return medicalCheckRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(check -> check.getVisit().getId(), check -> check));
     }
     
@@ -105,7 +105,7 @@ public class MedicalWorkflowService {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return donationRepository.findByVisit_IdIn(visitIds).stream()
+        return donationRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(donation -> donation.getVisit().getId(), donation -> donation));
     }
 
@@ -113,7 +113,7 @@ public class MedicalWorkflowService {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return collectionSessionRepository.findByVisit_IdIn(visitIds).stream()
+        return collectionSessionRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(session -> session.getVisit().getId(), session -> session));
     }
 
@@ -121,7 +121,7 @@ public class MedicalWorkflowService {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return labExaminationRequestRepository.findByVisit_IdIn(visitIds).stream()
+        return labExaminationRequestRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(request -> request.getVisit().getId(), request -> request));
     }
 
@@ -136,7 +136,7 @@ public class MedicalWorkflowService {
         MedicalCheck check = medicalCheckRepository.findById(request.examinationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Examination not found"));
 
-        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(check.getVisit().getId())
+        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisitId(check.getVisit().getId())
                 .orElse(null);
         if (labRequest == null || !LabExaminationStatus.COMPLETED.equals(labRequest.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
@@ -196,7 +196,7 @@ public class MedicalWorkflowService {
         StaffProfile staff = requireStaff(accountId);
         Visit visit = resolveVisit(request.bookingId(), request.visitId());
 
-        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(visit.getId())
+        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisitId(visit.getId())
                 .orElse(null);
         if (labRequest == null || labRequest.getStatus() != LabExaminationStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
@@ -213,7 +213,7 @@ public class MedicalWorkflowService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is not allowed when decision is ADMITTED");
         }
 
-        MedicalCheck check = medicalCheckRepository.findByVisit_Id(visit.getId()).orElseGet(MedicalCheck::new);
+        MedicalCheck check = medicalCheckRepository.findByVisitId(visit.getId()).orElseGet(MedicalCheck::new);
         check.setVisit(visit);
         check.setPerformedBy(staff);
         check.setWeightKg(request.weightKg());
@@ -262,7 +262,7 @@ public class MedicalWorkflowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking is not confirmed");
         }
 
-        LabExaminationRequest existing = labExaminationRequestRepository.findByVisit_Id(visitId).orElse(null);
+        LabExaminationRequest existing = labExaminationRequestRepository.findByVisitId(visitId).orElse(null);
         if (existing != null) {
             return existing;
         }
@@ -281,7 +281,7 @@ public class MedicalWorkflowService {
         Visit visit = visitRepository.findById(visitId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found"));
 
-        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(visitId)
+        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisitId(visitId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lab examination request not found"));
         if (labRequest.getStatus() != LabExaminationStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Lab examination is not completed");
@@ -298,7 +298,7 @@ public class MedicalWorkflowService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral is not allowed when decision is ADMITTED");
         }
 
-        MedicalCheck check = medicalCheckRepository.findByVisit_Id(visit.getId()).orElseGet(MedicalCheck::new);
+        MedicalCheck check = medicalCheckRepository.findByVisitId(visit.getId()).orElseGet(MedicalCheck::new);
         check.setVisit(visit);
         check.setPerformedBy(doctor);
         check.setDecision(decision);
@@ -363,17 +363,17 @@ public class MedicalWorkflowService {
         }
 
         MedicalCheck check = medicalCheckRepository
-                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(booking.getDonor().getId())
+                .findLatestByDonorId(booking.getDonor().getId())
                 .orElse(null);
         if (check == null || check.getDecision() != MedicalCheckDecision.ADMITTED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Donation not allowed without admission");
         }
 
-        if (donationRepository.findByVisit_Id(visit.getId()).isPresent()) {
+        if (donationRepository.findByVisitId(visit.getId()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Donation already registered for this visit");
         }
 
-        CollectionSession session = collectionSessionRepository.findByVisit_Id(visit.getId()).orElse(null);
+        CollectionSession session = collectionSessionRepository.findByVisitId(visit.getId()).orElse(null);
         if (session == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Collection session is required before donation");
         }
@@ -473,7 +473,7 @@ public class MedicalWorkflowService {
     }
 
     public MedicalCheck findLatestCheckByDonor(UUID donorId) {
-        return medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donorId)
+        return medicalCheckRepository.findLatestByDonorId(donorId)
                 .orElse(null);
     }
 
@@ -492,7 +492,7 @@ public class MedicalWorkflowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking is cancelled");
         }
 
-        return visitRepository.findByBooking_Id(bookingId)
+        return visitRepository.findByBookingId(bookingId)
                 .orElseGet(() -> visitRepository.save(newVisit(booking)));
     }
 

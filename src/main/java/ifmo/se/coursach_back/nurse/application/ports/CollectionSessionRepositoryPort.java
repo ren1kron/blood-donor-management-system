@@ -11,7 +11,7 @@ import java.util.UUID;
  */
 public interface CollectionSessionRepositoryPort {
     Optional<CollectionSession> findById(UUID id);
-    Optional<CollectionSession> findByVisit_Id(UUID visitId);
-    List<CollectionSession> findByVisit_IdIn(List<UUID> visitIds);
+    Optional<CollectionSession> findByVisitId(UUID visitId);
+    List<CollectionSession> findByVisitIds(List<UUID> visitIds);
     CollectionSession save(CollectionSession session);
 }

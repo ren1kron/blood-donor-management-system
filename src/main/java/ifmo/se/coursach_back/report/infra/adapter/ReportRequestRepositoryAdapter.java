@@ -26,8 +26,8 @@ public class ReportRequestRepositoryAdapter implements ReportRequestRepositoryPo
     }
 
     @Override
-    public List<ReportRequest> findByRequestedBy_IdOrderByCreatedAtDesc(UUID staffId) {
-        return jpaRepository.findByRequestedBy_IdOrderByCreatedAtDesc(staffId);
+    public List<ReportRequest> findByRequesterId(UUID staffId) {
+        return jpaRepository.findByRequesterId(staffId);
     }
 
     @Override
@@ -41,8 +41,8 @@ public class ReportRequestRepositoryAdapter implements ReportRequestRepositoryPo
     }
 
     @Override
-    public Optional<ReportRequest> findByIdAndRequestedBy_Id(UUID requestId, UUID staffId) {
-        return jpaRepository.findByIdAndRequestedBy_Id(requestId, staffId);
+    public Optional<ReportRequest> findByIdAndRequesterId(UUID requestId, UUID staffId) {
+        return jpaRepository.findByIdAndRequesterId(requestId, staffId);
     }
 
     @Override

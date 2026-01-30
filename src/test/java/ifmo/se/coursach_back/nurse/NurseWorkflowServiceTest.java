@@ -78,7 +78,7 @@ class NurseWorkflowServiceTest {
 
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(nurse));
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
-        when(collectionSessionRepository.findByVisit_Id(visitId)).thenReturn(Optional.empty());
+        when(collectionSessionRepository.findByVisitId(visitId)).thenReturn(Optional.empty());
         when(collectionSessionRepository.save(any(CollectionSession.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 

@@ -13,9 +13,9 @@ import java.util.UUID;
 public interface ReportRequestRepositoryPort {
     Optional<ReportRequest> findById(UUID id);
     List<ReportRequest> findAll();
-    List<ReportRequest> findByRequestedBy_IdOrderByCreatedAtDesc(UUID staffId);
+    List<ReportRequest> findByRequesterId(UUID staffId);
     List<ReportRequest> findByStatusOrderByCreatedAtAsc(ReportRequestStatus status);
     List<ReportRequest> findByStatusInOrderByCreatedAtAsc(List<ReportRequestStatus> statuses);
-    Optional<ReportRequest> findByIdAndRequestedBy_Id(UUID requestId, UUID staffId);
+    Optional<ReportRequest> findByIdAndRequesterId(UUID requestId, UUID staffId);
     ReportRequest save(ReportRequest request);
 }

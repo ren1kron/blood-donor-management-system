@@ -22,13 +22,13 @@ public class MedicalCheckRepositoryAdapter implements MedicalCheckRepositoryPort
     }
 
     @Override
-    public Optional<MedicalCheck> findByVisit_Id(UUID visitId) {
-        return jpaRepository.findByVisit_Id(visitId);
+    public Optional<MedicalCheck> findByVisitId(UUID visitId) {
+        return jpaRepository.findByVisitId(visitId);
     }
 
     @Override
-    public List<MedicalCheck> findByVisit_IdIn(List<UUID> visitIds) {
-        return jpaRepository.findByVisit_IdIn(visitIds);
+    public List<MedicalCheck> findByVisitIds(List<UUID> visitIds) {
+        return jpaRepository.findByVisitIds(visitIds);
     }
 
     @Override
@@ -47,8 +47,8 @@ public class MedicalCheckRepositoryAdapter implements MedicalCheckRepositoryPort
     }
 
     @Override
-    public Optional<MedicalCheck> findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(UUID donorId) {
-        return jpaRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donorId);
+    public Optional<MedicalCheck> findLatestByDonorId(UUID donorId) {
+        return jpaRepository.findLatestByDonorId(donorId);
     }
 
     @Override

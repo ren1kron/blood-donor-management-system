@@ -142,7 +142,7 @@ public class DonorService {
                 .map(d -> d.getVisit().getId())
                 .toList();
         
-        java.util.Map<UUID, CollectionSession> sessionMap = collectionSessionRepository.findByVisit_IdIn(visitIds)
+        java.util.Map<UUID, CollectionSession> sessionMap = collectionSessionRepository.findByVisitIds(visitIds)
                 .stream()
                 .collect(java.util.stream.Collectors.toMap(s -> s.getVisit().getId(), s -> s));
         
@@ -167,7 +167,7 @@ public class DonorService {
 
         Deferral activeDeferral = deferralRepository.findActiveDeferral(donor.getId(), now).orElse(null);
         Donation lastDonation = donationRepository
-                .findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(accountId)
+                .findLatestByDonorAccountId(accountId)
                 .orElse(null);
 
         OffsetDateTime lastDonationAt = lastDonation != null ? lastDonation.getPerformedAt() : null;
@@ -188,7 +188,7 @@ public class DonorService {
         boolean eligible = activeStatus && activeDeferral == null && eligibleByDonation;
         
         MedicalCheck latestCheck = medicalCheckRepository
-                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId())
+                .findLatestByDonorId(donor.getId())
                 .orElse(null);
         OffsetDateTime medicalCheckValidUntil = null;
         boolean hasValidMedicalCheck = false;
@@ -212,13 +212,13 @@ public class DonorService {
 
     public List<NotificationDelivery> listNotifications(UUID accountId) {
         DonorProfile donor = requireDonor(accountId);
-        return notificationDeliveryRepository.findByDonor_IdOrderBySentAtDesc(donor.getId());
+        return notificationDeliveryRepository.findRecentByDonorId(donor.getId());
     }
 
     @Transactional
     public void acknowledgeNotification(UUID accountId, UUID deliveryId) {
         DonorProfile donor = requireDonor(accountId);
-        NotificationDelivery delivery = notificationDeliveryRepository.findByIdAndDonor_Id(deliveryId, donor.getId())
+        NotificationDelivery delivery = notificationDeliveryRepository.findByIdAndDonorId(deliveryId, donor.getId())
                 .orElseThrow(() -> new NotFoundException("Notification not found"));
         delivery.setStatus(DeliveryStatus.ACKED);
         notificationDeliveryRepository.save(delivery);
@@ -249,7 +249,7 @@ public class DonorService {
         if (BookingStatus.CANCELLED.equals(booking.getStatus())) {
             throw new ConflictException("Booking is cancelled");
         }
-        return visitRepository.findByBooking_Id(booking.getId())
+        return visitRepository.findByBookingId(booking.getId())
                 .orElseGet(() -> visitRepository.save(newVisit(booking)));
     }
 

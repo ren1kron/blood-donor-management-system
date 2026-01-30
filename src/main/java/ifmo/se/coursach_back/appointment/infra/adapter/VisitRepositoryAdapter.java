@@ -21,13 +21,13 @@ public class VisitRepositoryAdapter implements VisitRepositoryPort {
     }
 
     @Override
-    public Optional<Visit> findByBooking_Id(UUID bookingId) {
-        return jpaRepository.findByBooking_Id(bookingId);
+    public Optional<Visit> findByBookingId(UUID bookingId) {
+        return jpaRepository.findByBookingId(bookingId);
     }
 
     @Override
-    public List<Visit> findByBooking_IdIn(Collection<UUID> bookingIds) {
-        return jpaRepository.findByBooking_IdIn(bookingIds);
+    public List<Visit> findByBookingIds(Collection<UUID> bookingIds) {
+        return jpaRepository.findByBookingIds(bookingIds);
     }
 
     @Override

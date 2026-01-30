@@ -14,16 +14,16 @@ import java.util.UUID;
  */
 public interface BookingRepositoryPort {
     Optional<Booking> findById(UUID id);
-    long countBySlot_IdAndStatus(UUID slotId, BookingStatus status);
-    boolean existsByDonor_IdAndSlot_Id(UUID donorId, UUID slotId);
-    List<Booking> findByStatusAndSlot_StartAtAfterOrderBySlot_StartAtAsc(BookingStatus status, OffsetDateTime startAt);
-    List<Booking> findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(List<BookingStatus> statuses, OffsetDateTime startAt);
-    List<Booking> findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(List<BookingStatus> statuses, SlotPurpose purpose, OffsetDateTime startAt);
-    List<Booking> findByDonor_Account_IdOrderBySlot_StartAtDesc(UUID accountId);
-    Optional<Booking> findByIdAndDonor_Account_Id(UUID bookingId, UUID accountId);
+    long countBySlotIdAndStatus(UUID slotId, BookingStatus status);
+    boolean existsByDonorIdAndSlotId(UUID donorId, UUID slotId);
+    List<Booking> findByStatusAfter(BookingStatus status, OffsetDateTime startAt);
+    List<Booking> findByStatusesAfter(List<BookingStatus> statuses, OffsetDateTime startAt);
+    List<Booking> findByStatusesAndPurposeAfter(List<BookingStatus> statuses, SlotPurpose purpose, OffsetDateTime startAt);
+    List<Booking> findRecentByDonorAccountId(UUID accountId);
+    Optional<Booking> findByIdAndDonorAccountId(UUID bookingId, UUID accountId);
     long countActiveBookingsBySlotId(UUID slotId);
-    Optional<Booking> findByDonor_IdAndSlot_IdAndStatusAndCancelledAtIsNull(UUID donorId, UUID slotId, BookingStatus status);
-    Optional<Booking> findByIdAndDonor_Id(UUID bookingId, UUID donorId);
+    Optional<Booking> findPendingBookingByDonorAndSlot(UUID donorId, UUID slotId, BookingStatus status);
+    Optional<Booking> findByIdAndDonorId(UUID bookingId, UUID donorId);
     List<Booking> findExaminationBookingsFrom(OffsetDateTime startTime);
     Booking save(Booking booking);
 }

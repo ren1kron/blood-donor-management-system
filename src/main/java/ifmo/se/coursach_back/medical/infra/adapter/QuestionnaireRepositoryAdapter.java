@@ -19,13 +19,13 @@ public class QuestionnaireRepositoryAdapter implements QuestionnaireRepositoryPo
     }
 
     @Override
-    public Optional<Questionnaire> findByVisit_Id(UUID visitId) {
-        return jpaRepository.findByVisit_Id(visitId);
+    public Optional<Questionnaire> findByVisitId(UUID visitId) {
+        return jpaRepository.findByVisitId(visitId);
     }
 
     @Override
-    public boolean existsByVisit_Id(UUID visitId) {
-        return jpaRepository.existsByVisit_Id(visitId);
+    public boolean existsByVisitId(UUID visitId) {
+        return jpaRepository.existsByVisitId(visitId);
     }
 
     @Override

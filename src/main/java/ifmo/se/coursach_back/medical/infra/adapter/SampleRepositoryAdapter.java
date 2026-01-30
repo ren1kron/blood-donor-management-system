@@ -26,8 +26,8 @@ public class SampleRepositoryAdapter implements SampleRepositoryPort {
     }
 
     @Override
-    public List<Sample> findByStatusInOrderByCollectedAtAsc(List<String> statuses) {
-        return jpaRepository.findByStatusInOrderByCollectedAtAsc(statuses);
+    public List<Sample> findByStatuses(List<String> statuses) {
+        return jpaRepository.findByStatuses(statuses);
     }
 
     @Override

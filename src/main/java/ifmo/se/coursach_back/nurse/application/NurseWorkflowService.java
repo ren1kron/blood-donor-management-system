@@ -51,7 +51,7 @@ public class NurseWorkflowService {
 
     public List<ScheduledDonorResponse> listDonationQueue(OffsetDateTime from) {
         OffsetDateTime start = from == null ? OffsetDateTime.now().minusHours(2) : from;
-        List<Booking> bookings = bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        List<Booking> bookings = bookingRepository.findByStatusesAndPurposeAfter(
                 List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED),
                 SlotPurpose.DONATION,
                 start);
@@ -69,7 +69,7 @@ public class NurseWorkflowService {
                     MedicalCheck check = visit != null ? checksByVisit.get(visit.getId()) : null;
                     if (check == null) {
                         check = medicalCheckRepository
-                                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(booking.getDonor().getId())
+                                .findLatestByDonorId(booking.getDonor().getId())
                                 .orElse(null);
                     }
                     Donation donation = visit != null ? donationsByVisit.get(visit.getId()) : null;
@@ -88,7 +88,7 @@ public class NurseWorkflowService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Visit is not for donation");
         }
 
-        CollectionSession existing = collectionSessionRepository.findByVisit_Id(visit.getId()).orElse(null);
+        CollectionSession existing = collectionSessionRepository.findByVisitId(visit.getId()).orElse(null);
         if (existing != null) {
             return toResponse(existing);
         }
@@ -206,7 +206,7 @@ public class NurseWorkflowService {
         }
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
-        return visitRepository.findByBooking_Id(bookingId)
+        return visitRepository.findByBookingId(bookingId)
                 .orElseGet(() -> visitRepository.save(newVisit(booking)));
     }
 
@@ -225,7 +225,7 @@ public class NurseWorkflowService {
         if (bookingIds.isEmpty()) {
             return new HashMap<>();
         }
-        return visitRepository.findByBooking_IdIn(bookingIds).stream()
+        return visitRepository.findByBookingIds(bookingIds).stream()
                 .collect(Collectors.toMap(visit -> visit.getBooking().getId(), visit -> visit));
     }
 
@@ -233,7 +233,7 @@ public class NurseWorkflowService {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return medicalCheckRepository.findByVisit_IdIn(visitIds).stream()
+        return medicalCheckRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(check -> check.getVisit().getId(), check -> check));
     }
 
@@ -241,7 +241,7 @@ public class NurseWorkflowService {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return donationRepository.findByVisit_IdIn(visitIds).stream()
+        return donationRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(donation -> donation.getVisit().getId(), donation -> donation));
     }
 
@@ -249,7 +249,7 @@ public class NurseWorkflowService {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return collectionSessionRepository.findByVisit_IdIn(visitIds).stream()
+        return collectionSessionRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(session -> session.getVisit().getId(), session -> session));
     }
 

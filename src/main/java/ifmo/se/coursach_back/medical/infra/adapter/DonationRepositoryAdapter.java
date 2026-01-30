@@ -22,8 +22,8 @@ public class DonationRepositoryAdapter implements DonationRepositoryPort {
     }
 
     @Override
-    public Optional<Donation> findByVisit_Id(UUID visitId) {
-        return jpaRepository.findByVisit_Id(visitId);
+    public Optional<Donation> findByVisitId(UUID visitId) {
+        return jpaRepository.findByVisitId(visitId);
     }
 
     @Override
@@ -42,13 +42,13 @@ public class DonationRepositoryAdapter implements DonationRepositoryPort {
     }
 
     @Override
-    public Optional<Donation> findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(UUID accountId) {
-        return jpaRepository.findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(accountId);
+    public Optional<Donation> findLatestByDonorAccountId(UUID accountId) {
+        return jpaRepository.findLatestByDonorAccountId(accountId);
     }
 
     @Override
-    public List<Donation> findByVisit_IdIn(List<UUID> visitIds) {
-        return jpaRepository.findByVisit_IdIn(visitIds);
+    public List<Donation> findByVisitIds(List<UUID> visitIds) {
+        return jpaRepository.findByVisitIds(visitIds);
     }
 
     @Override

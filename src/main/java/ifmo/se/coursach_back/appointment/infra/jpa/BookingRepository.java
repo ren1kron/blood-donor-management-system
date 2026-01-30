@@ -13,15 +13,31 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
-    long countBySlot_IdAndStatus(UUID slotId, BookingStatus status);
+    long countBySlotIdAndStatus(UUID slotId, BookingStatus status);
 
-    boolean existsByDonor_IdAndSlot_Id(UUID donorId, UUID slotId);
+    boolean existsByDonorIdAndSlotId(UUID donorId, UUID slotId);
 
-    List<Booking> findByStatusAndSlot_StartAtAfterOrderBySlot_StartAtAsc(BookingStatus status,
-                                                                         OffsetDateTime startAt);
+    @Query("""
+            SELECT b FROM Booking b
+            JOIN FETCH b.slot slot
+            WHERE b.status = :status
+              AND slot.startAt > :startAt
+            ORDER BY slot.startAt ASC
+            """)
+    List<Booking> findByStatusAfter(
+            @Param("status") BookingStatus status,
+            @Param("startAt") OffsetDateTime startAt);
     
-    List<Booking> findByStatusInAndSlot_StartAtAfterOrderBySlot_StartAtAsc(List<BookingStatus> statuses,
-                                                                           OffsetDateTime startAt);
+    @Query("""
+            SELECT b FROM Booking b
+            JOIN FETCH b.slot slot
+            WHERE b.status IN :statuses
+              AND slot.startAt > :startAt
+            ORDER BY slot.startAt ASC
+            """)
+    List<Booking> findByStatusesAfter(
+            @Param("statuses") List<BookingStatus> statuses,
+            @Param("startAt") OffsetDateTime startAt);
 
     @Query("""
             select b
@@ -33,7 +49,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
               and slot.startAt > :startAt
             order by slot.startAt asc
             """)
-    List<Booking> findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+    List<Booking> findByStatusesAndPurposeAfter(
             @Param("statuses") List<BookingStatus> statuses,
             @Param("purpose") SlotPurpose purpose,
             @Param("startAt") OffsetDateTime startAt);
@@ -46,9 +62,18 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             where donor.account.id = :accountId
             order by slot.startAt desc
             """)
-    List<Booking> findByDonor_Account_IdOrderBySlot_StartAtDesc(@Param("accountId") UUID accountId);
+    List<Booking> findRecentByDonorAccountId(@Param("accountId") UUID accountId);
 
-    Optional<Booking> findByIdAndDonor_Account_Id(UUID bookingId, UUID accountId);
+    @Query("""
+            SELECT b FROM Booking b
+            JOIN FETCH b.slot
+            JOIN FETCH b.donor donor
+            WHERE b.id = :bookingId
+              AND donor.account.id = :accountId
+            """)
+    Optional<Booking> findByIdAndDonorAccountId(
+            @Param("bookingId") UUID bookingId,
+            @Param("accountId") UUID accountId);
     
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.slot.id = :slotId " +
            "AND b.status IN (ifmo.se.coursach_back.appointment.domain.BookingStatus.PENDING_QUESTIONNAIRE, " +
@@ -57,10 +82,19 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
            "AND b.cancelledAt IS NULL")
     long countActiveBookingsBySlotId(@Param("slotId") UUID slotId);
     
-    Optional<Booking> findByDonor_IdAndSlot_IdAndStatusAndCancelledAtIsNull(
-            UUID donorId, UUID slotId, BookingStatus status);
+    @Query("""
+            SELECT b FROM Booking b
+            WHERE b.donor.id = :donorId
+              AND b.slot.id = :slotId
+              AND b.status = :status
+              AND b.cancelledAt IS NULL
+            """)
+    Optional<Booking> findPendingBookingByDonorAndSlot(
+            @Param("donorId") UUID donorId,
+            @Param("slotId") UUID slotId,
+            @Param("status") BookingStatus status);
     
-    Optional<Booking> findByIdAndDonor_Id(UUID bookingId, UUID donorId);
+    Optional<Booking> findByIdAndDonorId(UUID bookingId, UUID donorId);
     
 
     @Query("SELECT b FROM Booking b " +

@@ -11,7 +11,13 @@ import org.springframework.data.repository.query.Param;
 public interface SampleRepository extends JpaRepository<Sample, UUID> {
     boolean existsBySampleCode(String sampleCode);
 
-    List<Sample> findByStatusInOrderByCollectedAtAsc(List<String> statuses);
+    @Query("""
+            select s
+            from Sample s
+            where s.status in :statuses
+            order by s.collectedAt asc
+            """)
+    List<Sample> findByStatuses(@Param("statuses") List<String> statuses);
     
     @Query("SELECT COUNT(s) FROM Sample s WHERE s.collectedAt >= :from AND s.collectedAt <= :to")
     long countByCollectedAtBetween(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);

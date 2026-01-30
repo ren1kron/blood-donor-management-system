@@ -21,13 +21,13 @@ public class LabTestResultRepositoryAdapter implements LabTestResultRepositoryPo
     }
 
     @Override
-    public Optional<LabTestResult> findBySample_IdAndTestType_Id(UUID sampleId, Short testTypeId) {
-        return jpaRepository.findBySample_IdAndTestType_Id(sampleId, testTypeId);
+    public Optional<LabTestResult> findBySampleAndTestType(UUID sampleId, Short testTypeId) {
+        return jpaRepository.findBySampleAndTestType(sampleId, testTypeId);
     }
 
     @Override
-    public List<LabTestResult> findBySample_Id(UUID sampleId) {
-        return jpaRepository.findBySample_Id(sampleId);
+    public List<LabTestResult> findBySampleId(UUID sampleId) {
+        return jpaRepository.findBySampleId(sampleId);
     }
 
     @Override

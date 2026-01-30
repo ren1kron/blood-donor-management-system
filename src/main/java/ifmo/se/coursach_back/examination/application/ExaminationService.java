@@ -49,7 +49,7 @@ public class ExaminationService {
         OffsetDateTime end = to != null ? to : start.plusDays(30);
         
         List<AppointmentSlot> slots = slotRepository
-                .findByPurposeAndStartAtBetweenOrderByStartAtAsc(SlotPurpose.EXAMINATION, start, end);
+                .findByPurposeAndTimeRange(SlotPurpose.EXAMINATION, start, end);
         
         return slots.stream()
                 .map(slot -> {
@@ -74,7 +74,7 @@ public class ExaminationService {
             throw new BadRequestException("Slot has already started");
         }
         
-        var existingPending = bookingRepository.findByDonor_IdAndSlot_IdAndStatusAndCancelledAtIsNull(
+        var existingPending = bookingRepository.findPendingBookingByDonorAndSlot(
                 donor.getId(), slotId, BookingStatus.PENDING_QUESTIONNAIRE);
         if (existingPending.isPresent()) {
             return ExaminationBookingResponse.from(existingPending.get());
@@ -100,7 +100,7 @@ public class ExaminationService {
                                                       ConfirmExaminationRequest request) {
         DonorProfile donor = requireDonor(accountId);
         
-        Booking booking = bookingRepository.findByIdAndDonor_Id(bookingId, donor.getId())
+        Booking booking = bookingRepository.findByIdAndDonorId(bookingId, donor.getId())
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
         
         if (!BookingStatus.PENDING_QUESTIONNAIRE.equals(booking.getStatus())) {
@@ -156,7 +156,7 @@ public class ExaminationService {
     public void cancelBooking(UUID accountId, UUID bookingId) {
         DonorProfile donor = requireDonor(accountId);
         
-        Booking booking = bookingRepository.findByIdAndDonor_Id(bookingId, donor.getId())
+        Booking booking = bookingRepository.findByIdAndDonorId(bookingId, donor.getId())
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
         
         if (BookingStatus.CANCELLED.equals(booking.getStatus())) {
@@ -176,7 +176,7 @@ public class ExaminationService {
     public ExaminationBookingResponse getBooking(UUID accountId, UUID bookingId) {
         DonorProfile donor = requireDonor(accountId);
         
-        Booking booking = bookingRepository.findByIdAndDonor_Id(bookingId, donor.getId())
+        Booking booking = bookingRepository.findByIdAndDonorId(bookingId, donor.getId())
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
         
         return ExaminationBookingResponse.from(booking);

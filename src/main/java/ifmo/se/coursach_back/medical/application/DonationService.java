@@ -149,7 +149,7 @@ public class DonationService {
 
     private void validateMedicalAdmission(UUID donorId) {
         MedicalCheck check = medicalCheckRepository
-                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donorId)
+                .findLatestByDonorId(donorId)
                 .orElse(null);
 
         if (check == null || check.getDecision() != MedicalCheckDecision.ADMITTED) {
@@ -158,13 +158,13 @@ public class DonationService {
     }
 
     private void validateNoDuplicateDonation(UUID visitId) {
-        if (donationRepository.findByVisit_Id(visitId).isPresent()) {
+        if (donationRepository.findByVisitId(visitId).isPresent()) {
             throw new ConflictException("Donation already registered for this visit");
         }
     }
 
     private void validateCollectionSession(UUID visitId) {
-        CollectionSession session = collectionSessionRepository.findByVisit_Id(visitId)
+        CollectionSession session = collectionSessionRepository.findByVisitId(visitId)
                 .orElseThrow(() -> new ConflictException("Collection session is required before donation"));
 
         if (session.getStatus() == CollectionSessionStatus.ABORTED) {

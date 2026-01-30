@@ -15,13 +15,13 @@ public class NotificationDeliveryRepositoryAdapter implements NotificationDelive
     private final NotificationDeliveryRepository jpaRepository;
 
     @Override
-    public List<NotificationDelivery> findByDonor_IdOrderBySentAtDesc(UUID donorId) {
-        return jpaRepository.findByDonor_IdOrderBySentAtDesc(donorId);
+    public List<NotificationDelivery> findRecentByDonorId(UUID donorId) {
+        return jpaRepository.findRecentByDonorId(donorId);
     }
 
     @Override
-    public Optional<NotificationDelivery> findByIdAndDonor_Id(UUID deliveryId, UUID donorId) {
-        return jpaRepository.findByIdAndDonor_Id(deliveryId, donorId);
+    public Optional<NotificationDelivery> findByIdAndDonorId(UUID deliveryId, UUID donorId) {
+        return jpaRepository.findByIdAndDonorId(deliveryId, donorId);
     }
 
     @Override

@@ -12,9 +12,9 @@ import java.util.UUID;
  */
 public interface LabExaminationRequestRepositoryPort {
     Optional<LabExaminationRequest> findById(UUID id);
-    Optional<LabExaminationRequest> findByVisit_Id(UUID visitId);
-    List<LabExaminationRequest> findByVisit_IdIn(List<UUID> visitIds);
-    List<LabExaminationRequest> findByStatusInOrderByRequestedAtAsc(List<LabExaminationStatus> statuses);
+    Optional<LabExaminationRequest> findByVisitId(UUID visitId);
+    List<LabExaminationRequest> findByVisitIds(List<UUID> visitIds);
+    List<LabExaminationRequest> findByStatuses(List<LabExaminationStatus> statuses);
     long countByStatusIn(List<LabExaminationStatus> statuses);
     LabExaminationRequest save(LabExaminationRequest request);
 }

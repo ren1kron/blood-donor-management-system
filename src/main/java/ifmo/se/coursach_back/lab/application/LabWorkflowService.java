@@ -39,7 +39,7 @@ public class LabWorkflowService {
     private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
 
     public List<LabExaminationRequest> listPendingRequests() {
-        return labExaminationRequestRepository.findByStatusInOrderByRequestedAtAsc(
+        return labExaminationRequestRepository.findByStatuses(
                 List.of(LabExaminationStatus.REQUESTED, LabExaminationStatus.IN_PROGRESS));
     }
 
@@ -47,7 +47,7 @@ public class LabWorkflowService {
         List<String> statuses = status == null || status.isBlank()
                 ? DEFAULT_PENDING_STATUSES
                 : List.of(status.trim().toUpperCase());
-        return sampleRepository.findByStatusInOrderByCollectedAtAsc(statuses);
+        return sampleRepository.findByStatuses(statuses);
     }
 
     @Transactional
@@ -64,7 +64,7 @@ public class LabWorkflowService {
         }
 
         LabTestResult result = labTestResultRepository
-                .findBySample_IdAndTestType_Id(sample.getId(), testType.getId())
+                .findBySampleAndTestType(sample.getId(), testType.getId())
                 .orElseGet(LabTestResult::new);
 
         if (result.getId() != null && result.isPublished()) {
@@ -96,7 +96,7 @@ public class LabWorkflowService {
     public List<LabTestResult> getResultsBySample(UUID sampleId) {
         Sample sample = sampleRepository.findById(sampleId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sample not found"));
-        return labTestResultRepository.findBySample_Id(sample.getId());
+        return labTestResultRepository.findBySampleId(sample.getId());
     }
 
     @Transactional
@@ -122,7 +122,7 @@ public class LabWorkflowService {
         requestEntity.setRbc10e12L(request.rbc10e12L());
         LabExaminationRequest savedRequest = labExaminationRequestRepository.save(requestEntity);
 
-        MedicalCheck check = medicalCheckRepository.findByVisit_Id(requestEntity.getVisit().getId())
+        MedicalCheck check = medicalCheckRepository.findByVisitId(requestEntity.getVisit().getId())
                 .orElseGet(MedicalCheck::new);
         check.setVisit(requestEntity.getVisit());
         check.setSubmittedByLab(labTech);

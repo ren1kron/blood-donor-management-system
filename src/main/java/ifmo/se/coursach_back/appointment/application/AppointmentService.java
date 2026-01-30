@@ -42,13 +42,13 @@ public class AppointmentService {
 
     public List<AppointmentSlot> listUpcomingSlots(OffsetDateTime from, SlotPurpose purpose) {
         if (purpose == null) {
-            return slotRepository.findByStartAtAfterOrderByStartAtAsc(from);
+            return slotRepository.findSlotsStartingAfter(from);
         }
-        return slotRepository.findByPurposeAndStartAtAfterOrderByStartAtAsc(purpose, from);
+        return slotRepository.findByPurposeStartingAfter(purpose, from);
     }
 
     public long getSlotBookedCount(UUID slotId) {
-        return bookingRepository.countBySlot_IdAndStatus(slotId, BookingStatus.BOOKED);
+        return bookingRepository.countBySlotIdAndStatus(slotId, BookingStatus.BOOKED);
     }
 
     public AppointmentSlot createSlot(CreateSlotRequest request) {
@@ -102,7 +102,7 @@ public class AppointmentService {
         }
 
         MedicalCheck lastCheck = medicalCheckRepository
-                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId())
+                .findLatestByDonorId(donor.getId())
                 .orElse(null);
         if (lastCheck == null || lastCheck.getDecision() != MedicalCheckDecision.ADMITTED) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
@@ -117,10 +117,10 @@ public class AppointmentService {
     }
 
     public List<DonorBookingResponse> listDonorBookings(UUID accountId) {
-        List<Booking> bookings = bookingRepository.findByDonor_Account_IdOrderBySlot_StartAtDesc(accountId);
+        List<Booking> bookings = bookingRepository.findRecentByDonorAccountId(accountId);
         
         List<UUID> bookingIds = bookings.stream().map(Booking::getId).toList();
-        Set<UUID> bookingsWithVisit = visitRepository.findByBooking_IdIn(bookingIds).stream()
+        Set<UUID> bookingsWithVisit = visitRepository.findByBookingIds(bookingIds).stream()
                 .map(v -> v.getBooking().getId())
                 .collect(Collectors.toSet());
         
@@ -131,7 +131,7 @@ public class AppointmentService {
 
     @Transactional
     public Booking cancelBooking(UUID accountId, UUID bookingId) {
-        Booking booking = bookingRepository.findByIdAndDonor_Account_Id(bookingId, accountId)
+        Booking booking = bookingRepository.findByIdAndDonorAccountId(bookingId, accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
         if (!BookingStatus.BOOKED.equals(booking.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only booked appointments can be cancelled");
@@ -143,7 +143,7 @@ public class AppointmentService {
 
     @Transactional
     public Booking rescheduleBooking(UUID accountId, UUID bookingId, UUID newSlotId) {
-        Booking booking = bookingRepository.findByIdAndDonor_Account_Id(bookingId, accountId)
+        Booking booking = bookingRepository.findByIdAndDonorAccountId(bookingId, accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
         if (!BookingStatus.BOOKED.equals(booking.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only booked appointments can be rescheduled");
@@ -169,11 +169,11 @@ public class AppointmentService {
     }
 
     private void ensureSlotAvailable(DonorProfile donor, AppointmentSlot slot) {
-        if (bookingRepository.existsByDonor_IdAndSlot_Id(donor.getId(), slot.getId())) {
+        if (bookingRepository.existsByDonorIdAndSlotId(donor.getId(), slot.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking already exists for this slot");
         }
 
-        long bookedCount = bookingRepository.countBySlot_IdAndStatus(slot.getId(), BookingStatus.BOOKED);
+        long bookedCount = bookingRepository.countBySlotIdAndStatus(slot.getId(), BookingStatus.BOOKED);
         if (bookedCount >= slot.getCapacity()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Slot capacity exceeded");
         }

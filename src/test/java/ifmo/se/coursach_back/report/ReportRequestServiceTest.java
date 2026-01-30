@@ -126,7 +126,7 @@ class ReportRequestServiceTest {
         when(staffProfileRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(admin));
         when(reportRequestRepository.findById(persisted.getId())).thenReturn(Optional.of(persisted));
         when(donationRepository.findByDonorAccountId(any(UUID.class))).thenReturn(List.of());
-        when(medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(any(UUID.class)))
+        when(medicalCheckRepository.findLatestByDonorId(any(UUID.class)))
                 .thenReturn(Optional.empty());
         when(deferralRepository.findActiveDeferral(any(UUID.class), any()))
                 .thenReturn(Optional.empty());

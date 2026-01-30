@@ -13,12 +13,12 @@ import java.util.UUID;
  */
 public interface MedicalCheckRepositoryPort {
     Optional<MedicalCheck> findById(UUID id);
-    Optional<MedicalCheck> findByVisit_Id(UUID visitId);
-    List<MedicalCheck> findByVisit_IdIn(List<UUID> visitIds);
+    Optional<MedicalCheck> findByVisitId(UUID visitId);
+    List<MedicalCheck> findByVisitIds(List<UUID> visitIds);
     List<MedicalCheck> findByStatusOrderBySubmittedAtAsc(MedicalCheckDecision status);
     long countByStatus(MedicalCheckDecision status);
     List<MedicalCheck> findValidAdmittedChecksByDonorId(UUID donorId, MedicalCheckDecision decision, OffsetDateTime since);
-    Optional<MedicalCheck> findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(UUID donorId);
+    Optional<MedicalCheck> findLatestByDonorId(UUID donorId);
     List<MedicalCheck> findByDonorId(UUID donorId);
     MedicalCheck save(MedicalCheck medicalCheck);
 }

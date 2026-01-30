@@ -47,7 +47,7 @@ public class LabExaminationService {
         validateBookingConfirmed(booking);
 
         // Return existing if already created
-        LabExaminationRequest existing = labExaminationRequestRepository.findByVisit_Id(visitId)
+        LabExaminationRequest existing = labExaminationRequestRepository.findByVisitId(visitId)
                 .orElse(null);
         if (existing != null) {
             log.debug("Lab request already exists for visit: {}", visitId);
@@ -70,7 +70,7 @@ public class LabExaminationService {
      * Gets a lab examination request by visit ID.
      */
     public LabExaminationRequest getByVisit(UUID visitId) {
-        return labExaminationRequestRepository.findByVisit_Id(visitId)
+        return labExaminationRequestRepository.findByVisitId(visitId)
                 .orElseThrow(() -> NotFoundException.entity("Lab examination request", "visit " + visitId));
     }
 
@@ -78,7 +78,7 @@ public class LabExaminationService {
      * Checks if lab examination is completed for a visit.
      */
     public boolean isCompleted(UUID visitId) {
-        return labExaminationRequestRepository.findByVisit_Id(visitId)
+        return labExaminationRequestRepository.findByVisitId(visitId)
                 .map(r -> r.getStatus() == LabExaminationStatus.COMPLETED)
                 .orElse(false);
     }

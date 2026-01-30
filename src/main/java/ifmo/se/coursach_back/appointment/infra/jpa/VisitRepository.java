@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface VisitRepository extends JpaRepository<Visit, UUID> {
-    Optional<Visit> findByBooking_Id(UUID bookingId);
+    @Query("select v from Visit v where v.booking.id = :bookingId")
+    Optional<Visit> findByBookingId(@Param("bookingId") UUID bookingId);
 
-    List<Visit> findByBooking_IdIn(Collection<UUID> bookingIds);
+    @Query("select v from Visit v where v.booking.id in :bookingIds")
+    List<Visit> findByBookingIds(@Param("bookingIds") Collection<UUID> bookingIds);
 }

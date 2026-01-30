@@ -105,7 +105,7 @@ public class ReportRequestService {
 
     public List<ReportRequestSummaryResponse> listMyRequests(UUID accountId) {
         StaffProfile requester = requireStaff(accountId);
-        return reportRequestRepository.findByRequestedBy_IdOrderByCreatedAtDesc(requester.getId()).stream()
+        return reportRequestRepository.findByRequesterId(requester.getId()).stream()
                 .map(this::toSummary)
                 .toList();
     }
@@ -308,7 +308,7 @@ public class ReportRequestService {
         payload.put("donor", donorInfo);
 
         MedicalCheck latestCheck = medicalCheckRepository
-                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId())
+                .findLatestByDonorId(donor.getId())
                 .orElse(null);
         if (latestCheck == null) {
             payload.put("latestMedicalCheck", null);
@@ -412,13 +412,13 @@ public class ReportRequestService {
         }
 
         Donation lastDonation = donationRepository
-                .findTopByVisit_Booking_Donor_Account_IdOrderByPerformedAtDesc(donor.getAccount().getId())
+                .findLatestByDonorAccountId(donor.getAccount().getId())
                 .orElse(null);
         OffsetDateTime lastDonationAt = lastDonation != null ? lastDonation.getPerformedAt() : null;
         payload.put("lastDonationAt", lastDonationAt);
 
         MedicalCheck latestCheck = medicalCheckRepository
-                .findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId())
+                .findLatestByDonorId(donor.getId())
                 .orElse(null);
         payload.put("latestMedicalDecision", latestCheck == null ? null : latestCheck.getDecision());
         payload.put("latestMedicalDecisionAt", latestCheck == null ? null : latestCheck.getDecisionAt());

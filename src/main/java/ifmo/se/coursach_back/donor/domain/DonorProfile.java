@@ -2,6 +2,7 @@ package ifmo.se.coursach_back.donor.domain;
 import ifmo.se.coursach_back.shared.domain.Account;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -39,11 +40,11 @@ public class DonorProfile {
     private LocalDate birthDate;
 
     @Column(name = "blood_group")
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = BloodGroupConverter.class)
     private BloodGroup bloodGroup;
 
     @Column(name = "rh_factor")
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = RhFactorConverter.class)
     private RhFactor rhFactor;
 
     @Enumerated(EnumType.STRING)

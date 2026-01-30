@@ -108,11 +108,11 @@ class MedicalWorkflowServiceDonationTest {
 
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
-        when(donationRepository.findByVisit_Id(visitId)).thenReturn(Optional.empty());
+        when(donationRepository.findByVisitId(visitId)).thenReturn(Optional.empty());
         CollectionSession session = new CollectionSession();
         session.setStatus(CollectionSessionStatus.PREPARED);
-        when(collectionSessionRepository.findByVisit_Id(visitId)).thenReturn(Optional.of(session));
-        when(medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId()))
+        when(collectionSessionRepository.findByVisitId(visitId)).thenReturn(Optional.of(session));
+        when(medicalCheckRepository.findLatestByDonorId(donor.getId()))
                 .thenReturn(Optional.of(check));
         when(donationRepository.save(any(Donation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -147,12 +147,12 @@ class MedicalWorkflowServiceDonationTest {
 
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
-        when(medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId()))
+        when(medicalCheckRepository.findLatestByDonorId(donor.getId()))
                 .thenReturn(Optional.of(check));
         CollectionSession session = new CollectionSession();
         session.setStatus(CollectionSessionStatus.PREPARED);
-        when(collectionSessionRepository.findByVisit_Id(visitId)).thenReturn(Optional.of(session));
-        when(donationRepository.findByVisit_Id(visitId)).thenReturn(Optional.of(new Donation()));
+        when(collectionSessionRepository.findByVisitId(visitId)).thenReturn(Optional.of(session));
+        when(donationRepository.findByVisitId(visitId)).thenReturn(Optional.of(new Donation()));
 
         DonationRequest request = new DonationRequest(null, visitId, "WHOLE_BLOOD", 450, null);
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -183,10 +183,10 @@ class MedicalWorkflowServiceDonationTest {
 
         when(staffProfileRepository.findByAccountId(accountId)).thenReturn(Optional.of(doctor));
         when(visitRepository.findById(visitId)).thenReturn(Optional.of(visit));
-        when(medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donor.getId()))
+        when(medicalCheckRepository.findLatestByDonorId(donor.getId()))
                 .thenReturn(Optional.of(check));
-        when(donationRepository.findByVisit_Id(visitId)).thenReturn(Optional.empty());
-        when(collectionSessionRepository.findByVisit_Id(visitId)).thenReturn(Optional.empty());
+        when(donationRepository.findByVisitId(visitId)).thenReturn(Optional.empty());
+        when(collectionSessionRepository.findByVisitId(visitId)).thenReturn(Optional.empty());
 
         DonationRequest request = new DonationRequest(null, visitId, "WHOLE_BLOOD", 450, null);
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,

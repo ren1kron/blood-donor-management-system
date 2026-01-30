@@ -61,7 +61,7 @@ public class MedicalCheckService {
      * Finds the latest medical check for a donor.
      */
     public MedicalCheck findLatestByDonor(UUID donorId) {
-        return medicalCheckRepository.findTopByVisit_Booking_Donor_IdOrderByDecisionAtDesc(donorId)
+        return medicalCheckRepository.findLatestByDonorId(donorId)
                 .orElse(null);
     }
 
@@ -108,7 +108,7 @@ public class MedicalCheckService {
 
         MedicalCheckDecision decision = parseAndValidateDecision(request.decision(), request.deferral());
 
-        MedicalCheck check = medicalCheckRepository.findByVisit_Id(visit.getId())
+        MedicalCheck check = medicalCheckRepository.findByVisitId(visit.getId())
                 .orElseGet(MedicalCheck::new);
 
         check.setVisit(visit);
@@ -148,7 +148,7 @@ public class MedicalCheckService {
 
         MedicalCheckDecision decision = parseAndValidateDecision(request.decision(), request.deferral());
 
-        MedicalCheck check = medicalCheckRepository.findByVisit_Id(visit.getId())
+        MedicalCheck check = medicalCheckRepository.findByVisitId(visit.getId())
                 .orElseGet(MedicalCheck::new);
 
         check.setVisit(visit);
@@ -170,7 +170,7 @@ public class MedicalCheckService {
     }
 
     private void validateLabExaminationCompleted(UUID visitId) {
-        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisit_Id(visitId)
+        LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisitId(visitId)
                 .orElse(null);
 
         if (labRequest == null || labRequest.getStatus() != LabExaminationStatus.COMPLETED) {

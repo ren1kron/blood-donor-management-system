@@ -72,7 +72,7 @@ public class MedicalWorkflowFacade {
     // === Booking and Visit queries ===
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        return bookingRepository.findByStatusesAndPurposeAfter(
                 List.of(BookingStatus.BOOKED, BookingStatus.CONFIRMED),
                 SlotPurpose.DONATION,
                 from
@@ -80,7 +80,7 @@ public class MedicalWorkflowFacade {
     }
 
     public List<Booking> listConfirmedExaminationBookings(OffsetDateTime from) {
-        return bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
+        return bookingRepository.findByStatusesAndPurposeAfter(
                 List.of(BookingStatus.CONFIRMED),
                 SlotPurpose.EXAMINATION,
                 from
@@ -93,7 +93,7 @@ public class MedicalWorkflowFacade {
         if (bookingIds.isEmpty()) {
             return new HashMap<>();
         }
-        return visitRepository.findByBooking_IdIn(bookingIds).stream()
+        return visitRepository.findByBookingIds(bookingIds).stream()
                 .collect(Collectors.toMap(v -> v.getBooking().getId(), v -> v));
     }
 
@@ -101,7 +101,7 @@ public class MedicalWorkflowFacade {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return medicalCheckRepository.findByVisit_IdIn(visitIds).stream()
+        return medicalCheckRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(c -> c.getVisit().getId(), c -> c));
     }
 
@@ -109,7 +109,7 @@ public class MedicalWorkflowFacade {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return donationRepository.findByVisit_IdIn(visitIds).stream()
+        return donationRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(d -> d.getVisit().getId(), d -> d));
     }
 
@@ -117,7 +117,7 @@ public class MedicalWorkflowFacade {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return collectionSessionRepository.findByVisit_IdIn(visitIds).stream()
+        return collectionSessionRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(s -> s.getVisit().getId(), s -> s));
     }
 
@@ -125,7 +125,7 @@ public class MedicalWorkflowFacade {
         if (visitIds.isEmpty()) {
             return new HashMap<>();
         }
-        return labExaminationRequestRepository.findByVisit_IdIn(visitIds).stream()
+        return labExaminationRequestRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(r -> r.getVisit().getId(), r -> r));
     }
 

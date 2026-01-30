@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface SampleRepositoryPort {
     Optional<Sample> findById(UUID id);
     boolean existsBySampleCode(String sampleCode);
-    List<Sample> findByStatusInOrderByCollectedAtAsc(List<String> statuses);
+    List<Sample> findByStatuses(List<String> statuses);
     long countByCollectedAtBetween(OffsetDateTime from, OffsetDateTime to);
     List<Sample> findByDonorId(UUID donorId);
     Sample save(Sample sample);
