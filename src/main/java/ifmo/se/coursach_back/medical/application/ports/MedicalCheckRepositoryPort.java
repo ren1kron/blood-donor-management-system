@@ -19,6 +19,7 @@ public interface MedicalCheckRepositoryPort {
     long countByStatus(MedicalCheckDecision status);
     List<MedicalCheck> findValidAdmittedChecksByDonorId(UUID donorId, MedicalCheckDecision decision, OffsetDateTime since);
     Optional<MedicalCheck> findLatestByDonorId(UUID donorId);
+    List<MedicalCheck> findLatestByDonorIds(List<UUID> donorIds);
     List<MedicalCheck> findByDonorId(UUID donorId);
     MedicalCheck save(MedicalCheck medicalCheck);
 }

@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,7 @@ public interface MedicalCheckRepository extends JpaRepository<MedicalCheck, UUID
     @Query("select mc from MedicalCheck mc where mc.visit.id in :visitIds")
     List<MedicalCheck> findByVisitIds(@Param("visitIds") List<UUID> visitIds);
     
+    @EntityGraph(attributePaths = {"visit", "visit.booking", "visit.booking.donor"})
     List<MedicalCheck> findByStatusOrderBySubmittedAtAsc(MedicalCheckDecision status);
 
     long countByStatus(MedicalCheckDecision status);
@@ -48,6 +50,23 @@ public interface MedicalCheckRepository extends JpaRepository<MedicalCheck, UUID
                 .stream()
                 .findFirst();
     }
+
+    @Query("""
+            select mc
+            from MedicalCheck mc
+            join fetch mc.visit v
+            join fetch v.booking b
+            join fetch b.donor donor
+            where b.donor.id in :donorIds
+              and mc.decisionAt = (
+                select max(mc2.decisionAt)
+                from MedicalCheck mc2
+                join mc2.visit v2
+                join v2.booking b2
+                where b2.donor.id = b.donor.id
+              )
+            """)
+    List<MedicalCheck> findLatestByDonorIds(@Param("donorIds") List<UUID> donorIds);
 
     @Query("SELECT mc FROM MedicalCheck mc " +
            "WHERE mc.visit.booking.donor.id = :donorId " +

@@ -10,9 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface VisitRepository extends JpaRepository<Visit, UUID> {
-    @Query("select v from Visit v where v.booking.id = :bookingId")
+    @Query("select v from Visit v join fetch v.booking where v.booking.id = :bookingId")
     Optional<Visit> findByBookingId(@Param("bookingId") UUID bookingId);
 
-    @Query("select v from Visit v where v.booking.id in :bookingIds")
+    @Query("select v from Visit v join fetch v.booking where v.booking.id in :bookingIds")
     List<Visit> findByBookingIds(@Param("bookingIds") Collection<UUID> bookingIds);
 }

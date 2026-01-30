@@ -52,6 +52,11 @@ public class MedicalCheckRepositoryAdapter implements MedicalCheckRepositoryPort
     }
 
     @Override
+    public List<MedicalCheck> findLatestByDonorIds(List<UUID> donorIds) {
+        return jpaRepository.findLatestByDonorIds(donorIds);
+    }
+
+    @Override
     public List<MedicalCheck> findByDonorId(UUID donorId) {
         return jpaRepository.findByDonorId(donorId);
     }

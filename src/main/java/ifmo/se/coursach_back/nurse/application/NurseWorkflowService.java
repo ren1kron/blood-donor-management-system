@@ -62,15 +62,14 @@ public class NurseWorkflowService {
         Map<UUID, MedicalCheck> checksByVisit = loadMedicalChecksByVisitIds(visitIds);
         Map<UUID, Donation> donationsByVisit = loadDonationsByVisitIds(visitIds);
         Map<UUID, CollectionSession> sessionsByVisit = loadSessionsByVisitIds(visitIds);
+        Map<UUID, MedicalCheck> latestChecksByDonor = loadLatestChecksByDonorIds(bookings);
 
         return bookings.stream()
                 .map(booking -> {
                     Visit visit = visitsByBooking.get(booking.getId());
                     MedicalCheck check = visit != null ? checksByVisit.get(visit.getId()) : null;
                     if (check == null) {
-                        check = medicalCheckRepository
-                                .findLatestByDonorId(booking.getDonor().getId())
-                                .orElse(null);
+                        check = latestChecksByDonor.get(booking.getDonor().getId());
                     }
                     Donation donation = visit != null ? donationsByVisit.get(visit.getId()) : null;
                     CollectionSession session = visit != null ? sessionsByVisit.get(visit.getId()) : null;
@@ -251,6 +250,30 @@ public class NurseWorkflowService {
         }
         return collectionSessionRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(session -> session.getVisit().getId(), session -> session));
+    }
+
+    private Map<UUID, MedicalCheck> loadLatestChecksByDonorIds(List<Booking> bookings) {
+        List<UUID> donorIds = bookings.stream()
+                .map(booking -> booking.getDonor().getId())
+                .distinct()
+                .toList();
+        if (donorIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        return medicalCheckRepository.findLatestByDonorIds(donorIds).stream()
+                .collect(Collectors.toMap(
+                        check -> check.getVisit().getBooking().getDonor().getId(),
+                        check -> check,
+                        (first, second) -> {
+                            if (first.getDecisionAt() == null) {
+                                return second;
+                            }
+                            if (second.getDecisionAt() == null) {
+                                return first;
+                            }
+                            return first.getDecisionAt().isAfter(second.getDecisionAt()) ? first : second;
+                        }
+                ));
     }
 
     private CollectionSessionResponse toResponse(CollectionSession session) {
