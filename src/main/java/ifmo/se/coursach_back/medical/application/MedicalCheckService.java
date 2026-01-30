@@ -1,7 +1,9 @@
 package ifmo.se.coursach_back.medical.application;
 
-import ifmo.se.coursach_back.audit.application.AuditService;
 import ifmo.se.coursach_back.shared.application.EntityResolverService;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
+import ifmo.se.coursach_back.shared.domain.event.AuditDomainEvent;
+import ifmo.se.coursach_back.shared.domain.event.NotificationDomainEvent;
 import ifmo.se.coursach_back.shared.util.EnumUtils;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
@@ -19,7 +21,6 @@ import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.notification.application.NotificationService;
 import ifmo.se.coursach_back.notification.domain.NotificationTopics;
 import ifmo.se.coursach_back.medical.application.ports.DeferralRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
@@ -47,8 +48,7 @@ public class MedicalCheckService {
     private final DeferralRepositoryPort deferralRepository;
     private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
     private final EntityResolverService entityResolver;
-    private final NotificationService notificationService;
-    private final AuditService auditService;
+    private final DomainEventPublisher eventPublisher;
 
     /**
      * Lists all examinations pending doctor review.
@@ -90,8 +90,8 @@ public class MedicalCheckService {
 
         sendDecisionNotification(check.getVisit().getBooking().getDonor(), decision, request.deferral());
 
-        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision.name()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision.name())));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -130,8 +130,8 @@ public class MedicalCheckService {
             sendDecisionNotification(visit.getBooking().getDonor(), decision, null);
         }
 
-        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision.name()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision.name())));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -163,8 +163,8 @@ public class MedicalCheckService {
 
         sendDecisionNotification(visit.getBooking().getDonor(), decision, request.deferral());
 
-        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision.name()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision.name())));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -240,14 +240,7 @@ public class MedicalCheckService {
             body = buildDeferralMessage(deferral);
         }
 
-        notificationService.sendToDonor(
-                NotificationService.NotificationRequest.builder()
-                        .channel("IN_APP")
-                        .topic(topic)
-                        .body(body)
-                        .donor(donor)
-                        .build()
-        );
+        eventPublisher.publish(NotificationDomainEvent.inApp(donor, topic, body));
     }
 
     private String buildDeferralMessage(DeferralRequest deferral) {

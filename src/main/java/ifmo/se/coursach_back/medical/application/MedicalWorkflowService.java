@@ -14,7 +14,6 @@ import ifmo.se.coursach_back.nurse.domain.CollectionSession;
 import ifmo.se.coursach_back.nurse.domain.CollectionSessionStatus;
 import ifmo.se.coursach_back.medical.domain.Deferral;
 import ifmo.se.coursach_back.medical.domain.DeferralType;
-import ifmo.se.coursach_back.notification.domain.DeliveryStatus;
 import ifmo.se.coursach_back.medical.domain.Donation;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.donor.domain.DonorStatus;
@@ -22,14 +21,15 @@ import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
 import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
-import ifmo.se.coursach_back.notification.domain.Notification;
-import ifmo.se.coursach_back.notification.domain.NotificationDelivery;
 import ifmo.se.coursach_back.medical.domain.Sample;
 import ifmo.se.coursach_back.medical.domain.SampleStatus;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
-import ifmo.se.coursach_back.audit.application.AuditService;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
+import ifmo.se.coursach_back.shared.domain.event.AuditDomainEvent;
+import ifmo.se.coursach_back.shared.domain.event.NotificationDomainEvent;
+import ifmo.se.coursach_back.notification.domain.NotificationTopics;
 import ifmo.se.coursach_back.medical.application.ports.AdverseReactionRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
 import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
@@ -38,8 +38,6 @@ import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
 import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
-import ifmo.se.coursach_back.notification.application.ports.NotificationDeliveryRepositoryPort;
-import ifmo.se.coursach_back.notification.application.ports.NotificationRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
@@ -68,10 +66,8 @@ public class MedicalWorkflowService {
     private final DonorProfileRepositoryPort donorProfileRepository;
     private final StaffProfileRepositoryPort staffProfileRepository;
     private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
-    private final NotificationRepositoryPort notificationRepository;
-    private final NotificationDeliveryRepositoryPort notificationDeliveryRepository;
     private final CollectionSessionRepositoryPort collectionSessionRepository;
-    private final AuditService auditService;
+    private final DomainEventPublisher eventPublisher;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
         return bookingRepository.findByStatusInAndSlot_PurposeAndSlot_StartAtAfterOrderBySlot_StartAtAsc(
@@ -184,8 +180,8 @@ public class MedicalWorkflowService {
             sendDeferralNotification(check.getVisit().getBooking().getDonor(), request.deferral());
         }
 
-        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision.name()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision.name())));
         
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -244,8 +240,8 @@ public class MedicalWorkflowService {
             sendDonationReadyNotification(visit.getBooking().getDonor());
         }
 
-        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision.name()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision.name())));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
@@ -326,31 +322,21 @@ public class MedicalWorkflowService {
             sendDeferralNotification(visit.getBooking().getDonor(), request.deferral());
         }
 
-        auditService.log(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
-                Map.of("decision", decision.name()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
+                Map.of("decision", decision.name())));
 
         return new MedicalCheckResult(saved, savedDeferral);
     }
     
     private void sendDonationReadyNotification(DonorProfile donor) {
-        Notification notification = new Notification();
-        notification.setChannel("IN_APP");
-        notification.setTopic("Медосмотр пройден");
-        notification.setBody("Вы успешно прошли медосмотр и можете записаться на донацию.");
-        Notification savedNotification = notificationRepository.save(notification);
-        
-        NotificationDelivery delivery = new NotificationDelivery();
-        delivery.setNotification(savedNotification);
-        delivery.setDonor(donor);
-        delivery.setSentAt(OffsetDateTime.now());
-        delivery.setStatus(DeliveryStatus.SENT);
-        notificationDeliveryRepository.save(delivery);
+        eventPublisher.publish(NotificationDomainEvent.inApp(
+                donor,
+                NotificationTopics.MEDICAL_CHECK,
+                "Вы успешно прошли медосмотр и можете записаться на донацию."
+        ));
     }
     
     private void sendDeferralNotification(DonorProfile donor, DeferralRequest deferralRequest) {
-        Notification notification = new Notification();
-        notification.setChannel("IN_APP");
-        notification.setTopic("Результат медосмотра");
         String body = "К сожалению, по результатам медосмотра вы не допущены к донации.";
         if (deferralRequest != null && deferralRequest.reason() != null) {
             body += " Причина: " + deferralRequest.reason();
@@ -358,15 +344,11 @@ public class MedicalWorkflowService {
         if (deferralRequest != null && deferralRequest.endsAt() != null) {
             body += " Повторная запись возможна после " + deferralRequest.endsAt().toLocalDate();
         }
-        notification.setBody(body);
-        Notification savedNotification = notificationRepository.save(notification);
-        
-        NotificationDelivery delivery = new NotificationDelivery();
-        delivery.setNotification(savedNotification);
-        delivery.setDonor(donor);
-        delivery.setSentAt(OffsetDateTime.now());
-        delivery.setStatus(DeliveryStatus.SENT);
-        notificationDeliveryRepository.save(delivery);
+        eventPublisher.publish(NotificationDomainEvent.inApp(
+                donor,
+                NotificationTopics.DEFERRAL,
+                body
+        ));
     }
 
     @Transactional
@@ -421,8 +403,8 @@ public class MedicalWorkflowService {
         bookingRepository.save(booking);
         
         activateDonorIfNeeded(booking.getDonor());
-        auditService.log(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
-                Map.of("visitId", visit.getId()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
+                Map.of("visitId", visit.getId())));
         return saved;
     }
 
@@ -435,7 +417,7 @@ public class MedicalWorkflowService {
             donation.setPublished(true);
             donation.setPublishedAt(OffsetDateTime.now());
             donation = donationRepository.save(donation);
-            auditService.log(accountId, "DONATION_PUBLISHED", "Donation", donation.getId(), null);
+            eventPublisher.publish(AuditDomainEvent.of(accountId, "DONATION_PUBLISHED", "Donation", donation.getId()));
         }
         return donation;
     }

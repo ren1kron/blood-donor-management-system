@@ -8,7 +8,8 @@ import ifmo.se.coursach_back.admin.api.dto.AdminCreateStaffProfileResponse;
 import ifmo.se.coursach_back.admin.api.dto.AdminDonorSummaryResponse;
 import ifmo.se.coursach_back.admin.api.dto.AdminStaffSummaryResponse;
 import ifmo.se.coursach_back.admin.api.dto.AdminUpdateAccountRequest;
-import ifmo.se.coursach_back.audit.application.AuditService;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
+import ifmo.se.coursach_back.shared.domain.event.AuditDomainEvent;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
@@ -40,7 +41,7 @@ public class AdminAccountService {
     private final StaffProfileRepositoryPort staffProfileRepository;
     private final DonorProfileRepositoryPort donorProfileRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuditService auditService;
+    private final DomainEventPublisher eventPublisher;
 
     @Transactional
     public AdminCreateAccountResponse createAccount(UUID adminAccountId, AdminCreateAccountRequest request) {
@@ -64,7 +65,7 @@ public class AdminAccountService {
             account.setActive(request.isActive());
         }
         Account saved = accountRepository.save(account);
-        auditService.log(adminAccountId, "ACCOUNT_CREATED", "Account", saved.getId(), null);
+        eventPublisher.publish(AuditDomainEvent.of(adminAccountId, "ACCOUNT_CREATED", "Account", saved.getId()));
         return new AdminCreateAccountResponse(saved.getId());
     }
 
@@ -90,8 +91,8 @@ public class AdminAccountService {
         staff.setFullName(request.fullName().trim());
         staff.setStaffKind(staffKind);
         StaffProfile saved = staffProfileRepository.save(staff);
-        auditService.log(adminAccountId, "STAFF_PROFILE_CREATED", "StaffProfile", saved.getId(),
-                java.util.Map.of("staffKind", staffKind));
+        eventPublisher.publish(AuditDomainEvent.of(adminAccountId, "STAFF_PROFILE_CREATED", "StaffProfile", saved.getId(),
+                java.util.Map.of("staffKind", staffKind)));
         return new AdminCreateStaffProfileResponse(saved.getId());
     }
 
@@ -117,8 +118,8 @@ public class AdminAccountService {
 
         account.setRoles(roles);
         Account saved = accountRepository.save(account);
-        auditService.log(adminAccountId, "ACCOUNT_ROLES_UPDATED", "Account", accountId,
-                java.util.Map.of("roles", roles.stream().map(Role::getCode).sorted().toList()));
+        eventPublisher.publish(AuditDomainEvent.of(adminAccountId, "ACCOUNT_ROLES_UPDATED", "Account", accountId,
+                java.util.Map.of("roles", roles.stream().map(Role::getCode).sorted().toList())));
 
         StaffProfile staff = staffProfileRepository.findByAccountId(accountId).orElse(null);
         return toStaffSummary(staff, saved);
@@ -141,7 +142,7 @@ public class AdminAccountService {
             throw new BadRequestException("No updates provided");
         }
         accountRepository.save(account);
-        auditService.log(adminAccountId, "ACCOUNT_UPDATED", "Account", accountId, null);
+        eventPublisher.publish(AuditDomainEvent.of(adminAccountId, "ACCOUNT_UPDATED", "Account", accountId));
     }
 
     public List<AdminStaffSummaryResponse> listStaff(String role, String staffKind) {

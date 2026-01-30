@@ -3,7 +3,8 @@ package ifmo.se.coursach_back.report.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ifmo.se.coursach_back.audit.application.AuditService;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
+import ifmo.se.coursach_back.shared.domain.event.AuditDomainEvent;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.shared.domain.Account;
@@ -72,7 +73,7 @@ public class ReportRequestService {
     private final NotificationRepositoryPort notificationRepository;
     private final NotificationDeliveryRepositoryPort notificationDeliveryRepository;
     private final ObjectMapper objectMapper;
-    private final AuditService auditService;
+    private final DomainEventPublisher eventPublisher;
 
     @Transactional
     public ReportRequestSummaryResponse createRequest(UUID accountId, ReportRequestCreateRequest request) {
@@ -97,8 +98,8 @@ public class ReportRequestService {
         reportRequest.setMessage(normalize(request.comment()));
         ReportRequest saved = reportRequestRepository.save(reportRequest);
 
-        auditService.log(accountId, "REPORT_REQUEST_CREATED", "ReportRequest", saved.getId(),
-                Map.of("reportType", reportType.name(), "donorId", donor.getId()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "REPORT_REQUEST_CREATED", "ReportRequest", saved.getId(),
+                Map.of("reportType", reportType.name(), "donorId", donor.getId())));
         return toSummary(saved);
     }
 
@@ -149,7 +150,7 @@ public class ReportRequestService {
         request.setAssignedAdmin(admin);
         request.setStatus(ReportRequestStatus.IN_PROGRESS);
         ReportRequest saved = reportRequestRepository.save(request);
-        auditService.log(accountId, "REPORT_REQUEST_TAKEN", "ReportRequest", saved.getId(), null);
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "REPORT_REQUEST_TAKEN", "ReportRequest", saved.getId()));
         return toSummary(saved);
     }
 
@@ -165,8 +166,8 @@ public class ReportRequestService {
         request.setGeneratedAt(OffsetDateTime.now());
         request.setStatus(ReportRequestStatus.READY);
         ReportRequest saved = reportRequestRepository.save(request);
-        auditService.log(accountId, "REPORT_GENERATED", "ReportRequest", saved.getId(),
-                Map.of("reportType", saved.getReportType()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "REPORT_GENERATED", "ReportRequest", saved.getId(),
+                Map.of("reportType", saved.getReportType())));
 
         return toDetails(saved, payload);
     }
@@ -196,7 +197,7 @@ public class ReportRequestService {
 
         request.setStatus(ReportRequestStatus.SENT);
         ReportRequest saved = reportRequestRepository.save(request);
-        auditService.log(accountId, "REPORT_SENT", "ReportRequest", saved.getId(), null);
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "REPORT_SENT", "ReportRequest", saved.getId()));
         return toSummary(saved);
     }
 
@@ -215,7 +216,7 @@ public class ReportRequestService {
             request.setMessage(action.message().trim());
         }
         ReportRequest saved = reportRequestRepository.save(request);
-        auditService.log(accountId, "REPORT_REJECTED", "ReportRequest", saved.getId(), null);
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "REPORT_REJECTED", "ReportRequest", saved.getId()));
         return toSummary(saved);
     }
 

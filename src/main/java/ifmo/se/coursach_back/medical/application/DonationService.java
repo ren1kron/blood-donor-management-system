@@ -1,7 +1,8 @@
 package ifmo.se.coursach_back.medical.application;
 
-import ifmo.se.coursach_back.audit.application.AuditService;
 import ifmo.se.coursach_back.shared.application.EntityResolverService;
+import ifmo.se.coursach_back.shared.application.ports.DomainEventPublisher;
+import ifmo.se.coursach_back.shared.domain.event.AuditDomainEvent;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
 import ifmo.se.coursach_back.medical.api.dto.AdverseReactionRequest;
@@ -58,7 +59,7 @@ public class DonationService {
     private final BookingRepositoryPort bookingRepository;
     private final DonorProfileRepositoryPort donorProfileRepository;
     private final EntityResolverService entityResolver;
-    private final AuditService auditService;
+    private final DomainEventPublisher eventPublisher;
 
     /**
      * Records a new donation for a visit.
@@ -81,8 +82,8 @@ public class DonationService {
         completeBooking(booking);
         activateDonorIfNeeded(booking.getDonor());
 
-        auditService.log(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
-                Map.of("visitId", visit.getId()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
+                Map.of("visitId", visit.getId())));
 
         log.info("Donation recorded: donationId={}, donorId={}", saved.getId(), booking.getDonor().getId());
         return saved;
@@ -103,7 +104,7 @@ public class DonationService {
             donation.setPublishedAt(OffsetDateTime.now());
             donation = donationRepository.save(donation);
 
-            auditService.log(accountId, "DONATION_PUBLISHED", "Donation", donation.getId(), null);
+            eventPublisher.publish(AuditDomainEvent.of(accountId, "DONATION_PUBLISHED", "Donation", donation.getId()));
             log.info("Donation published: donationId={}", donationId);
         }
 
@@ -129,8 +130,8 @@ public class DonationService {
 
         AdverseReaction saved = adverseReactionRepository.save(reaction);
 
-        auditService.log(accountId, "ADVERSE_REACTION_REGISTERED", "AdverseReaction", saved.getId(),
-                Map.of("donationId", donation.getId(), "severity", request.severity()));
+        eventPublisher.publish(AuditDomainEvent.of(accountId, "ADVERSE_REACTION_REGISTERED", "AdverseReaction", saved.getId(),
+                Map.of("donationId", donation.getId(), "severity", request.severity())));
 
         log.warn("Adverse reaction registered: reactionId={}, donationId={}, severity={}",
                 saved.getId(), donation.getId(), request.severity());
