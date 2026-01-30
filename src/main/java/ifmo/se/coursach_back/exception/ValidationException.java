@@ -9,13 +9,14 @@ import org.springframework.http.HttpStatus;
 public class ValidationException extends ApplicationException {
 
     private static final String CODE = "VALIDATION_ERROR";
+    private static final HttpStatus STATUS = HttpStatus.valueOf(422);
 
     public ValidationException(String message) {
-        super(CODE, HttpStatus.UNPROCESSABLE_ENTITY, message);
+        super(CODE, STATUS, message);
     }
 
     public ValidationException(String message, Object details) {
-        super(CODE, HttpStatus.UNPROCESSABLE_ENTITY, message, details);
+        super(CODE, STATUS, message, details);
     }
 
     public static ValidationException invalidField(String field, String reason) {

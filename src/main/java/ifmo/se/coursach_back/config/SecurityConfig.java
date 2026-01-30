@@ -108,6 +108,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @SuppressWarnings("deprecation")
     public MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
         DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
         handler.setRoleHierarchy(roleHierarchy);
