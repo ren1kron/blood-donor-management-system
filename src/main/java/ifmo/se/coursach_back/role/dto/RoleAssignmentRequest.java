@@ -5,7 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record RoleAssignmentRequest(
-        @NotNull UUID accountId,
-        @NotBlank String roleCode
+        @NotNull(message = "Account ID is required")
+        UUID accountId,
+        @NotBlank(message = "Role code is required")
+        String roleCode
 ) {
 }

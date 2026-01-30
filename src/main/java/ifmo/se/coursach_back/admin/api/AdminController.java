@@ -87,7 +87,7 @@ public class AdminController {
     public ResponseEntity<NotificationMarkResponse> markEligibleNotified(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID donorId,
-            @RequestBody(required = false) MarkNotifiedRequest request) {
+            @Valid @RequestBody(required = false) MarkNotifiedRequest request) {
         MarkNotifiedCommand command = new MarkNotifiedCommand(
                 principal.getId(), donorId,
                 request != null ? request.channel() : null,
@@ -115,7 +115,7 @@ public class AdminController {
     public ResponseEntity<NotificationMarkResponse> markExpiredNotified(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID documentId,
-            @RequestBody(required = false) MarkNotifiedRequest request) {
+            @Valid @RequestBody(required = false) MarkNotifiedRequest request) {
         MarkNotifiedCommand command = new MarkNotifiedCommand(
                 principal.getId(), documentId,
                 request != null ? request.channel() : null,

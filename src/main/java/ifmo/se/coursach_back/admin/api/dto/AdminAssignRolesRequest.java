@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 public record AdminAssignRolesRequest(
-        @NotEmpty List<String> roles
+        @NotEmpty(message = "Roles list cannot be empty")
+        List<String> roles
 ) {
 }

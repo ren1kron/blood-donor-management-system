@@ -99,7 +99,7 @@ public class AdminAccountsController {
     public ResponseEntity<Void> updateAccount(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID accountId,
-            @RequestBody AdminUpdateAccountRequest request) {
+            @Valid @RequestBody AdminUpdateAccountRequest request) {
         UpdateAccountCommand command = new UpdateAccountCommand(
                 principal.getId(), accountId,
                 request.isActive(), request.newPassword()

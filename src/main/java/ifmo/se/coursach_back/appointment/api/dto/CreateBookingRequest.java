@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record CreateBookingRequest(
-        @NotNull UUID slotId
+        @NotNull(message = "Slot ID is required")
+        UUID slotId
 ) {
 }

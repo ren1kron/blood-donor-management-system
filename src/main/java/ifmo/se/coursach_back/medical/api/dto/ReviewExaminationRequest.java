@@ -6,8 +6,10 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record ReviewExaminationRequest(
-        @NotNull UUID examinationId,
-        @NotBlank String decision,
+        @NotNull(message = "Examination ID is required")
+        UUID examinationId,
+        @NotBlank(message = "Decision is required")
+        String decision,
         @Valid DeferralRequest deferral
 ) {
 }

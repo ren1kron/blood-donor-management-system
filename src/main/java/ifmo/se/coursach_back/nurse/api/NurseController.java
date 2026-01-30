@@ -83,7 +83,7 @@ public class NurseController {
     public ResponseEntity<CollectionSessionResponse> startSession(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID id,
-            @RequestBody(required = false) CollectionSessionUpdateRequest request) {
+            @Valid @RequestBody(required = false) CollectionSessionUpdateRequest request) {
         StartCollectionSessionCommand command = new StartCollectionSessionCommand(
                 principal.getId(), id,
                 request != null ? request.preVitals() : null,
@@ -97,7 +97,7 @@ public class NurseController {
     public ResponseEntity<CollectionSessionResponse> completeSession(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID id,
-            @RequestBody(required = false) CollectionSessionUpdateRequest request) {
+            @Valid @RequestBody(required = false) CollectionSessionUpdateRequest request) {
         CompleteCollectionSessionCommand command = new CompleteCollectionSessionCommand(
                 principal.getId(), id,
                 request != null ? request.postVitals() : null,
@@ -111,7 +111,7 @@ public class NurseController {
     public ResponseEntity<CollectionSessionResponse> abortSession(
             @AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID id,
-            @RequestBody(required = false) CollectionSessionUpdateRequest request) {
+            @Valid @RequestBody(required = false) CollectionSessionUpdateRequest request) {
         AbortCollectionSessionCommand command = new AbortCollectionSessionCommand(
                 principal.getId(), id,
                 request != null ? request.interruptionReason() : null,

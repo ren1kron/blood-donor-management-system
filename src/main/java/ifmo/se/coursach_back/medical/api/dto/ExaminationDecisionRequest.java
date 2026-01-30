@@ -4,7 +4,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 public record ExaminationDecisionRequest(
-        @NotBlank String decision,
+        @NotBlank(message = "Decision is required")
+        String decision,
         @Valid DeferralRequest deferral
 ) {
 }
