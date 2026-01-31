@@ -2,7 +2,6 @@ package ifmo.se.coursach_back.auth.infra;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Bucket4j;
 import io.github.bucket4j.Refill;
 import java.time.Duration;
 import java.util.Map;
@@ -28,6 +27,6 @@ public class AuthRateLimiter {
     }
 
     private Bucket resolveBucket(Map<String, Bucket> buckets, String key, Bandwidth limit) {
-        return buckets.computeIfAbsent(key, k -> Bucket4j.builder().addLimit(limit).build());
+        return buckets.computeIfAbsent(key, k -> Bucket.builder().addLimit(limit).build());
     }
 }
