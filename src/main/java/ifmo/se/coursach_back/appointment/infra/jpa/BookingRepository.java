@@ -43,6 +43,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             select b
             from Booking b
             join fetch b.donor donor
+            join fetch donor.account account
             join fetch b.slot slot
             where b.status in :statuses
               and slot.purpose = :purpose

@@ -13,7 +13,7 @@ public interface CollectionSessionRepository extends JpaRepository<CollectionSes
     @Query("select cs from CollectionSession cs where cs.visit.id = :visitId")
     Optional<CollectionSession> findByVisitId(@Param("visitId") UUID visitId);
 
-    @EntityGraph(attributePaths = {"visit", "nurse"})
+    @EntityGraph(attributePaths = {"visit", "nurse", "nurse.account"})
     @Query("select cs from CollectionSession cs where cs.visit.id in :visitIds")
     List<CollectionSession> findByVisitIds(@Param("visitIds") List<UUID> visitIds);
 }

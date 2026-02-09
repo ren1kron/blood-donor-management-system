@@ -49,6 +49,7 @@ public class NurseWorkflowService {
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
 
+    @Transactional(readOnly = true)
     public List<ScheduledDonorResponse> listDonationQueue(OffsetDateTime from) {
         OffsetDateTime start = from == null ? OffsetDateTime.now().minusHours(2) : from;
         List<Booking> bookings = bookingRepository.findByStatusesAndPurposeAfter(
