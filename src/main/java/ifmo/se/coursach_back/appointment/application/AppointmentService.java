@@ -58,6 +58,9 @@ public class AppointmentService {
         if (!request.endAt().isAfter(request.startAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endAt must be after startAt");
         }
+        if (!request.startAt().isAfter(OffsetDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startAt must be in the future");
+        }
 
         AppointmentSlot slot = new AppointmentSlot();
         slot.setPurpose(request.purpose());
@@ -169,6 +172,10 @@ public class AppointmentService {
     }
 
     private void ensureSlotAvailable(DonorProfile donor, AppointmentSlot slot) {
+        if (!slot.getStartAt().isAfter(OffsetDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot create booking for past slot");
+        }
+
         if (bookingRepository.existsByDonorIdAndSlotId(donor.getId(), slot.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking already exists for this slot");
         }

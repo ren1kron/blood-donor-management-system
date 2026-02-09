@@ -18,6 +18,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      - 'LOGGING_LEVEL_ROOT=INFO'
       - 'DB_URL=jdbc:postgresql://postgres:5432/blood_donation'
       - 'DB_USER=postgres'
       - 'DB_PASSWORD=postgres'
