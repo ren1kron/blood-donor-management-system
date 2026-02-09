@@ -33,7 +33,7 @@ public interface DonorProfileRepository extends JpaRepository<DonorProfile, UUID
                      SELECT v.id FROM visit v
                      JOIN booking b ON v.booking_id = b.id
                      WHERE b.donor_id = donor.id
-                 )) as lastDonationAt,
+                 )) as lastDonationAtRaw,
                 (SELECT MAX(mc.decision_at)
                  FROM medical_check mc
                  WHERE mc.decision = 'ADMITTED'
@@ -41,7 +41,7 @@ public interface DonorProfileRepository extends JpaRepository<DonorProfile, UUID
                      SELECT v.id FROM visit v
                      JOIN booking b ON v.booking_id = b.id
                      WHERE b.donor_id = donor.id
-                 )) as lastAdmittedAt
+                 )) as lastAdmittedAtRaw
             FROM donor_profile donor
             JOIN account account ON donor.account_id = account.id
             ORDER BY donor.full_name

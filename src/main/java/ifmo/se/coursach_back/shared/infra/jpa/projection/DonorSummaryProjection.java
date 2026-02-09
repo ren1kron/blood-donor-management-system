@@ -1,7 +1,9 @@
 package ifmo.se.coursach_back.shared.infra.jpa.projection;
 
 import ifmo.se.coursach_back.donor.application.ports.DonorSummary;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 /**
@@ -21,7 +23,21 @@ public interface DonorSummaryProjection extends DonorSummary {
 
     String getPhone();
 
-    OffsetDateTime getLastDonationAt();
+    Instant getLastDonationAtRaw();
 
-    OffsetDateTime getLastAdmittedAt();
+    Instant getLastAdmittedAtRaw();
+
+    @Override
+    default OffsetDateTime getLastDonationAt() {
+        return toOffsetDateTime(getLastDonationAtRaw());
+    }
+
+    @Override
+    default OffsetDateTime getLastAdmittedAt() {
+        return toOffsetDateTime(getLastAdmittedAtRaw());
+    }
+
+    private static OffsetDateTime toOffsetDateTime(Instant value) {
+        return value == null ? null : value.atOffset(ZoneOffset.UTC);
+    }
 }
