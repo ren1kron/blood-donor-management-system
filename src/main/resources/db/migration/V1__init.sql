@@ -1,4 +1,5 @@
 -- PostgreSQL schema for Blood Donation Management System.
+
 create table role (
     id          smallserial primary key,
     code        text not null unique,
@@ -18,7 +19,7 @@ create table blood_component_type (
 );
 
 create table contraindication (
-    id              uuid primary key default gen_random_uuid(),
+    id              uuid primary key,
     name            text not null,
     is_permanent    boolean not null default false,
     description     text
@@ -53,7 +54,7 @@ create table donor_profile (
     birth_date   date not null,
     blood_group  text,
     rh_factor    text,
-    donor_status text not null default 'ACTIVE'
+    donor_status text not null default 'POTENTIAL'
 );
 
 create index idx_donor_profile_full_name on donor_profile (full_name);
@@ -120,6 +121,7 @@ create table consent (
 );
 
 create index idx_consent_visit on consent (visit_id);
+create index idx_consent_donor on consent (donor_id);
 
 create table questionnaire (
     id           uuid primary key default gen_random_uuid(),
@@ -130,21 +132,55 @@ create table questionnaire (
 );
 
 create index idx_questionnaire_visit on questionnaire (visit_id);
+create index idx_questionnaire_donor on questionnaire (donor_id);
 create index idx_questionnaire_payload_gin on questionnaire using gin (payload_json);
 
 create table medical_check (
     id                      uuid primary key default gen_random_uuid(),
     visit_id                uuid not null unique references visit(id) on delete cascade,
-    performed_by_staff_id   uuid not null references staff_profile(id) on delete restrict,
+    performed_by_staff_id   uuid references staff_profile(id) on delete restrict,
+    submitted_by_lab_id     uuid references staff_profile(id),
+    submitted_at            timestamptz,
+    status                  text not null default 'PENDING_REVIEW',
     weight_kg               numeric(5,2),
     hemoglobin_g_l          numeric(6,2),
+    hematocrit_pct          numeric(5,2),
+    rbc_10e12_l             numeric(5,2),
     systolic_mmhg           integer,
     diastolic_mmhg          integer,
+    pulse_rate              integer,
+    body_temperature_c      numeric(4,2),
     decision                text not null,
     decision_at             timestamptz not null default now()
 );
 
 create index idx_medical_check_staff on medical_check (performed_by_staff_id);
+create index idx_medical_check_status on medical_check (status);
+create index idx_medical_check_lab on medical_check (submitted_by_lab_id);
+
+create table lab_examination_request (
+    id                      uuid primary key default gen_random_uuid(),
+    visit_id                uuid not null unique references visit(id) on delete cascade,
+    requested_by_staff_id   uuid not null references staff_profile(id) on delete restrict,
+    requested_at            timestamptz not null default now(),
+    status                  text not null default 'REQUESTED',
+    completed_by_lab_id     uuid references staff_profile(id) on delete set null,
+    completed_at            timestamptz,
+    weight_kg               numeric(5,2),
+    hemoglobin_g_l          numeric(6,2),
+    hematocrit_pct          numeric(5,2),
+    rbc_10e12_l             numeric(5,2),
+    systolic_mmhg           integer,
+    diastolic_mmhg          integer,
+    pulse_rate              integer,
+    body_temperature_c      numeric(4,2)
+);
+
+create index idx_lab_exam_request_status on lab_examination_request (status);
+create index idx_lab_exam_request_requested_at on lab_examination_request (requested_at);
+create index idx_lab_exam_request_requested_by on lab_examination_request (requested_by_staff_id);
+create index idx_lab_exam_request_completed_by on lab_examination_request (completed_by_lab_id);
+create index idx_lab_exam_request_hemoglobin on lab_examination_request (hemoglobin_g_l);
 
 create table deferral (
     id                      uuid primary key default gen_random_uuid(),
@@ -165,10 +201,32 @@ create table donation (
     donation_type           text not null,
     volume_ml               integer,
     performed_by_staff_id   uuid not null references staff_profile(id) on delete restrict,
-    performed_at            timestamptz not null default now()
+    performed_at            timestamptz not null default now(),
+    is_published            boolean not null default false,
+    published_at            timestamptz
 );
 
 create index idx_donation_staff on donation (performed_by_staff_id);
+create index idx_donation_published on donation (is_published);
+
+create table collection_session (
+    id                  uuid primary key default gen_random_uuid(),
+    visit_id            uuid not null unique references visit(id) on delete cascade,
+    nurse_staff_id      uuid references staff_profile(id) on delete set null,
+    status              text not null default 'PREPARED',
+    started_at          timestamptz,
+    ended_at            timestamptz,
+    pre_vitals_json     jsonb,
+    post_vitals_json    jsonb,
+    notes               text,
+    complications       text,
+    interruption_reason text,
+    created_at          timestamptz not null default now(),
+    updated_at          timestamptz not null default now()
+);
+
+create index idx_collection_session_status on collection_session (status);
+create index idx_collection_session_nurse on collection_session (nurse_staff_id);
 
 create table adverse_reaction (
     id                      uuid primary key default gen_random_uuid(),
@@ -212,15 +270,15 @@ create index idx_lab_result_staff on lab_test_result (labtech_staff_id);
 
 create table blood_unit (
     id                  uuid primary key default gen_random_uuid(),
-    donation_id          uuid not null references donation(id) on delete cascade,
-    component_type_id    smallint not null references blood_component_type(id) on delete restrict,
-    blood_group          text,
-    rh_factor            text,
-    volume_ml            integer,
-    collected_at         timestamptz not null default now(),
-    expires_at           timestamptz,
-    status               text not null default 'IN_STOCK',
-    storage_location     text
+    donation_id         uuid not null references donation(id) on delete cascade,
+    component_type_id   smallint not null references blood_component_type(id) on delete restrict,
+    blood_group         text,
+    rh_factor           text,
+    volume_ml           integer,
+    collected_at        timestamptz not null default now(),
+    expires_at          timestamptz,
+    status              text not null default 'IN_STOCK',
+    storage_location    text
 );
 
 create index idx_blood_unit_donation on blood_unit (donation_id);
@@ -238,6 +296,26 @@ create table donor_document (
 
 create index idx_donor_document_donor on donor_document (donor_id);
 create index idx_donor_document_expires on donor_document (expires_at);
+
+create table report_request (
+    id                      uuid primary key default gen_random_uuid(),
+    donor_id                uuid not null references donor_profile(id) on delete cascade,
+    requested_by_staff_id   uuid not null references staff_profile(id) on delete restrict,
+    requested_by_role       text,
+    assigned_admin_id       uuid references staff_profile(id) on delete set null,
+    report_type             text not null,
+    status                  text not null default 'REQUESTED',
+    payload_json            jsonb,
+    generated_at            timestamptz,
+    message                 text,
+    created_at              timestamptz not null default now(),
+    updated_at              timestamptz not null default now()
+);
+
+create index idx_report_request_status on report_request (status);
+create index idx_report_request_donor on report_request (donor_id);
+create index idx_report_request_requested_by on report_request (requested_by_staff_id);
+create index idx_report_request_assigned_admin on report_request (assigned_admin_id);
 
 create table notification (
     id          uuid primary key default gen_random_uuid(),
@@ -259,6 +337,20 @@ create table notification_delivery (
 create index idx_delivery_notification on notification_delivery (notification_id);
 create index idx_delivery_donor on notification_delivery (donor_id);
 create index idx_delivery_status on notification_delivery (status);
+create index idx_notification_delivery_staff on notification_delivery (staff_id);
+
+create table audit_event (
+    id            uuid primary key default gen_random_uuid(),
+    account_id    uuid references account(id) on delete set null,
+    action        text not null,
+    entity_type   text not null,
+    entity_id     uuid,
+    created_at    timestamptz not null default now(),
+    metadata_json jsonb
+);
+
+create index idx_audit_event_account on audit_event (account_id);
+create index idx_audit_event_entity on audit_event (entity_type, entity_id);
 
 insert into role (code, name)
 values
