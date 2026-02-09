@@ -35,7 +35,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         RegisterUserCommand command = new RegisterUserCommand(
                 request.email(), request.phone(), request.password(),
-                request.fullName(), request.birthDate(), request.bloodGroup(), request.rhFactor()
+                request.lastName(), request.firstName(), request.middleName(), request.birthDate()
         );
         AuthResult result = registerUserUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED)

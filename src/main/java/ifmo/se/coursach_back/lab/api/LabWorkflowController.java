@@ -58,7 +58,7 @@ public class LabWorkflowController {
                         item.requestId(), item.visitId(), null, item.donorFullName(),
                         null, null, null, item.status(), null, item.requestedAt(),
                         null, item.completedAt(), item.hemoglobinGl(),
-                        item.hematocritPct(), item.rbc10e12L()
+                        item.hematocritPct(), item.rbc10e12L(), item.bloodGroup(), item.rhFactor()
                 ))
                 .toList();
     }
@@ -124,13 +124,14 @@ public class LabWorkflowController {
             @Valid @RequestBody LabExaminationRequest request) {
         SubmitLabExaminationCommand command = new SubmitLabExaminationCommand(
                 principal.getId(), requestId,
-                request.hemoglobinGl(), request.hematocritPct(), request.rbc10e12L()
+                request.hemoglobinGl(), request.hematocritPct(), request.rbc10e12L(),
+                request.bloodGroup(), request.rhFactor()
         );
         LabExaminationSubmitResult result = submitLabExaminationUseCase.execute(command);
         LabExaminationResponse response = new LabExaminationResponse(
                 result.requestId(), null, null, null, null, null, null,
                 result.status(), null, null, null, result.completedAt(),
-                null, null, null
+                null, null, null, result.bloodGroup(), result.rhFactor()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -143,7 +144,7 @@ public class LabWorkflowController {
                         item.requestId(), item.visitId(), item.bookingId(), item.donorFullName(),
                         item.slotStartAt(), item.slotEndAt(), item.location(), item.status(), null, item.requestedAt(),
                         null, item.completedAt(), item.hemoglobinGl(),
-                        item.hematocritPct(), item.rbc10e12L()
+                        item.hematocritPct(), item.rbc10e12L(), item.bloodGroup(), item.rhFactor()
                 ))
                 .toList();
     }
@@ -156,7 +157,7 @@ public class LabWorkflowController {
                         item.requestId(), item.visitId(), item.bookingId(), item.donorFullName(),
                         item.slotStartAt(), item.slotEndAt(), item.location(), item.status(), null, item.requestedAt(),
                         null, item.completedAt(), item.hemoglobinGl(),
-                        item.hematocritPct(), item.rbc10e12L()
+                        item.hematocritPct(), item.rbc10e12L(), item.bloodGroup(), item.rhFactor()
                 ))
                 .toList();
     }

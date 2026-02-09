@@ -175,6 +175,8 @@ public class MedicalWorkflowService {
             deferral.setEndsAt(request.deferral().endsAt());
             savedDeferral = deferralRepository.save(deferral);
         }
+
+        assignBloodDataOnAdmission(check.getVisit().getBooking().getDonor(), decision, labRequest);
         
         if (decision == MedicalCheckDecision.ADMITTED) {
             sendDonationReadyNotification(check.getVisit().getBooking().getDonor());
@@ -237,6 +239,8 @@ public class MedicalWorkflowService {
             deferral.setEndsAt(deferralRequest.endsAt());
             savedDeferral = deferralRepository.save(deferral);
         }
+
+        assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
 
         if (decision == MedicalCheckDecision.ADMITTED) {
             sendDonationReadyNotification(visit.getBooking().getDonor());
@@ -317,6 +321,8 @@ public class MedicalWorkflowService {
             deferral.setEndsAt(request.deferral().endsAt());
             savedDeferral = deferralRepository.save(deferral);
         }
+
+        assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
 
         if (decision == MedicalCheckDecision.ADMITTED) {
             sendDonationReadyNotification(visit.getBooking().getDonor());
@@ -511,6 +517,21 @@ public class MedicalWorkflowService {
         if (request.endsAt() != null && request.endsAt().isBefore(OffsetDateTime.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deferral end time is in the past");
         }
+    }
+
+    private void assignBloodDataOnAdmission(DonorProfile donor, MedicalCheckDecision decision,
+                                            LabExaminationRequest labRequest) {
+        if (decision != MedicalCheckDecision.ADMITTED || donor == null) {
+            return;
+        }
+        if (labRequest == null || labRequest.getBloodGroup() == null || labRequest.getRhFactor() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Blood group and Rh factor must be provided in lab examination before admission");
+        }
+
+        donor.setBloodGroup(labRequest.getBloodGroup());
+        donor.setRhFactor(labRequest.getRhFactor());
+        donorProfileRepository.save(donor);
     }
 
     private void activateDonorIfNeeded(DonorProfile donor) {

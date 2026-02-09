@@ -19,7 +19,8 @@ public interface DonationRepository extends JpaRepository<Donation, UUID> {
     @Query("""
             select new ifmo.se.coursach_back.admin.api.dto.EligibleDonorRow(
                 donor.id,
-                donor.fullName,
+                trim(concat(concat(coalesce(account.lastName, ''), ' '),
+                        concat(coalesce(account.firstName, ''), coalesce(concat(' ', account.middleName), '')))),
                 account.phone,
                 account.email,
                 max(donation.performedAt)
@@ -29,7 +30,7 @@ public interface DonationRepository extends JpaRepository<Donation, UUID> {
             join visit.booking booking
             join booking.donor donor
             join donor.account account
-            group by donor.id, donor.fullName, account.phone, account.email
+            group by donor.id, account.lastName, account.firstName, account.middleName, account.phone, account.email
             having max(donation.performedAt) <= :threshold
             order by max(donation.performedAt) asc
             """)

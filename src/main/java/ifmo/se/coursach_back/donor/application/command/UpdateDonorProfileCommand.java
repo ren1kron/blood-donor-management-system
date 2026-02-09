@@ -10,8 +10,6 @@ public record UpdateDonorProfileCommand(
         UUID accountId,
         String fullName,
         LocalDate birthDate,
-        String bloodGroup,
-        String rhFactor,
         String email,
         String phone
 ) {

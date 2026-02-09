@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +36,15 @@ public class Account {
     @Column(unique = true)
     private String phone;
 
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "middle_name")
+    private String middleName;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -57,5 +67,53 @@ public class Account {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
         }
+    }
+
+    public String getFullName() {
+        ArrayList<String> parts = new ArrayList<>(3);
+        if (lastName != null && !lastName.isBlank()) {
+            parts.add(lastName.trim());
+        }
+        if (firstName != null && !firstName.isBlank()) {
+            parts.add(firstName.trim());
+        }
+        if (middleName != null && !middleName.isBlank()) {
+            parts.add(middleName.trim());
+        }
+        if (parts.isEmpty()) {
+            return null;
+        }
+        return String.join(" ", parts);
+    }
+
+    public void setFullName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            lastName = null;
+            firstName = null;
+            middleName = null;
+            return;
+        }
+
+        String[] parts = fullName.trim().split("\\s+");
+        lastName = normalizeNamePart(parts[0]);
+        firstName = parts.length > 1 ? normalizeNamePart(parts[1]) : null;
+
+        if (parts.length > 2) {
+            StringBuilder middle = new StringBuilder(parts[2]);
+            for (int i = 3; i < parts.length; i++) {
+                middle.append(' ').append(parts[i]);
+            }
+            middleName = normalizeNamePart(middle.toString());
+        } else {
+            middleName = null;
+        }
+    }
+
+    private String normalizeNamePart(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

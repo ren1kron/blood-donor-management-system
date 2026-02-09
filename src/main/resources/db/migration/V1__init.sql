@@ -31,6 +31,9 @@ create table account (
     id              uuid primary key default gen_random_uuid(),
     email           text unique,
     phone           text unique,
+    last_name       text,
+    first_name      text,
+    middle_name     text,
     password_hash   text not null,
     created_at      timestamptz not null default now(),
     is_active       boolean not null default true,
@@ -50,23 +53,17 @@ create index idx_account_role_role on account_role (role_id);
 create table donor_profile (
     id           uuid primary key default gen_random_uuid(),
     account_id   uuid not null unique references account(id) on delete cascade,
-    full_name    text not null,
     birth_date   date not null,
     blood_group  text,
     rh_factor    text,
     donor_status text not null default 'POTENTIAL'
 );
 
-create index idx_donor_profile_full_name on donor_profile (full_name);
-
 create table staff_profile (
     id          uuid primary key default gen_random_uuid(),
     account_id  uuid not null unique references account(id) on delete cascade,
-    full_name   text not null,
     staff_kind  text not null
 );
-
-create index idx_staff_profile_full_name on staff_profile (full_name);
 
 create table donor_contraindication (
     donor_id            uuid not null references donor_profile(id) on delete cascade,
@@ -173,7 +170,9 @@ create table lab_examination_request (
     systolic_mmhg           integer,
     diastolic_mmhg          integer,
     pulse_rate              integer,
-    body_temperature_c      numeric(4,2)
+    body_temperature_c      numeric(4,2),
+    blood_group             text,
+    rh_factor               text
 );
 
 create index idx_lab_exam_request_status on lab_examination_request (status);

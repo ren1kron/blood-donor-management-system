@@ -10,8 +10,6 @@ public record RegisterDonorByPhoneCommand(
         String email,
         String password,
         String fullName,
-        LocalDate birthDate,
-        String bloodGroup,
-        String rhFactor
+        LocalDate birthDate
 ) {
 }

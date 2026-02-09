@@ -5,6 +5,8 @@ import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
 import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.lab.domain.LabTestResult;
 import ifmo.se.coursach_back.lab.domain.LabTestType;
+import ifmo.se.coursach_back.donor.domain.BloodGroup;
+import ifmo.se.coursach_back.donor.domain.RhFactor;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.medical.domain.Sample;
@@ -113,6 +115,14 @@ public class LabWorkflowService {
         if (request.hemoglobinGl() == null || request.hematocritPct() == null || request.rbc10e12L() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "All blood analysis values are required");
         }
+        BloodGroup bloodGroup = BloodGroup.fromStringOrNull(request.bloodGroup());
+        if (bloodGroup == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blood group is required and must be valid");
+        }
+        RhFactor rhFactor = RhFactor.fromStringOrNull(request.rhFactor());
+        if (rhFactor == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rh factor is required and must be valid");
+        }
 
         requestEntity.setCompletedByLab(labTech);
         requestEntity.setCompletedAt(OffsetDateTime.now());
@@ -120,6 +130,8 @@ public class LabWorkflowService {
         requestEntity.setHemoglobinGl(request.hemoglobinGl());
         requestEntity.setHematocritPct(request.hematocritPct());
         requestEntity.setRbc10e12L(request.rbc10e12L());
+        requestEntity.setBloodGroup(bloodGroup);
+        requestEntity.setRhFactor(rhFactor);
         LabExaminationRequest savedRequest = labExaminationRequestRepository.save(requestEntity);
 
         MedicalCheck check = medicalCheckRepository.findByVisitId(requestEntity.getVisit().getId())

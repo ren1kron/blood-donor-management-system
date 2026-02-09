@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.Getter;
@@ -33,8 +34,8 @@ public class DonorProfile {
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     private Account account;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
+    @Transient
+    private String pendingFullName;
 
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
@@ -55,6 +56,30 @@ public class DonorProfile {
     public void prePersist() {
         if (donorStatus == null) {
             donorStatus = DonorStatus.POTENTIAL;
+        }
+    }
+
+    @Transient
+    public String getFullName() {
+        if (account != null && account.getFullName() != null) {
+            return account.getFullName();
+        }
+        return pendingFullName;
+    }
+
+    public void setFullName(String fullName) {
+        if (account == null) {
+            pendingFullName = fullName;
+            return;
+        }
+        account.setFullName(fullName);
+        pendingFullName = account.getFullName();
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+        if (this.account != null && this.account.getFullName() == null && pendingFullName != null) {
+            this.account.setFullName(pendingFullName);
         }
     }
 }

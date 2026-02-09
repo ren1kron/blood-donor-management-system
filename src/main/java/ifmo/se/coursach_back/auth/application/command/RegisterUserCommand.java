@@ -9,9 +9,9 @@ public record RegisterUserCommand(
         String email,
         String phone,
         String password,
-        String fullName,
-        LocalDate birthDate,
-        String bloodGroup,
-        String rhFactor
+        String lastName,
+        String firstName,
+        String middleName,
+        LocalDate birthDate
 ) {
 }

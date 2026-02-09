@@ -23,7 +23,7 @@ public interface DonorProfileRepository extends JpaRepository<DonorProfile, UUID
     @Query(value = """
             SELECT 
                 donor.id as donorId,
-                donor.full_name as fullName,
+                concat_ws(' ', account.last_name, account.first_name, account.middle_name) as fullName,
                 donor.donor_status as donorStatus,
                 account.email as email,
                 account.phone as phone,
@@ -44,7 +44,7 @@ public interface DonorProfileRepository extends JpaRepository<DonorProfile, UUID
                  )) as lastAdmittedAtRaw
             FROM donor_profile donor
             JOIN account account ON donor.account_id = account.id
-            ORDER BY donor.full_name
+            ORDER BY account.last_name, account.first_name, account.middle_name
             """, nativeQuery = true)
     List<DonorSummaryProjection> findDonorSummaries();
 }

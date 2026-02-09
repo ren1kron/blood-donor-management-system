@@ -73,7 +73,7 @@ public class DonorController {
                                               @Valid @RequestBody UpdateDonorProfileRequest request) {
         UpdateDonorProfileCommand command = new UpdateDonorProfileCommand(
                 principal.getId(), request.fullName(), request.birthDate(),
-                request.bloodGroup(), request.rhFactor(), request.email(), request.phone()
+                request.email(), request.phone()
         );
         DonorProfileResult result = updateDonorProfileUseCase.execute(command);
         return new DonorProfileResponse(

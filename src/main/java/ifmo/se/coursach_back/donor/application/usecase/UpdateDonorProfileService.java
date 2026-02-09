@@ -17,8 +17,6 @@ public class UpdateDonorProfileService implements UpdateDonorProfileUseCase {
         UpdateDonorProfileRequest request = new UpdateDonorProfileRequest(
                 command.fullName(),
                 command.birthDate(),
-                command.bloodGroup(),
-                command.rhFactor(),
                 command.email(),
                 command.phone()
         );

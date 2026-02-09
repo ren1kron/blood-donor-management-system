@@ -11,6 +11,8 @@ public record SubmitLabExaminationCommand(
         UUID requestId,
         BigDecimal hemoglobinGl,
         BigDecimal hematocritPct,
-        BigDecimal rbc10e12L
+        BigDecimal rbc10e12L,
+        String bloodGroup,
+        String rhFactor
 ) {
 }

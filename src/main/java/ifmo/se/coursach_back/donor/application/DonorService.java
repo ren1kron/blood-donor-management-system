@@ -6,9 +6,7 @@ import ifmo.se.coursach_back.donor.api.dto.DonationHistoryResponse;
 import ifmo.se.coursach_back.donor.api.dto.DonorProfileResponse;
 import ifmo.se.coursach_back.donor.api.dto.EligibilityResponse;
 import ifmo.se.coursach_back.donor.api.dto.UpdateDonorProfileRequest;
-import ifmo.se.coursach_back.donor.domain.BloodGroup;
 import ifmo.se.coursach_back.donor.domain.ConsentType;
-import ifmo.se.coursach_back.donor.domain.RhFactor;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
@@ -90,12 +88,6 @@ public class DonorService {
         }
         if (request.birthDate() != null) {
             donor.setBirthDate(request.birthDate());
-        }
-        if (request.bloodGroup() != null) {
-            donor.setBloodGroup(BloodGroup.fromStringOrNull(request.bloodGroup()));
-        }
-        if (request.rhFactor() != null) {
-            donor.setRhFactor(RhFactor.fromStringOrNull(request.rhFactor()));
         }
 
         if (request.email() != null) {

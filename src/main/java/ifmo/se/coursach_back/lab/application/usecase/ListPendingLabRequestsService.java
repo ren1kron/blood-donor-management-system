@@ -36,7 +36,9 @@ public class ListPendingLabRequestsService implements ListPendingLabRequestsUseC
                             r.getCompletedAt(),
                             r.getHemoglobinGl(),
                             r.getHematocritPct(),
-                            r.getRbc10e12L()
+                            r.getRbc10e12L(),
+                            r.getBloodGroup() != null ? r.getBloodGroup().getDisplayValue() : null,
+                            r.getRhFactor() != null ? r.getRhFactor().getDisplayValue() : null
                     );
                 })
                 .toList();

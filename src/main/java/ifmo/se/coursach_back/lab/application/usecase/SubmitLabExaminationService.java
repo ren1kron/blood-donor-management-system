@@ -20,14 +20,18 @@ public class SubmitLabExaminationService implements SubmitLabExaminationUseCase 
         LabExaminationRequest request = new LabExaminationRequest(
                 command.hemoglobinGl(),
                 command.hematocritPct(),
-                command.rbc10e12L()
+                command.rbc10e12L(),
+                command.bloodGroup(),
+                command.rhFactor()
         );
         ifmo.se.coursach_back.lab.domain.LabExaminationRequest result = 
                 labWorkflowService.submitExamination(command.accountId(), command.requestId(), request);
         return new LabExaminationSubmitResult(
                 result.getId(),
                 result.getStatus(),
-                result.getCompletedAt()
+                result.getCompletedAt(),
+                result.getBloodGroup() != null ? result.getBloodGroup().getDisplayValue() : null,
+                result.getRhFactor() != null ? result.getRhFactor().getDisplayValue() : null
         );
     }
 }

@@ -61,8 +61,7 @@ public class AdminController {
     public ResponseEntity<AdminRegisterDonorResponse> registerDonor(@Valid @RequestBody AdminRegisterDonorRequest request) {
         RegisterDonorByPhoneCommand command = new RegisterDonorByPhoneCommand(
                 request.phone(), request.email(), request.password(),
-                request.fullName(), request.birthDate(),
-                request.bloodGroup(), request.rhFactor()
+                request.fullName(), request.birthDate()
         );
         RegisterDonorResult result = registerDonorByPhoneUseCase.execute(command);
         AdminRegisterDonorResponse response = new AdminRegisterDonorResponse(

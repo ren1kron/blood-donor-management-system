@@ -17,8 +17,6 @@ import ifmo.se.coursach_back.shared.application.ports.RoleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.security.AccountPrincipal;
 import ifmo.se.coursach_back.security.JwtService;
-import ifmo.se.coursach_back.donor.domain.BloodGroup;
-import ifmo.se.coursach_back.donor.domain.RhFactor;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -56,6 +54,9 @@ public class AuthService {
         Account account = new Account();
         account.setEmail(email);
         account.setPhone(phone);
+        account.setLastName(normalize(request.lastName()));
+        account.setFirstName(normalize(request.firstName()));
+        account.setMiddleName(normalize(request.middleName()));
         account.setPasswordHash(passwordEncoder.encode(request.password()));
         account.setRoles(new java.util.HashSet<>());
         account.getRoles().add(donorRole);
@@ -63,10 +64,7 @@ public class AuthService {
 
         DonorProfile profile = new DonorProfile();
         profile.setAccount(savedAccount);
-        profile.setFullName(request.fullName());
         profile.setBirthDate(request.birthDate());
-        profile.setBloodGroup(BloodGroup.fromStringOrNull(request.bloodGroup()));
-        profile.setRhFactor(RhFactor.fromStringOrNull(request.rhFactor()));
         donorProfileRepository.save(profile);
 
         return buildAuthResponse(savedAccount);
@@ -98,16 +96,14 @@ public class AuthService {
                 .orElseThrow(() -> new NotFoundException("Account not found"));
 
         String profileType = "NONE";
-        String fullName = null;
+        String fullName = account.getFullName();
         DonorProfile donorProfile = donorProfileRepository.findByAccountId(account.getId()).orElse(null);
         if (donorProfile != null) {
             profileType = "DONOR";
-            fullName = donorProfile.getFullName();
         } else {
             StaffProfile staffProfile = staffProfileRepository.findByAccountId(account.getId()).orElse(null);
             if (staffProfile != null) {
                 profileType = "STAFF";
-                fullName = staffProfile.getFullName();
             }
         }
 

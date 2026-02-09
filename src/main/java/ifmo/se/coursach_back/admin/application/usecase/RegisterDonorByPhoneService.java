@@ -23,9 +23,7 @@ public class RegisterDonorByPhoneService implements RegisterDonorByPhoneUseCase 
                 command.phone(),
                 command.email(),
                 command.password(),
-                command.birthDate(),
-                command.bloodGroup(),
-                command.rhFactor()
+                command.birthDate()
         );
         AdminRegisterDonorResponse response = adminService.registerDonorByPhone(request);
         return new RegisterDonorResult(response.accountId(), response.donorId());

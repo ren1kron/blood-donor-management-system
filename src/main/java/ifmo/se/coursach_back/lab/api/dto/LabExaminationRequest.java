@@ -2,6 +2,7 @@ package ifmo.se.coursach_back.lab.api.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
@@ -16,6 +17,12 @@ public record LabExaminationRequest(
         
         @Positive(message = "RBC must be positive")
         @DecimalMax(value = "10", message = "RBC must not exceed 10 x10^12/L")
-        BigDecimal rbc10e12L        // RBC x10^12/L (1-10)
+        BigDecimal rbc10e12L,       // RBC x10^12/L (1-10)
+
+        @NotBlank(message = "Blood group is required")
+        String bloodGroup,
+
+        @NotBlank(message = "Rh factor is required")
+        String rhFactor
 ) {
 }

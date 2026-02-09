@@ -25,6 +25,7 @@ import ifmo.se.coursach_back.notification.domain.NotificationTopics;
 import ifmo.se.coursach_back.medical.application.ports.DeferralRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,7 @@ public class MedicalCheckService {
     private final MedicalCheckRepositoryPort medicalCheckRepository;
     private final DeferralRepositoryPort deferralRepository;
     private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
     private final EntityResolverService entityResolver;
     private final DomainEventPublisher eventPublisher;
 
@@ -75,7 +77,7 @@ public class MedicalCheckService {
         MedicalCheck check = medicalCheckRepository.findById(request.examinationId())
                 .orElseThrow(() -> NotFoundException.entity("Medical check", request.examinationId()));
 
-        validateLabExaminationCompleted(check.getVisit().getId());
+        LabExaminationRequest labRequest = requireCompletedLabExamination(check.getVisit().getId());
         validatePendingReview(check);
 
         MedicalCheckDecision decision = parseAndValidateDecision(request.decision(), request.deferral());
@@ -87,6 +89,8 @@ public class MedicalCheckService {
         if (request.deferral() != null) {
             savedDeferral = createDeferral(check.getVisit().getBooking().getDonor(), saved, request.deferral());
         }
+
+        assignBloodDataOnAdmission(check.getVisit().getBooking().getDonor(), decision, labRequest);
 
         sendDecisionNotification(check.getVisit().getBooking().getDonor(), decision, request.deferral());
 
@@ -104,7 +108,7 @@ public class MedicalCheckService {
         StaffProfile staff = entityResolver.requireStaff(accountId);
         Visit visit = entityResolver.resolveVisit(request.bookingId(), request.visitId());
 
-        validateLabExaminationCompleted(visit.getId());
+        LabExaminationRequest labRequest = requireCompletedLabExamination(visit.getId());
 
         MedicalCheckDecision decision = parseAndValidateDecision(request.decision(), request.deferral());
 
@@ -126,6 +130,8 @@ public class MedicalCheckService {
             savedDeferral = createDeferral(visit.getBooking().getDonor(), saved, request.deferral());
         }
 
+        assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
+
         if (decision == MedicalCheckDecision.ADMITTED) {
             sendDecisionNotification(visit.getBooking().getDonor(), decision, null);
         }
@@ -144,7 +150,7 @@ public class MedicalCheckService {
         StaffProfile doctor = entityResolver.requireStaff(accountId);
         Visit visit = entityResolver.getVisit(visitId);
 
-        validateLabExaminationCompleted(visitId);
+        LabExaminationRequest labRequest = requireCompletedLabExamination(visitId);
 
         MedicalCheckDecision decision = parseAndValidateDecision(request.decision(), request.deferral());
 
@@ -161,6 +167,8 @@ public class MedicalCheckService {
             savedDeferral = createDeferral(visit.getBooking().getDonor(), saved, request.deferral());
         }
 
+        assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
+
         sendDecisionNotification(visit.getBooking().getDonor(), decision, request.deferral());
 
         eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
@@ -169,13 +177,14 @@ public class MedicalCheckService {
         return new MedicalCheckResult(saved, savedDeferral);
     }
 
-    private void validateLabExaminationCompleted(UUID visitId) {
+    private LabExaminationRequest requireCompletedLabExamination(UUID visitId) {
         LabExaminationRequest labRequest = labExaminationRequestRepository.findByVisitId(visitId)
                 .orElse(null);
 
         if (labRequest == null || labRequest.getStatus() != LabExaminationStatus.COMPLETED) {
             throw new ConflictException("Lab examination is not completed");
         }
+        return labRequest;
     }
 
     private void validatePendingReview(MedicalCheck check) {
@@ -207,6 +216,21 @@ public class MedicalCheckService {
         check.setDecision(decision);
         check.setStatus(decision);
         check.setDecisionAt(OffsetDateTime.now());
+    }
+
+    private void assignBloodDataOnAdmission(DonorProfile donor, MedicalCheckDecision decision,
+                                            LabExaminationRequest labRequest) {
+        if (decision != MedicalCheckDecision.ADMITTED || donor == null) {
+            return;
+        }
+        if (labRequest == null || labRequest.getBloodGroup() == null || labRequest.getRhFactor() == null) {
+            throw new BadRequestException(
+                    "Blood group and Rh factor must be provided in lab examination before admission");
+        }
+
+        donor.setBloodGroup(labRequest.getBloodGroup());
+        donor.setRhFactor(labRequest.getRhFactor());
+        donorProfileRepository.save(donor);
     }
 
     private Deferral createDeferral(DonorProfile donor, MedicalCheck check, DeferralRequest request) {

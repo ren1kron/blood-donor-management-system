@@ -21,10 +21,10 @@ public class RegisterUserService implements RegisterUserUseCase {
                 command.email(),
                 command.phone(),
                 command.password(),
-                command.fullName(),
-                command.birthDate(),
-                command.bloodGroup(),
-                command.rhFactor()
+                command.lastName(),
+                command.firstName(),
+                command.middleName(),
+                command.birthDate()
         );
         var response = authService.register(request);
         return new AuthResult(response.token(), response.accountId(), response.roles());

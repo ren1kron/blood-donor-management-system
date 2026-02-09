@@ -38,8 +38,6 @@ import ifmo.se.coursach_back.notification.application.ports.NotificationReposito
 import ifmo.se.coursach_back.shared.application.ports.RoleRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
-import ifmo.se.coursach_back.donor.domain.BloodGroup;
-import ifmo.se.coursach_back.donor.domain.RhFactor;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -93,6 +91,7 @@ public class AdminService {
         Account account = new Account();
         account.setPhone(phone);
         account.setEmail(email);
+        account.setFullName(request.fullName());
         account.setPasswordHash(passwordEncoder.encode(request.password()));
         account.setRoles(new java.util.HashSet<>());
         account.getRoles().add(donorRole);
@@ -100,10 +99,7 @@ public class AdminService {
 
         DonorProfile profile = new DonorProfile();
         profile.setAccount(savedAccount);
-        profile.setFullName(request.fullName());
         profile.setBirthDate(request.birthDate());
-        profile.setBloodGroup(BloodGroup.fromStringOrNull(request.bloodGroup()));
-        profile.setRhFactor(RhFactor.fromStringOrNull(request.rhFactor()));
         DonorProfile savedProfile = donorProfileRepository.save(profile);
 
         return new AdminRegisterDonorResponse(savedAccount.getId(), savedProfile.getId(), request.password());

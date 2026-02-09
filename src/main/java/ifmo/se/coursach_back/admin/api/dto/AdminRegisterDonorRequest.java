@@ -20,8 +20,6 @@ public record AdminRegisterDonorRequest(
         String password,
         @NotNull(message = "Birth date is required")
         @Past(message = "Birth date must be in the past")
-        LocalDate birthDate,
-        String bloodGroup,
-        String rhFactor
+        LocalDate birthDate
 ) {
 }

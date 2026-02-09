@@ -10,8 +10,6 @@ public record UpdateDonorProfileRequest(
         String fullName,
         @Past(message = "Birth date must be in the past")
         LocalDate birthDate,
-        String bloodGroup,
-        String rhFactor,
         @Email(message = "Invalid email format")
         String email,
         String phone

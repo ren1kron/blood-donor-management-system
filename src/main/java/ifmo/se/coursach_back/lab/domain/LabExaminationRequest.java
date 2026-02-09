@@ -1,8 +1,13 @@
 package ifmo.se.coursach_back.lab.domain;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
+import ifmo.se.coursach_back.donor.domain.BloodGroup;
+import ifmo.se.coursach_back.donor.domain.BloodGroupConverter;
+import ifmo.se.coursach_back.donor.domain.RhFactor;
+import ifmo.se.coursach_back.donor.domain.RhFactorConverter;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -78,6 +83,14 @@ public class LabExaminationRequest {
 
     @Column(name = "body_temperature_c")
     private BigDecimal bodyTemperatureC;
+
+    @Column(name = "blood_group")
+    @Convert(converter = BloodGroupConverter.class)
+    private BloodGroup bloodGroup;
+
+    @Column(name = "rh_factor")
+    @Convert(converter = RhFactorConverter.class)
+    private RhFactor rhFactor;
 
     @PrePersist
     public void prePersist() {

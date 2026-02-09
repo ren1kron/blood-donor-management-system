@@ -10,6 +10,8 @@ import java.util.UUID;
 public record LabExaminationSubmitResult(
         UUID requestId,
         LabExaminationStatus status,
-        OffsetDateTime completedAt
+        OffsetDateTime completedAt,
+        String bloodGroup,
+        String rhFactor
 ) {
 }

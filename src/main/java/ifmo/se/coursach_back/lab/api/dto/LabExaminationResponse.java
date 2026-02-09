@@ -21,7 +21,9 @@ public record LabExaminationResponse(
         OffsetDateTime completedAt,
         BigDecimal hemoglobinGl,
         BigDecimal hematocritPct,
-        BigDecimal rbc10e12L
+        BigDecimal rbc10e12L,
+        String bloodGroup,
+        String rhFactor
 ) {
     public static LabExaminationResponse from(LabExaminationRequest request) {
         return new LabExaminationResponse(
@@ -39,7 +41,9 @@ public record LabExaminationResponse(
                 request.getCompletedAt(),
                 request.getHemoglobinGl(),
                 request.getHematocritPct(),
-                request.getRbc10e12L()
+                request.getRbc10e12L(),
+                request.getBloodGroup() != null ? request.getBloodGroup().getDisplayValue() : null,
+                request.getRhFactor() != null ? request.getRhFactor().getDisplayValue() : null
         );
     }
 }

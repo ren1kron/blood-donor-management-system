@@ -14,7 +14,8 @@ public interface DonorDocumentRepository extends JpaRepository<DonorDocument, UU
             select new ifmo.se.coursach_back.admin.api.dto.ExpiredDocumentRow(
                 document.id,
                 donor.id,
-                donor.fullName,
+                trim(concat(concat(coalesce(account.lastName, ''), ' '),
+                        concat(coalesce(account.firstName, ''), coalesce(concat(' ', account.middleName), '')))),
                 account.phone,
                 account.email,
                 document.docType,
