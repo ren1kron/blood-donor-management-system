@@ -145,6 +145,7 @@ public class AdminAccountService {
         eventPublisher.publish(AuditDomainEvent.of(adminAccountId, "ACCOUNT_UPDATED", "Account", accountId));
     }
 
+    @Transactional(readOnly = true)
     public List<AdminStaffSummaryResponse> listStaff(String role, String staffKind) {
         String normalizedKind = normalizeRole(staffKind);
         String normalizedRole = normalizeRole(role);
@@ -162,6 +163,7 @@ public class AdminAccountService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<AdminDonorSummaryResponse> listDonors() {
         return donorProfileRepository.findDonorSummaries().stream()
                 .map(AdminDonorSummaryResponse::from)
