@@ -1,5 +1,6 @@
 package ifmo.se.coursach_back.medical.application.result;
 
+import ifmo.se.coursach_back.nurse.api.dto.VitalsPayload;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -30,6 +31,11 @@ public record ScheduledDonorResult(
         String collectionSessionStatus,
         OffsetDateTime collectionSessionStartedAt,
         OffsetDateTime collectionSessionEndedAt,
-        String collectionSessionNurseName
+        String collectionSessionNurseName,
+        VitalsPayload collectionSessionPreVitals,
+        VitalsPayload collectionSessionPostVitals,
+        String collectionSessionNotes,
+        String collectionSessionComplications,
+        String collectionSessionInterruptionReason
 ) {
 }

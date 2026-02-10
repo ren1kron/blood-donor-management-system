@@ -103,7 +103,8 @@ public class MedicalWorkflowController {
                         r.collectionSessionId(), r.collectionSessionStatus() != null ?
                             ifmo.se.coursach_back.nurse.domain.CollectionSessionStatus.valueOf(r.collectionSessionStatus()) : null,
                         r.collectionSessionStartedAt(), r.collectionSessionEndedAt(), r.collectionSessionNurseName(),
-                        null, null, null, null, null
+                        r.collectionSessionPreVitals(), r.collectionSessionPostVitals(),
+                        r.collectionSessionNotes(), r.collectionSessionComplications(), r.collectionSessionInterruptionReason()
                 ))
                 .toList();
     }

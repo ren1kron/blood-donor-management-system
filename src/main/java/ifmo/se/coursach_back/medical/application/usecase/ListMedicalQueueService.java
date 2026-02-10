@@ -6,6 +6,7 @@ import ifmo.se.coursach_back.medical.application.MedicalWorkflowService;
 import ifmo.se.coursach_back.medical.application.result.ScheduledDonorResult;
 import ifmo.se.coursach_back.medical.domain.Donation;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
+import ifmo.se.coursach_back.nurse.api.dto.VitalsPayload;
 import ifmo.se.coursach_back.nurse.domain.CollectionSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -79,9 +80,32 @@ public class ListMedicalQueueService implements ListMedicalQueueUseCase {
                             session != null ? session.getStatus().name() : null,
                             session != null ? session.getStartedAt() : null,
                             session != null ? session.getEndedAt() : null,
-                            session != null && session.getNurse() != null ? session.getNurse().getFullName() : null
+                            session != null && session.getNurse() != null ? session.getNurse().getFullName() : null,
+                            session != null ? vitalsFromSession(session, true) : null,
+                            session != null ? vitalsFromSession(session, false) : null,
+                            session != null ? session.getNotes() : null,
+                            session != null ? session.getComplications() : null,
+                            session != null ? session.getInterruptionReason() : null
                     );
                 })
                 .toList();
+    }
+
+    private static VitalsPayload vitalsFromSession(CollectionSession s, boolean pre) {
+        if (pre) {
+            if (s.getPreSystolicMmhg() == null && s.getPreDiastolicMmhg() == null
+                    && s.getPrePulseRate() == null && s.getPreBodyTemperatureC() == null && s.getPreWellbeing() == null) {
+                return null;
+            }
+            return new VitalsPayload(s.getPreSystolicMmhg(), s.getPreDiastolicMmhg(), s.getPrePulseRate(),
+                    s.getPreBodyTemperatureC() != null ? s.getPreBodyTemperatureC().doubleValue() : null, s.getPreWellbeing());
+        } else {
+            if (s.getPostSystolicMmhg() == null && s.getPostDiastolicMmhg() == null
+                    && s.getPostPulseRate() == null && s.getPostBodyTemperatureC() == null && s.getPostWellbeing() == null) {
+                return null;
+            }
+            return new VitalsPayload(s.getPostSystolicMmhg(), s.getPostDiastolicMmhg(), s.getPostPulseRate(),
+                    s.getPostBodyTemperatureC() != null ? s.getPostBodyTemperatureC().doubleValue() : null, s.getPostWellbeing());
+        }
     }
 }
