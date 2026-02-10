@@ -95,9 +95,12 @@ create table booking (
     slot_id      uuid not null references appointment_slot(id) on delete restrict,
     status       text not null default 'BOOKED',
     created_at   timestamptz not null default now(),
-    cancelled_at timestamptz,
-    constraint uq_booking_donor_slot unique (donor_id, slot_id)
+    cancelled_at timestamptz
 );
+
+create unique index uq_booking_donor_slot_active
+    on booking (donor_id, slot_id)
+    where cancelled_at is null;
 
 create index idx_booking_donor on booking (donor_id);
 create index idx_booking_slot on booking (slot_id);
