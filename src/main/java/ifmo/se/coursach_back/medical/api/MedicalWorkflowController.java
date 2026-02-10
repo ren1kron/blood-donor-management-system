@@ -39,7 +39,6 @@ import ifmo.se.coursach_back.medical.application.usecase.RegisterSampleUseCase;
 import ifmo.se.coursach_back.medical.application.usecase.ReviewExaminationUseCase;
 import ifmo.se.coursach_back.medical.application.usecase.UpdateDonorStatusUseCase;
 import ifmo.se.coursach_back.appointment.domain.Booking;
-import ifmo.se.coursach_back.nurse.domain.CollectionSession;
 import ifmo.se.coursach_back.medical.domain.Deferral;
 import ifmo.se.coursach_back.medical.domain.Donation;
 import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;

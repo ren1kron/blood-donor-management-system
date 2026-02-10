@@ -2,6 +2,8 @@ package ifmo.se.coursach_back.medical.api.dto;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ifmo.se.coursach_back.donor.domain.BloodGroup;
+import ifmo.se.coursach_back.donor.domain.RhFactor;
 import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
 import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
@@ -30,6 +32,10 @@ public record ExaminationQueueResponse(
         Integer diastolicMmhg,
         Integer pulseRate,
         BigDecimal bodyTemperatureC,
+        BigDecimal hematocritPct,
+        BigDecimal rbc10e12L,
+        BloodGroup bloodGroup,
+        RhFactor rhFactor,
         MedicalCheckDecision decision,
         OffsetDateTime decisionAt,
         Boolean questionnaireHasFever,
@@ -76,6 +82,10 @@ public record ExaminationQueueResponse(
                 request != null ? request.getDiastolicMmhg() : null,
                 request != null ? request.getPulseRate() : null,
                 request != null ? request.getBodyTemperatureC() : null,
+                request != null ? request.getHematocritPct() : null,
+                request != null ? request.getRbc10e12L() : null,
+                request != null ? request.getBloodGroup() : null,
+                request != null ? request.getRhFactor() : null,
                 check != null ? check.getDecision() : null,
                 check != null ? check.getDecisionAt() : null,
                 hasFever,
