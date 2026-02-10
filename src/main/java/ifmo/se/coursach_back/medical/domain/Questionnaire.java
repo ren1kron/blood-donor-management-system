@@ -17,8 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "questionnaire")
@@ -42,9 +40,17 @@ public class Questionnaire {
     @Column(name = "filled_at", nullable = false)
     private OffsetDateTime filledAt;
 
-    @Column(name = "payload_json", nullable = false, columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    private String payloadJson;
+    @Column(name = "has_fever", nullable = false)
+    private Boolean hasFever;
+
+    @Column(name = "took_antibiotics_last_14d", nullable = false)
+    private Boolean tookAntibioticsLast14d;
+
+    @Column(name = "has_chronic_diseases", nullable = false)
+    private Boolean hasChronicDiseases;
+
+    @Column(name = "comment")
+    private String comment;
 
     @PrePersist
     public void prePersist() {

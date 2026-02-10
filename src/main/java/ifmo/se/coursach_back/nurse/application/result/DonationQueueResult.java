@@ -4,6 +4,7 @@ import ifmo.se.coursach_back.appointment.domain.BookingStatus;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
+import ifmo.se.coursach_back.nurse.api.dto.VitalsPayload;
 import ifmo.se.coursach_back.nurse.domain.CollectionSessionStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -40,8 +41,8 @@ public record DonationQueueResult(
             OffsetDateTime collectionSessionStartedAt,
             OffsetDateTime collectionSessionEndedAt,
             String collectionSessionNurseName,
-            String collectionSessionPreVitalsJson,
-            String collectionSessionPostVitalsJson,
+            VitalsPayload collectionSessionPreVitals,
+            VitalsPayload collectionSessionPostVitals,
             String collectionSessionNotes,
             String collectionSessionComplications,
             String collectionSessionInterruptionReason

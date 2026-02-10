@@ -1,5 +1,6 @@
 package ifmo.se.coursach_back.donor.application.result;
 
+import ifmo.se.coursach_back.nurse.api.dto.VitalsPayload;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -13,8 +14,8 @@ public record DonationHistoryResult(
         String donationType,
         Integer volumeMl,
         OffsetDateTime publishedAt,
-        String preVitalsJson,
-        String postVitalsJson,
+        VitalsPayload preVitals,
+        VitalsPayload postVitals,
         boolean hasVitals
 ) {
 }

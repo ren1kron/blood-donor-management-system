@@ -1,7 +1,5 @@
 package ifmo.se.coursach_back.medical.api.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ifmo.se.coursach_back.donor.domain.BloodGroup;
 import ifmo.se.coursach_back.donor.domain.RhFactor;
 import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
@@ -43,26 +41,12 @@ public record ExaminationQueueResponse(
         Boolean questionnaireHasChronicDiseases,
         String questionnaireComment
 ) {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static ExaminationQueueResponse from(Visit visit, LabExaminationRequest request,
                                                  MedicalCheck check, Questionnaire questionnaire) {
-        Boolean hasFever = null;
-        Boolean tookAntibiotics = null;
-        Boolean hasChronicDiseases = null;
-        String comment = null;
-
-        if (questionnaire != null && questionnaire.getPayloadJson() != null) {
-            try {
-                JsonNode json = OBJECT_MAPPER.readTree(questionnaire.getPayloadJson());
-                hasFever = json.has("hasFever") ? json.get("hasFever").asBoolean() : null;
-                tookAntibiotics = json.has("tookAntibioticsLast14Days") ? json.get("tookAntibioticsLast14Days").asBoolean() : null;
-                hasChronicDiseases = json.has("hasChronicDiseases") ? json.get("hasChronicDiseases").asBoolean() : null;
-                comment = json.has("comment") && !json.get("comment").isNull() ? json.get("comment").asText() : null;
-            } catch (Exception ignored) {
-                // If payload parsing fails, leave fields as null
-            }
-        }
+        Boolean hasFever = questionnaire != null ? questionnaire.getHasFever() : null;
+        Boolean tookAntibiotics = questionnaire != null ? questionnaire.getTookAntibioticsLast14d() : null;
+        Boolean hasChronicDiseases = questionnaire != null ? questionnaire.getHasChronicDiseases() : null;
+        String comment = questionnaire != null ? questionnaire.getComment() : null;
 
         return new ExaminationQueueResponse(
                 visit.getId(),

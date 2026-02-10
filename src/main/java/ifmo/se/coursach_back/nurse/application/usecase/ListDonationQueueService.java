@@ -42,8 +42,8 @@ public class ListDonationQueueService implements ListDonationQueueUseCase {
                         d.collectionSessionStartedAt(),
                         d.collectionSessionEndedAt(),
                         d.collectionSessionNurseName(),
-                        d.collectionSessionPreVitalsJson(),
-                        d.collectionSessionPostVitalsJson(),
+                        d.collectionSessionPreVitals(),
+                        d.collectionSessionPostVitals(),
                         d.collectionSessionNotes(),
                         d.collectionSessionComplications(),
                         d.collectionSessionInterruptionReason()

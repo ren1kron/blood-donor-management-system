@@ -101,7 +101,7 @@ public class DonorController {
         return results.stream()
                 .map(r -> new DonationHistoryResponse(
                         r.donationId(), r.visitId(), r.performedAt(), r.donationType(),
-                        r.volumeMl(), r.publishedAt(), r.preVitalsJson(), r.postVitalsJson(), r.hasVitals()
+                        r.volumeMl(), r.publishedAt(), r.preVitals(), r.postVitals(), r.hasVitals()
                 ))
                 .toList();
     }

@@ -59,8 +59,8 @@ public class NurseController {
                         item.donationId(), item.donationPublished(),
                         item.collectionSessionId(), item.collectionSessionStatus(),
                         item.collectionSessionStartedAt(), item.collectionSessionEndedAt(),
-                        item.collectionSessionNurseName(), item.collectionSessionPreVitalsJson(),
-                        item.collectionSessionPostVitalsJson(), item.collectionSessionNotes(),
+                        item.collectionSessionNurseName(), item.collectionSessionPreVitals(),
+                        item.collectionSessionPostVitals(), item.collectionSessionNotes(),
                         item.collectionSessionComplications(), item.collectionSessionInterruptionReason()
                 ))
                 .toList();

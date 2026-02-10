@@ -32,6 +32,7 @@ import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
 import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.QuestionnaireRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
@@ -56,6 +57,7 @@ class MedicalWorkflowServiceDonationTest {
     @Mock private StaffProfileRepositoryPort staffProfileRepository;
     @Mock private LabExaminationRequestRepositoryPort labExaminationRequestRepository;
     @Mock private CollectionSessionRepositoryPort collectionSessionRepository;
+    @Mock private QuestionnaireRepositoryPort questionnaireRepository;
     @Mock private DomainEventPublisher eventPublisher;
 
     private MedicalWorkflowService service;
@@ -75,6 +77,7 @@ class MedicalWorkflowServiceDonationTest {
                 staffProfileRepository,
                 labExaminationRequestRepository,
                 collectionSessionRepository,
+                questionnaireRepository,
                 eventPublisher
         );
     }

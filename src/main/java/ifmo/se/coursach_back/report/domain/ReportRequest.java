@@ -20,8 +20,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "report_request")
@@ -57,9 +55,8 @@ public class ReportRequest {
     @Column(nullable = false)
     private ReportRequestStatus status;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "payload_json", columnDefinition = "jsonb")
-    private String payloadJson;
+    @Column(name = "payload_text")
+    private String payloadText;
 
     @Column(name = "generated_at")
     private OffsetDateTime generatedAt;

@@ -124,16 +124,18 @@ create index idx_consent_visit on consent (visit_id);
 create index idx_consent_donor on consent (donor_id);
 
 create table questionnaire (
-    id           uuid primary key default gen_random_uuid(),
-    visit_id     uuid not null references visit(id) on delete cascade,
-    donor_id     uuid not null references donor_profile(id) on delete cascade,
-    filled_at    timestamptz not null default now(),
-    payload_json jsonb not null
+    id                          uuid primary key default gen_random_uuid(),
+    visit_id                    uuid not null references visit(id) on delete cascade,
+    donor_id                    uuid not null references donor_profile(id) on delete cascade,
+    filled_at                   timestamptz not null default now(),
+    has_fever                   boolean not null,
+    took_antibiotics_last_14d   boolean not null,
+    has_chronic_diseases        boolean not null,
+    comment                     text
 );
 
 create index idx_questionnaire_visit on questionnaire (visit_id);
 create index idx_questionnaire_donor on questionnaire (donor_id);
-create index idx_questionnaire_payload_gin on questionnaire using gin (payload_json);
 
 create table medical_check (
     id                      uuid primary key default gen_random_uuid(),
@@ -218,8 +220,16 @@ create table collection_session (
     status              text not null default 'PREPARED',
     started_at          timestamptz,
     ended_at            timestamptz,
-    pre_vitals_json     jsonb,
-    post_vitals_json    jsonb,
+    pre_systolic_mmhg       integer,
+    pre_diastolic_mmhg      integer,
+    pre_pulse_rate          integer,
+    pre_body_temperature_c  numeric(4,2),
+    pre_wellbeing           text,
+    post_systolic_mmhg      integer,
+    post_diastolic_mmhg     integer,
+    post_pulse_rate         integer,
+    post_body_temperature_c numeric(4,2),
+    post_wellbeing          text,
     notes               text,
     complications       text,
     interruption_reason text,
@@ -307,7 +317,7 @@ create table report_request (
     assigned_admin_id       uuid references staff_profile(id) on delete set null,
     report_type             text not null,
     status                  text not null default 'REQUESTED',
-    payload_json            jsonb,
+    payload_text            text,
     generated_at            timestamptz,
     message                 text,
     created_at              timestamptz not null default now(),
@@ -348,7 +358,7 @@ create table audit_event (
     entity_type   text not null,
     entity_id     uuid,
     created_at    timestamptz not null default now(),
-    metadata_json jsonb
+    metadata_text text
 );
 
 create index idx_audit_event_account on audit_event (account_id);

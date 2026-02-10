@@ -25,8 +25,8 @@ public class ListDonationHistoryService implements ListDonationHistoryUseCase {
                         r.donationType(),
                         r.volumeMl(),
                         r.publishedAt(),
-                        r.preVitalsJson(),
-                        r.postVitalsJson(),
+                        r.preVitals(),
+                        r.postVitals(),
                         r.hasVitals()
                 ))
                 .toList();

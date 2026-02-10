@@ -119,7 +119,7 @@ public class ReportRequestService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        Object payload = parseJson(request.getPayloadJson());
+        Object payload = parseJson(request.getPayloadText());
         return toDetails(request, payload);
     }
 
@@ -162,7 +162,7 @@ public class ReportRequestService {
         ensureAssigned(admin, request);
 
         Map<String, Object> payload = buildPayload(request);
-        request.setPayloadJson(toJson(payload));
+        request.setPayloadText(toJson(payload));
         request.setGeneratedAt(OffsetDateTime.now());
         request.setStatus(ReportRequestStatus.READY);
         ReportRequest saved = reportRequestRepository.save(request);

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ifmo.se.coursach_back.audit.application.AuditService;
 import ifmo.se.coursach_back.appointment.domain.AppointmentSlot;
 import ifmo.se.coursach_back.appointment.domain.Booking;
@@ -53,7 +52,6 @@ class NurseWorkflowServiceTest {
                 donationRepository,
                 collectionSessionRepository,
                 staffProfileRepository,
-                new ObjectMapper(),
                 auditService
         );
     }

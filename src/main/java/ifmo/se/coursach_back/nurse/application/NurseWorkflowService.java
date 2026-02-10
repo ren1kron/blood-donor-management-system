@@ -1,7 +1,5 @@
 package ifmo.se.coursach_back.nurse.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ifmo.se.coursach_back.audit.application.AuditService;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.NotFoundException;
@@ -25,6 +23,7 @@ import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,6 @@ public class NurseWorkflowService {
     private final DonationRepositoryPort donationRepository;
     private final CollectionSessionRepositoryPort collectionSessionRepository;
     private final StaffProfileRepositoryPort staffProfileRepository;
-    private final ObjectMapper objectMapper;
     private final AuditService auditService;
 
     @Transactional(readOnly = true)
@@ -97,7 +95,7 @@ public class NurseWorkflowService {
         session.setVisit(visit);
         session.setNurse(nurse);
         session.setStatus(CollectionSessionStatus.PREPARED);
-        session.setPreVitalsJson(toJson(request.preVitals()));
+        applyPreVitals(session, request.preVitals());
         session.setNotes(normalize(request.notes()));
         CollectionSession saved = collectionSessionRepository.save(session);
 
@@ -180,10 +178,10 @@ public class NurseWorkflowService {
             return;
         }
         if (request.preVitals() != null) {
-            session.setPreVitalsJson(toJson(request.preVitals()));
+            applyPreVitals(session, request.preVitals());
         }
         if (request.postVitals() != null) {
-            session.setPostVitalsJson(toJson(request.postVitals()));
+            applyPostVitals(session, request.postVitals());
         }
         if (request.notes() != null) {
             session.setNotes(normalize(request.notes()));
@@ -194,6 +192,24 @@ public class NurseWorkflowService {
         if (request.interruptionReason() != null) {
             session.setInterruptionReason(normalize(request.interruptionReason()));
         }
+    }
+
+    private void applyPreVitals(CollectionSession session, VitalsPayload vitals) {
+        if (vitals == null) return;
+        session.setPreSystolicMmhg(vitals.systolicMmhg());
+        session.setPreDiastolicMmhg(vitals.diastolicMmhg());
+        session.setPrePulseRate(vitals.pulseRate());
+        session.setPreBodyTemperatureC(vitals.bodyTemperatureC() != null ? BigDecimal.valueOf(vitals.bodyTemperatureC()) : null);
+        session.setPreWellbeing(vitals.wellbeing());
+    }
+
+    private void applyPostVitals(CollectionSession session, VitalsPayload vitals) {
+        if (vitals == null) return;
+        session.setPostSystolicMmhg(vitals.systolicMmhg());
+        session.setPostDiastolicMmhg(vitals.diastolicMmhg());
+        session.setPostPulseRate(vitals.pulseRate());
+        session.setPostBodyTemperatureC(vitals.bodyTemperatureC() != null ? BigDecimal.valueOf(vitals.bodyTemperatureC()) : null);
+        session.setPostWellbeing(vitals.wellbeing());
     }
 
     private Visit resolveVisit(UUID visitId, UUID bookingId) {
@@ -286,8 +302,10 @@ public class NurseWorkflowService {
                 session.getStatus(),
                 session.getStartedAt(),
                 session.getEndedAt(),
-                parseVitals(session.getPreVitalsJson()),
-                parseVitals(session.getPostVitalsJson()),
+                toVitalsPayload(session.getPreSystolicMmhg(), session.getPreDiastolicMmhg(),
+                        session.getPrePulseRate(), session.getPreBodyTemperatureC(), session.getPreWellbeing()),
+                toVitalsPayload(session.getPostSystolicMmhg(), session.getPostDiastolicMmhg(),
+                        session.getPostPulseRate(), session.getPostBodyTemperatureC(), session.getPostWellbeing()),
                 session.getNotes(),
                 session.getComplications(),
                 session.getInterruptionReason(),
@@ -296,26 +314,13 @@ public class NurseWorkflowService {
         );
     }
 
-    private VitalsPayload parseVitals(String json) {
-        if (json == null || json.isBlank()) {
+    private VitalsPayload toVitalsPayload(Integer systolic, Integer diastolic, Integer pulse,
+                                          BigDecimal temperature, String wellbeing) {
+        if (systolic == null && diastolic == null && pulse == null && temperature == null && wellbeing == null) {
             return null;
         }
-        try {
-            return objectMapper.readValue(json, VitalsPayload.class);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-    }
-
-    private String toJson(VitalsPayload payload) {
-        if (payload == null) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
-            throw new BadRequestException("Invalid vitals payload");
-        }
+        return new VitalsPayload(systolic, diastolic, pulse,
+                temperature != null ? temperature.doubleValue() : null, wellbeing);
     }
 
     private String normalize(String value) {

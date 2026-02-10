@@ -8,6 +8,6 @@ import java.util.UUID;
 public record ProcessReportRequestCommand(
         UUID adminAccountId,
         UUID requestId,
-        String payloadJson
+        String payloadText
 ) {
 }

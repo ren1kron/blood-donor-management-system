@@ -15,14 +15,13 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "collection_session")
@@ -53,13 +52,35 @@ public class CollectionSession {
     @Column(name = "ended_at")
     private OffsetDateTime endedAt;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "pre_vitals_json", columnDefinition = "jsonb")
-    private String preVitalsJson;
+    @Column(name = "pre_systolic_mmhg")
+    private Integer preSystolicMmhg;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "post_vitals_json", columnDefinition = "jsonb")
-    private String postVitalsJson;
+    @Column(name = "pre_diastolic_mmhg")
+    private Integer preDiastolicMmhg;
+
+    @Column(name = "pre_pulse_rate")
+    private Integer prePulseRate;
+
+    @Column(name = "pre_body_temperature_c")
+    private BigDecimal preBodyTemperatureC;
+
+    @Column(name = "pre_wellbeing")
+    private String preWellbeing;
+
+    @Column(name = "post_systolic_mmhg")
+    private Integer postSystolicMmhg;
+
+    @Column(name = "post_diastolic_mmhg")
+    private Integer postDiastolicMmhg;
+
+    @Column(name = "post_pulse_rate")
+    private Integer postPulseRate;
+
+    @Column(name = "post_body_temperature_c")
+    private BigDecimal postBodyTemperatureC;
+
+    @Column(name = "post_wellbeing")
+    private String postWellbeing;
 
     @Column(name = "notes")
     private String notes;

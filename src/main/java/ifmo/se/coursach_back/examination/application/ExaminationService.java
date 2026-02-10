@@ -1,11 +1,10 @@
 package ifmo.se.coursach_back.examination.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ifmo.se.coursach_back.examination.api.dto.ConfirmExaminationRequest;
 import ifmo.se.coursach_back.examination.api.dto.ConfirmExaminationResponse;
 import ifmo.se.coursach_back.examination.api.dto.ExaminationBookingResponse;
 import ifmo.se.coursach_back.examination.api.dto.ExaminationSlotResponse;
+import ifmo.se.coursach_back.examination.api.dto.QuestionnairePayload;
 import ifmo.se.coursach_back.exception.BadRequestException;
 import ifmo.se.coursach_back.exception.ConflictException;
 import ifmo.se.coursach_back.exception.NotFoundException;
@@ -42,7 +41,6 @@ public class ExaminationService {
     private final VisitRepositoryPort visitRepository;
     private final ConsentRepositoryPort consentRepository;
     private final QuestionnaireRepositoryPort questionnaireRepository;
-    private final ObjectMapper objectMapper;
     
     public List<ExaminationSlotResponse> listAvailableSlots(OffsetDateTime from, OffsetDateTime to) {
         OffsetDateTime start = from != null ? from : OffsetDateTime.now();
@@ -136,7 +134,11 @@ public class ExaminationService {
         questionnaire.setVisit(savedVisit);
         questionnaire.setDonor(donor);
         questionnaire.setFilledAt(now);
-        questionnaire.setPayloadJson(serializePayload(request.questionnairePayload()));
+        QuestionnairePayload payload = request.questionnairePayload();
+        questionnaire.setHasFever(payload.hasFever());
+        questionnaire.setTookAntibioticsLast14d(payload.tookAntibioticsLast14Days());
+        questionnaire.setHasChronicDiseases(payload.hasChronicDiseases());
+        questionnaire.setComment(payload.comment());
         questionnaireRepository.save(questionnaire);
         
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -185,13 +187,5 @@ public class ExaminationService {
     private DonorProfile requireDonor(UUID accountId) {
         return donorProfileRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new NotFoundException("Donor profile not found"));
-    }
-    
-    private String serializePayload(Object payload) {
-        try {
-            return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
-            throw new BadRequestException("Failed to serialize questionnaire payload");
-        }
     }
 }

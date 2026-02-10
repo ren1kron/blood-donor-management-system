@@ -28,7 +28,7 @@ public class AuditService {
         event.setEntityType(entityType);
         event.setEntityId(entityId);
         if (metadata != null && !metadata.isEmpty()) {
-            event.setMetadataJson(toJson(metadata));
+            event.setMetadataText(toJson(metadata));
         }
         auditEventRepository.save(event);
     }

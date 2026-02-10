@@ -16,8 +16,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "audit_event")
@@ -46,9 +44,8 @@ public class AuditEvent {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "metadata_json", columnDefinition = "jsonb")
-    private String metadataJson;
+    @Column(name = "metadata_text")
+    private String metadataText;
 
     @PrePersist
     public void prePersist() {
