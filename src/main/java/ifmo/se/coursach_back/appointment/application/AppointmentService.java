@@ -136,8 +136,13 @@ public class AppointmentService {
     public Booking cancelBooking(UUID accountId, UUID bookingId) {
         Booking booking = bookingRepository.findByIdAndDonorAccountId(bookingId, accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
-        if (!BookingStatus.BOOKED.equals(booking.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only booked appointments can be cancelled");
+        if (BookingStatus.CANCELLED.equals(booking.getStatus())) {
+            return booking;
+        }
+        if (!BookingStatus.BOOKED.equals(booking.getStatus())
+                && !BookingStatus.PENDING_QUESTIONNAIRE.equals(booking.getStatus())
+                && !BookingStatus.CONFIRMED.equals(booking.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot cancel booking with status: " + booking.getStatus());
         }
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(OffsetDateTime.now());

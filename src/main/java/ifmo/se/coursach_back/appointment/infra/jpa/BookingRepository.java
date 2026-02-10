@@ -15,7 +15,10 @@ import org.springframework.data.repository.query.Param;
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
     long countBySlotIdAndStatus(UUID slotId, BookingStatus status);
 
-    boolean existsByDonorIdAndSlotId(UUID donorId, UUID slotId);
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM Booking b " +
+           "WHERE b.donor.id = :donorId AND b.slot.id = :slotId " +
+           "AND b.status <> ifmo.se.coursach_back.appointment.domain.BookingStatus.CANCELLED")
+    boolean existsByDonorIdAndSlotId(@Param("donorId") UUID donorId, @Param("slotId") UUID slotId);
 
     @Query("""
             SELECT b FROM Booking b
