@@ -15,9 +15,7 @@ import org.springframework.data.repository.query.Param;
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
     long countBySlotIdAndStatus(UUID slotId, BookingStatus status);
 
-    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM Booking b " +
-           "WHERE b.donor.id = :donorId AND b.slot.id = :slotId " +
-           "AND b.status <> ifmo.se.coursach_back.appointment.domain.BookingStatus.CANCELLED")
+    @Query(value = "select fn_exists_active_booking(:donorId, :slotId)", nativeQuery = true)
     boolean existsByDonorIdAndSlotId(@Param("donorId") UUID donorId, @Param("slotId") UUID slotId);
 
     @Query("""
@@ -79,20 +77,14 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             @Param("bookingId") UUID bookingId,
             @Param("accountId") UUID accountId);
     
-    @Query("SELECT COUNT(b) FROM Booking b WHERE b.slot.id = :slotId " +
-           "AND b.status IN (ifmo.se.coursach_back.appointment.domain.BookingStatus.PENDING_QUESTIONNAIRE, " +
-           "ifmo.se.coursach_back.appointment.domain.BookingStatus.CONFIRMED, " +
-           "ifmo.se.coursach_back.appointment.domain.BookingStatus.BOOKED) " +
-           "AND b.cancelledAt IS NULL")
+    @Query(value = "select fn_count_active_bookings_by_slot(:slotId)", nativeQuery = true)
     long countActiveBookingsBySlotId(@Param("slotId") UUID slotId);
     
-    @Query("""
-            SELECT b FROM Booking b
-            WHERE b.donor.id = :donorId
-              AND b.slot.id = :slotId
-              AND b.status = :status
-              AND b.cancelledAt IS NULL
-            """)
+    @Query(value = """
+            select b.*
+            from booking b
+            where b.id = fn_get_pending_booking_id(:donorId, :slotId, :#{#status.name()})
+            """, nativeQuery = true)
     Optional<Booking> findPendingBookingByDonorAndSlot(
             @Param("donorId") UUID donorId,
             @Param("slotId") UUID slotId,

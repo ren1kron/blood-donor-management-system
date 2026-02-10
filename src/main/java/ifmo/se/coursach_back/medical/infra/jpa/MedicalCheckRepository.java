@@ -6,8 +6,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -35,21 +33,12 @@ public interface MedicalCheckRepository extends JpaRepository<MedicalCheck, UUID
             @Param("decision") MedicalCheckDecision decision,
             @Param("since") OffsetDateTime since);
 
-    @Query("""
-            select mc
-            from MedicalCheck mc
-            join mc.visit v
-            join v.booking b
-            where b.donor.id = :donorId
-            order by mc.decisionAt desc
-            """)
-    List<MedicalCheck> findLatestByDonorId(@Param("donorId") UUID donorId, Pageable pageable);
-
-    default Optional<MedicalCheck> findLatestByDonorId(UUID donorId) {
-        return findLatestByDonorId(donorId, PageRequest.of(0, 1))
-                .stream()
-                .findFirst();
-    }
+    @Query(value = """
+            select mc.*
+            from medical_check mc
+            where mc.id = fn_get_latest_medical_check_id(:donorId)
+            """, nativeQuery = true)
+    Optional<MedicalCheck> findLatestByDonorId(@Param("donorId") UUID donorId);
 
     @Query("""
             select mc

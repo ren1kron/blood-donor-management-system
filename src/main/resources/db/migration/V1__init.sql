@@ -296,6 +296,7 @@ create table blood_unit (
 create index idx_blood_unit_donation on blood_unit (donation_id);
 create index idx_blood_unit_component on blood_unit (component_type_id);
 create index idx_blood_unit_status on blood_unit (status);
+create index idx_blood_unit_expires_at on blood_unit (expires_at);
 
 create table donor_document (
     id          uuid primary key default gen_random_uuid(),
@@ -363,6 +364,186 @@ create table audit_event (
 
 create index idx_audit_event_account on audit_event (account_id);
 create index idx_audit_event_entity on audit_event (entity_type, entity_id);
+
+-- Shared helper: normalize enum-like text values.
+create or replace function normalize_upper_text(value text)
+returns text
+language sql
+immutable
+as $$
+    select case
+        when value is null then null
+        else upper(trim(value))
+    end
+$$;
+
+-- Generic updated_at maintenance for tables with audit columns.
+create or replace function trg_set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+    new.updated_at := now();
+    return new;
+end;
+$$;
+
+create trigger trg_report_request_set_updated_at
+before update on report_request
+for each row
+execute function trg_set_updated_at();
+
+create trigger trg_collection_session_set_updated_at
+before update on collection_session
+for each row
+execute function trg_set_updated_at();
+
+-- Keep booking cancellation metadata consistent with status.
+create or replace function trg_booking_consistency()
+returns trigger
+language plpgsql
+as $$
+begin
+    new.status := normalize_upper_text(new.status);
+
+    if new.status = 'CANCELLED' then
+        if new.cancelled_at is null then
+            new.cancelled_at := now();
+        end if;
+    else
+        new.cancelled_at := null;
+    end if;
+
+    return new;
+end;
+$$;
+
+create trigger trg_booking_consistency
+before insert or update on booking
+for each row
+execute function trg_booking_consistency();
+
+-- Sync publication timestamp with is_published flag.
+create or replace function trg_publication_consistency()
+returns trigger
+language plpgsql
+as $$
+begin
+    if new.is_published then
+        if new.published_at is null then
+            new.published_at := now();
+        end if;
+    else
+        new.published_at := null;
+    end if;
+
+    return new;
+end;
+$$;
+
+create trigger trg_donation_publication_consistency
+before insert or update on donation
+for each row
+execute function trg_publication_consistency();
+
+create trigger trg_lab_test_result_publication_consistency
+before insert or update on lab_test_result
+for each row
+execute function trg_publication_consistency();
+
+-- Keep delivery status and delivery time aligned.
+create or replace function trg_notification_delivery_consistency()
+returns trigger
+language plpgsql
+as $$
+begin
+    new.status := normalize_upper_text(new.status);
+
+    if new.donor_id is null and new.staff_id is null then
+        raise exception 'Notification delivery must reference donor_id or staff_id';
+    end if;
+
+    if new.status in ('SENT', 'ACKED') and new.sent_at is null then
+        new.sent_at := now();
+    elsif new.status = 'PENDING' then
+        new.sent_at := null;
+    end if;
+
+    return new;
+end;
+$$;
+
+create trigger trg_notification_delivery_consistency
+before insert or update on notification_delivery
+for each row
+execute function trg_notification_delivery_consistency();
+
+-- Keep reason fields relevant to current sample status.
+create or replace function trg_sample_consistency()
+returns trigger
+language plpgsql
+as $$
+begin
+    new.status := normalize_upper_text(new.status);
+
+    if new.status = 'QUARANTINE' then
+        new.quarantine_reason := nullif(trim(new.quarantine_reason), '');
+    else
+        new.quarantine_reason := null;
+    end if;
+
+    if new.status = 'REJECTED' then
+        new.rejection_reason := nullif(trim(new.rejection_reason), '');
+    else
+        new.rejection_reason := null;
+    end if;
+
+    return new;
+end;
+$$;
+
+create trigger trg_sample_consistency
+before insert or update on sample
+for each row
+execute function trg_sample_consistency();
+
+-- Validate blood unit shelf-life data and normalize status.
+create or replace function trg_blood_unit_consistency()
+returns trigger
+language plpgsql
+as $$
+begin
+    new.status := normalize_upper_text(new.status);
+
+    if new.volume_ml is not null and new.volume_ml <= 0 then
+        raise exception 'blood_unit.volume_ml must be greater than 0 when provided';
+    end if;
+
+    if new.expires_at is not null and new.collected_at is not null and new.expires_at <= new.collected_at then
+        raise exception 'blood_unit.expires_at must be later than collected_at';
+    end if;
+
+    return new;
+end;
+$$;
+
+create trigger trg_blood_unit_consistency
+before insert or update on blood_unit
+for each row
+execute function trg_blood_unit_consistency();
+
+-- View with derived blood unit status (virtual EXPIRED without physical status mutation).
+create or replace view v_blood_unit as
+select
+    bu.*,
+    case
+        when bu.expires_at is not null
+             and bu.expires_at <= now()
+             and normalize_upper_text(bu.status) in ('IN_STOCK', 'RESERVED')
+            then 'EXPIRED'
+        else normalize_upper_text(bu.status)
+    end as effective_status
+from blood_unit bu;
 
 insert into role (code, name)
 values

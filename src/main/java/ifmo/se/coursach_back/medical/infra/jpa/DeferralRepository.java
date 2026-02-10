@@ -9,12 +9,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface DeferralRepository extends JpaRepository<Deferral, UUID> {
-    @Query("""
-            select deferral
-            from Deferral deferral
-            where deferral.donor.id = :donorId
-              and (deferral.endsAt is null or deferral.endsAt > :now)
-            order by deferral.startsAt desc
-            """)
+    @Query(value = """
+            select d.*
+            from deferral d
+            where d.id = fn_get_active_deferral_id(:donorId, :now)
+            """, nativeQuery = true)
     Optional<Deferral> findActiveDeferral(@Param("donorId") UUID donorId, @Param("now") OffsetDateTime now);
 }
