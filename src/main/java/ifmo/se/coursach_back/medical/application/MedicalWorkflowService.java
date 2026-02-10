@@ -335,6 +335,10 @@ public class MedicalWorkflowService {
 
         assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
 
+        Booking booking = visit.getBooking();
+        booking.setStatus(BookingStatus.COMPLETED);
+        bookingRepository.save(booking);
+
         if (decision == MedicalCheckDecision.ADMITTED) {
             sendDonationReadyNotification(visit.getBooking().getDonor());
         } else {
