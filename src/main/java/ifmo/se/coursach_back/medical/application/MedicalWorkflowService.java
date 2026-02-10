@@ -23,6 +23,7 @@ import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
 import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
+import ifmo.se.coursach_back.medical.domain.Questionnaire;
 import ifmo.se.coursach_back.medical.domain.Sample;
 import ifmo.se.coursach_back.medical.domain.SampleStatus;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
@@ -40,6 +41,7 @@ import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
 import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.QuestionnaireRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
@@ -69,6 +71,7 @@ public class MedicalWorkflowService {
     private final StaffProfileRepositoryPort staffProfileRepository;
     private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
     private final CollectionSessionRepositoryPort collectionSessionRepository;
+    private final QuestionnaireRepositoryPort questionnaireRepository;
     private final DomainEventPublisher eventPublisher;
 
     public List<Booking> listScheduledBookings(OffsetDateTime from) {
@@ -123,6 +126,14 @@ public class MedicalWorkflowService {
         }
         return labExaminationRequestRepository.findByVisitIds(visitIds).stream()
                 .collect(Collectors.toMap(request -> request.getVisit().getId(), request -> request));
+    }
+
+    public Map<UUID, Questionnaire> loadQuestionnairesByVisitIds(List<UUID> visitIds) {
+        if (visitIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        return questionnaireRepository.findByVisitIds(visitIds).stream()
+                .collect(Collectors.toMap(q -> q.getVisit().getId(), q -> q));
     }
 
     public List<MedicalCheck> listPendingExaminations() {

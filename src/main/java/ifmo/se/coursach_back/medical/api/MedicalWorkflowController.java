@@ -45,6 +45,7 @@ import ifmo.se.coursach_back.medical.domain.Donation;
 import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.Sample;
+import ifmo.se.coursach_back.medical.domain.Questionnaire;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.appointment.domain.Visit;
 import ifmo.se.coursach_back.security.AccountPrincipal;
@@ -227,6 +228,7 @@ public class MedicalWorkflowController {
         List<UUID> visitIds = visitsByBooking.values().stream().map(Visit::getId).toList();
         Map<UUID, LabExaminationRequest> requestsByVisit = medicalWorkflowService.loadLabRequestsByVisitIds(visitIds);
         Map<UUID, MedicalCheck> checksByVisit = medicalWorkflowService.loadMedicalChecksByVisitIds(visitIds);
+        Map<UUID, Questionnaire> questionnairesByVisit = medicalWorkflowService.loadQuestionnairesByVisitIds(visitIds);
 
         return bookings.stream()
                 .map(booking -> {
@@ -236,7 +238,8 @@ public class MedicalWorkflowController {
                     }
                     LabExaminationRequest request = requestsByVisit.get(visit.getId());
                     MedicalCheck check = checksByVisit.get(visit.getId());
-                    return ExaminationQueueResponse.from(visit, request, check);
+                    Questionnaire questionnaire = questionnairesByVisit.get(visit.getId());
+                    return ExaminationQueueResponse.from(visit, request, check, questionnaire);
                 })
                 .filter(java.util.Objects::nonNull)
                 .toList();

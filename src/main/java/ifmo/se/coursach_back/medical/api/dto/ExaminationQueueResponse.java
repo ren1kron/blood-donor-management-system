@@ -1,9 +1,12 @@
 package ifmo.se.coursach_back.medical.api.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
 import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
+import ifmo.se.coursach_back.medical.domain.Questionnaire;
 import ifmo.se.coursach_back.appointment.domain.Visit;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -28,9 +31,33 @@ public record ExaminationQueueResponse(
         Integer pulseRate,
         BigDecimal bodyTemperatureC,
         MedicalCheckDecision decision,
-        OffsetDateTime decisionAt
+        OffsetDateTime decisionAt,
+        Boolean questionnaireHasFever,
+        Boolean questionnaireTookAntibiotics,
+        Boolean questionnaireHasChronicDiseases,
+        String questionnaireComment
 ) {
-    public static ExaminationQueueResponse from(Visit visit, LabExaminationRequest request, MedicalCheck check) {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static ExaminationQueueResponse from(Visit visit, LabExaminationRequest request,
+                                                 MedicalCheck check, Questionnaire questionnaire) {
+        Boolean hasFever = null;
+        Boolean tookAntibiotics = null;
+        Boolean hasChronicDiseases = null;
+        String comment = null;
+
+        if (questionnaire != null && questionnaire.getPayloadJson() != null) {
+            try {
+                JsonNode json = OBJECT_MAPPER.readTree(questionnaire.getPayloadJson());
+                hasFever = json.has("hasFever") ? json.get("hasFever").asBoolean() : null;
+                tookAntibiotics = json.has("tookAntibioticsLast14Days") ? json.get("tookAntibioticsLast14Days").asBoolean() : null;
+                hasChronicDiseases = json.has("hasChronicDiseases") ? json.get("hasChronicDiseases").asBoolean() : null;
+                comment = json.has("comment") && !json.get("comment").isNull() ? json.get("comment").asText() : null;
+            } catch (Exception ignored) {
+                // If payload parsing fails, leave fields as null
+            }
+        }
+
         return new ExaminationQueueResponse(
                 visit.getId(),
                 visit.getBooking().getId(),
@@ -50,7 +77,11 @@ public record ExaminationQueueResponse(
                 request != null ? request.getPulseRate() : null,
                 request != null ? request.getBodyTemperatureC() : null,
                 check != null ? check.getDecision() : null,
-                check != null ? check.getDecisionAt() : null
+                check != null ? check.getDecisionAt() : null,
+                hasFever,
+                tookAntibiotics,
+                hasChronicDiseases,
+                comment
         );
     }
 }

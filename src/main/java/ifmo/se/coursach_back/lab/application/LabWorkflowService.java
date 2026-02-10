@@ -6,11 +6,13 @@ import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.lab.domain.LabTestResult;
 import ifmo.se.coursach_back.lab.domain.LabTestType;
 import ifmo.se.coursach_back.donor.domain.BloodGroup;
+import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.donor.domain.RhFactor;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.medical.domain.Sample;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
+import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabTestResultRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabTestTypeRepositoryPort;
@@ -39,6 +41,7 @@ public class LabWorkflowService {
     private final StaffProfileRepositoryPort staffProfileRepository;
     private final MedicalCheckRepositoryPort medicalCheckRepository;
     private final LabExaminationRequestRepositoryPort labExaminationRequestRepository;
+    private final DonorProfileRepositoryPort donorProfileRepository;
 
     public List<LabExaminationRequest> listPendingRequests() {
         return labExaminationRequestRepository.findByStatuses(
@@ -133,6 +136,12 @@ public class LabWorkflowService {
         requestEntity.setBloodGroup(bloodGroup);
         requestEntity.setRhFactor(rhFactor);
         LabExaminationRequest savedRequest = labExaminationRequestRepository.save(requestEntity);
+
+        // Update donor profile with blood group and Rh factor
+        DonorProfile donorProfile = requestEntity.getVisit().getBooking().getDonor();
+        donorProfile.setBloodGroup(bloodGroup);
+        donorProfile.setRhFactor(rhFactor);
+        donorProfileRepository.save(donorProfile);
 
         MedicalCheck check = medicalCheckRepository.findByVisitId(requestEntity.getVisit().getId())
                 .orElseGet(MedicalCheck::new);
