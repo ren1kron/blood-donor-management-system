@@ -15,6 +15,7 @@ import ifmo.se.coursach_back.medical.api.dto.ReviewExaminationRequest;
 import ifmo.se.coursach_back.medical.domain.Deferral;
 import ifmo.se.coursach_back.medical.domain.DeferralType;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
+import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.lab.domain.LabExaminationRequest;
 import ifmo.se.coursach_back.lab.domain.LabExaminationStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
@@ -92,6 +93,10 @@ public class MedicalCheckService {
 
         assignBloodDataOnAdmission(check.getVisit().getBooking().getDonor(), decision, labRequest);
 
+        if (decision == MedicalCheckDecision.ADMITTED) {
+            activateDonorIfNeeded(check.getVisit().getBooking().getDonor());
+        }
+
         sendDecisionNotification(check.getVisit().getBooking().getDonor(), decision, request.deferral());
 
         eventPublisher.publish(AuditDomainEvent.of(accountId, "MEDICAL_CHECK_DECISION", "MedicalCheck", saved.getId(),
@@ -133,6 +138,7 @@ public class MedicalCheckService {
         assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
 
         if (decision == MedicalCheckDecision.ADMITTED) {
+            activateDonorIfNeeded(visit.getBooking().getDonor());
             sendDecisionNotification(visit.getBooking().getDonor(), decision, null);
         }
 
@@ -168,6 +174,10 @@ public class MedicalCheckService {
         }
 
         assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
+
+        if (decision == MedicalCheckDecision.ADMITTED) {
+            activateDonorIfNeeded(visit.getBooking().getDonor());
+        }
 
         sendDecisionNotification(visit.getBooking().getDonor(), decision, request.deferral());
 
@@ -216,6 +226,14 @@ public class MedicalCheckService {
         check.setDecision(decision);
         check.setStatus(decision);
         check.setDecisionAt(OffsetDateTime.now());
+    }
+
+    private void activateDonorIfNeeded(DonorProfile donor) {
+        if (donor != null && donor.getDonorStatus() != DonorStatus.ACTIVE) {
+            donor.setDonorStatus(DonorStatus.ACTIVE);
+            donorProfileRepository.save(donor);
+            log.info("Donor activated after examination: donorId={}", donor.getId());
+        }
     }
 
     private void assignBloodDataOnAdmission(DonorProfile donor, MedicalCheckDecision decision,

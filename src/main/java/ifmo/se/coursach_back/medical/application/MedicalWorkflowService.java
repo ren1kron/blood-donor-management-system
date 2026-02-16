@@ -190,6 +190,7 @@ public class MedicalWorkflowService {
         assignBloodDataOnAdmission(check.getVisit().getBooking().getDonor(), decision, labRequest);
         
         if (decision == MedicalCheckDecision.ADMITTED) {
+            activateDonorIfNeeded(check.getVisit().getBooking().getDonor());
             sendDonationReadyNotification(check.getVisit().getBooking().getDonor());
         } else {
             sendDeferralNotification(check.getVisit().getBooking().getDonor(), request.deferral());
@@ -254,6 +255,7 @@ public class MedicalWorkflowService {
         assignBloodDataOnAdmission(visit.getBooking().getDonor(), decision, labRequest);
 
         if (decision == MedicalCheckDecision.ADMITTED) {
+            activateDonorIfNeeded(visit.getBooking().getDonor());
             sendDonationReadyNotification(visit.getBooking().getDonor());
         }
 
@@ -340,6 +342,7 @@ public class MedicalWorkflowService {
         bookingRepository.save(booking);
 
         if (decision == MedicalCheckDecision.ADMITTED) {
+            activateDonorIfNeeded(visit.getBooking().getDonor());
             sendDonationReadyNotification(visit.getBooking().getDonor());
         } else {
             sendDeferralNotification(visit.getBooking().getDonor(), request.deferral());
@@ -425,7 +428,6 @@ public class MedicalWorkflowService {
         booking.setStatus(BookingStatus.COMPLETED);
         bookingRepository.save(booking);
         
-        activateDonorIfNeeded(booking.getDonor());
         eventPublisher.publish(AuditDomainEvent.of(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
                 Map.of("visitId", visit.getId())));
         return saved;

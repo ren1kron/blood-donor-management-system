@@ -16,7 +16,6 @@ import ifmo.se.coursach_back.medical.domain.Donation;
 import ifmo.se.coursach_back.medical.domain.DonationType;
 import ifmo.se.coursach_back.medical.domain.ReactionSeverity;
 import ifmo.se.coursach_back.donor.domain.DonorProfile;
-import ifmo.se.coursach_back.donor.domain.DonorStatus;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.medical.domain.Sample;
@@ -28,7 +27,6 @@ import ifmo.se.coursach_back.medical.application.ports.AdverseReactionRepository
 import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
 import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
-import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +57,6 @@ public class DonationService {
     private final MedicalCheckRepositoryPort medicalCheckRepository;
     private final CollectionSessionRepositoryPort collectionSessionRepository;
     private final BookingRepositoryPort bookingRepository;
-    private final DonorProfileRepositoryPort donorProfileRepository;
     private final EntityResolverService entityResolver;
     private final DomainEventPublisher eventPublisher;
 
@@ -82,7 +79,6 @@ public class DonationService {
 
         createSampleForDonation(saved);
         completeBooking(booking);
-        activateDonorIfNeeded(booking.getDonor());
 
         eventPublisher.publish(AuditDomainEvent.of(accountId, "DONATION_REGISTERED", "Donation", saved.getId(),
                 Map.of("visitId", visit.getId())));
@@ -202,14 +198,6 @@ public class DonationService {
     private void completeBooking(Booking booking) {
         booking.setStatus(BookingStatus.COMPLETED);
         bookingRepository.save(booking);
-    }
-
-    private void activateDonorIfNeeded(DonorProfile donor) {
-        if (donor != null && donor.getDonorStatus() != DonorStatus.ACTIVE) {
-            donor.setDonorStatus(DonorStatus.ACTIVE);
-            donorProfileRepository.save(donor);
-            log.info("Donor activated: donorId={}", donor.getId());
-        }
     }
 
     private String generateSampleCode() {
