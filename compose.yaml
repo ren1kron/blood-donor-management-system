@@ -24,4 +24,4 @@ services:
       - 'DB_PASSWORD=postgres'
       - 'SECURITY_JWT_SECRET=your-super-secret-jwt-key-that-should-be-at-least-256-bits-long'
     ports:
-      - '8080:8080'
+      - '9696:9696'
