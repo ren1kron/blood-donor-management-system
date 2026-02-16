@@ -38,3 +38,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+deploy.sh
+super_deploy.sh

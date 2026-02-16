@@ -39,7 +39,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthRateLimitFilter authRateLimitFilter;
 
-    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://localhost:27843}")
     private String corsAllowedOrigins;
 
     @Bean
@@ -51,6 +51,17 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/favicon.ico",
+                                "/vite.svg",
+                                "/assets/**",
+                                "/*.js",
+                                "/*.css",
+                                "/*.map")
+                        .permitAll()
+                        .requestMatchers(request -> isFrontendRouteRequest(request)).permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/actuator/health",
@@ -65,6 +76,27 @@ public class SecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(authRateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
+    }
+
+    private boolean isFrontendRouteRequest(jakarta.servlet.http.HttpServletRequest request) {
+        if (!HttpMethod.GET.matches(request.getMethod())) {
+            return false;
+        }
+
+        String path = request.getRequestURI();
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+
+        if (path.startsWith("/api/")
+                || path.startsWith("/actuator/")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")
+                || path.equals("/error")) {
+            return false;
+        }
+
+        return !path.contains(".");
     }
 
     @Bean

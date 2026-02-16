@@ -66,12 +66,24 @@ public class DemoDataBootstrap implements ApplicationRunner {
 
     private void ensureRole(Account account, String roleCode) {
         Role role = roleRepository.findByCode(roleCode)
-                .orElseThrow(() -> new IllegalStateException("Role is not configured: " + roleCode));
+                .orElseGet(() -> roleRepository.save(new Role(null, roleCode, defaultRoleName(roleCode))));
         boolean hasRole = account.getRoles().stream().anyMatch(existing -> roleCode.equalsIgnoreCase(existing.getCode()));
         if (!hasRole) {
             account.getRoles().add(role);
             accountRepository.save(account);
         }
+    }
+
+    private String defaultRoleName(String roleCode) {
+        return switch (roleCode) {
+            case "GOD" -> "Head Administrator";
+            case "ADMIN" -> "Administrator";
+            case "DOCTOR" -> "Doctor";
+            case "NURSE" -> "Nurse";
+            case "LAB" -> "Lab Technician";
+            case "DONOR" -> "Donor";
+            default -> roleCode;
+        };
     }
 
     private void ensureDonorProfile(Account account, String fullName, LocalDate birthDate, BloodGroup bloodGroup,
