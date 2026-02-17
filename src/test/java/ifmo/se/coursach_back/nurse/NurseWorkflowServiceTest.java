@@ -22,6 +22,8 @@ import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort
 import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.BloodUnitRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import java.util.Optional;
@@ -38,6 +40,8 @@ class NurseWorkflowServiceTest {
     @Mock private DonationRepositoryPort donationRepository;
     @Mock private CollectionSessionRepositoryPort collectionSessionRepository;
     @Mock private StaffProfileRepositoryPort staffProfileRepository;
+    @Mock private SampleRepositoryPort sampleRepository;
+    @Mock private BloodUnitRepositoryPort bloodUnitRepository;
     @Mock private AuditService auditService;
 
     private NurseWorkflowService service;
@@ -52,6 +56,8 @@ class NurseWorkflowServiceTest {
                 donationRepository,
                 collectionSessionRepository,
                 staffProfileRepository,
+                sampleRepository,
+                bloodUnitRepository,
                 auditService
         );
     }
@@ -84,7 +90,10 @@ class NurseWorkflowServiceTest {
                 visitId,
                 null,
                 new VitalsPayload(120, 80, 72, 36.6, "ok"),
-                "notes"
+                "notes",
+                "WHOLE_BLOOD",
+                450,
+                "good"
         );
 
         CollectionSessionResponse created = service.createSession(accountId, createRequest);
@@ -98,13 +107,13 @@ class NurseWorkflowServiceTest {
         when(collectionSessionRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
 
         CollectionSessionResponse started = service.startSession(accountId, existing.getId(),
-                new CollectionSessionUpdateRequest(createRequest.preVitals(), null, null, null, null));
+                new CollectionSessionUpdateRequest(createRequest.preVitals(), null, null, null, null, null, null, null));
         assertEquals(CollectionSessionStatus.IN_PROGRESS, started.status());
         assertNotNull(started.startedAt());
 
         CollectionSessionResponse completed = service.completeSession(accountId, existing.getId(),
                 new CollectionSessionUpdateRequest(null, new VitalsPayload(118, 78, 70, 36.7, "ok"),
-                        "done", null, null));
+                        "done", null, null, "WHOLE_BLOOD", 450, "good"));
         assertEquals(CollectionSessionStatus.COMPLETED, completed.status());
         assertNotNull(completed.endedAt());
     }

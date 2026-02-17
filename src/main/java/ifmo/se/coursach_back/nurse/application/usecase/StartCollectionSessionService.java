@@ -23,6 +23,9 @@ public class StartCollectionSessionService implements StartCollectionSessionUseC
                 null,
                 command.notes(),
                 null,
+                null,
+                null,
+                null,
                 null
         );
         CollectionSessionResponse response = nurseWorkflowService.startSession(
@@ -47,6 +50,9 @@ public class StartCollectionSessionService implements StartCollectionSessionUseC
                 response.notes(),
                 response.complications(),
                 response.interruptionReason(),
+                response.donationType(),
+                response.volumeMl(),
+                response.donorState(),
                 response.createdAt(),
                 response.updatedAt()
         );

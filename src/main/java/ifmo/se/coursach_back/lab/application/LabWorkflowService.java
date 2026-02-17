@@ -11,7 +11,9 @@ import ifmo.se.coursach_back.donor.domain.RhFactor;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
 import ifmo.se.coursach_back.medical.domain.MedicalCheckDecision;
 import ifmo.se.coursach_back.medical.domain.Sample;
+import ifmo.se.coursach_back.medical.domain.SampleStatus;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
+import java.util.Arrays;
 import ifmo.se.coursach_back.donor.application.ports.DonorProfileRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabExaminationRequestRepositoryPort;
 import ifmo.se.coursach_back.lab.application.ports.LabTestResultRepositoryPort;
@@ -32,7 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class LabWorkflowService {
-    private static final List<String> DEFAULT_PENDING_STATUSES = List.of("REGISTERED", "NEW");
+    private static final List<SampleStatus> DEFAULT_PENDING_STATUSES = List.of(SampleStatus.REGISTERED, SampleStatus.NEW);
     private static final Set<String> ALLOWED_FLAGS = Set.of("OK", "POSITIVE", "NEGATIVE", "INCONCLUSIVE");
 
     private final SampleRepositoryPort sampleRepository;
@@ -49,9 +51,9 @@ public class LabWorkflowService {
     }
 
     public List<Sample> listPendingSamples(String status) {
-        List<String> statuses = status == null || status.isBlank()
-                ? DEFAULT_PENDING_STATUSES
-                : List.of(status.trim().toUpperCase());
+        List<SampleStatus> statuses = status == null || status.isBlank()
+                ? Arrays.asList(SampleStatus.values())
+                : List.of(SampleStatus.valueOf(status.trim().toUpperCase()));
         return sampleRepository.findByStatuses(statuses);
     }
 

@@ -1,6 +1,7 @@
 package ifmo.se.coursach_back.medical.infra.jpa;
 
 import ifmo.se.coursach_back.medical.domain.Sample;
+import ifmo.se.coursach_back.medical.domain.SampleStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +18,7 @@ public interface SampleRepository extends JpaRepository<Sample, UUID> {
             where s.status in :statuses
             order by s.collectedAt asc
             """)
-    List<Sample> findByStatuses(@Param("statuses") List<String> statuses);
+    List<Sample> findByStatuses(@Param("statuses") List<SampleStatus> statuses);
     
     @Query("SELECT COUNT(s) FROM Sample s WHERE s.collectedAt >= :from AND s.collectedAt <= :to")
     long countByCollectedAtBetween(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);

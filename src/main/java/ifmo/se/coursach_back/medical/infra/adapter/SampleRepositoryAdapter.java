@@ -2,6 +2,7 @@ package ifmo.se.coursach_back.medical.infra.adapter;
 
 import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import ifmo.se.coursach_back.medical.domain.Sample;
+import ifmo.se.coursach_back.medical.domain.SampleStatus;
 import ifmo.se.coursach_back.medical.infra.jpa.SampleRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -26,7 +27,7 @@ public class SampleRepositoryAdapter implements SampleRepositoryPort {
     }
 
     @Override
-    public List<Sample> findByStatuses(List<String> statuses) {
+    public List<Sample> findByStatuses(List<SampleStatus> statuses) {
         return jpaRepository.findByStatuses(statuses);
     }
 

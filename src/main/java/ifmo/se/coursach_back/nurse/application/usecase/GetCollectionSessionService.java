@@ -31,6 +31,9 @@ public class GetCollectionSessionService implements GetCollectionSessionUseCase 
                 response.notes(),
                 response.complications(),
                 response.interruptionReason(),
+                response.donationType(),
+                response.volumeMl(),
+                response.donorState(),
                 response.createdAt(),
                 response.updatedAt()
         );

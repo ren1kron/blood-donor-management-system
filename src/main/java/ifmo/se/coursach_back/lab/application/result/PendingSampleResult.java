@@ -18,7 +18,12 @@ public record PendingSampleResult(
             UUID sampleId,
             String barcode,
             SampleStatus status,
-            OffsetDateTime collectedAt
+            OffsetDateTime collectedAt,
+            UUID donationId,
+            UUID donorId,
+            String donorFullName,
+            String quarantineReason,
+            String rejectionReason
     ) {
     }
 }

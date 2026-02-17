@@ -72,7 +72,8 @@ public class NurseController {
             @Valid @RequestBody CollectionSessionCreateRequest request) {
         CreateCollectionSessionCommand command = new CreateCollectionSessionCommand(
                 principal.getId(), request.visitId(), request.bookingId(),
-                request.preVitals(), request.notes()
+                request.preVitals(), request.notes(),
+                request.donationType(), request.volumeMl(), request.donorState()
         );
         CollectionSessionResult result = createCollectionSessionUseCase.execute(command);
         CollectionSessionResponse response = mapToResponse(result);
@@ -101,7 +102,10 @@ public class NurseController {
         CompleteCollectionSessionCommand command = new CompleteCollectionSessionCommand(
                 principal.getId(), id,
                 request != null ? request.postVitals() : null,
-                request != null ? request.notes() : null
+                request != null ? request.notes() : null,
+                request != null ? request.donationType() : null,
+                request != null ? request.volumeMl() : null,
+                request != null ? request.donorState() : null
         );
         CollectionSessionResult result = completeCollectionSessionUseCase.execute(command);
         return ResponseEntity.ok(mapToResponse(result));
@@ -133,6 +137,7 @@ public class NurseController {
                 result.status(), result.startedAt(), result.endedAt(),
                 result.preVitals(), result.postVitals(), result.notes(),
                 result.complications(), result.interruptionReason(),
+                result.donationType(), result.volumeMl(), result.donorState(),
                 result.createdAt(), result.updatedAt()
         );
     }

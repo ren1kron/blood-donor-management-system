@@ -11,6 +11,10 @@ public record CollectionSessionUpdateRequest(
         @Size(max = 1000, message = "Complications must not exceed 1000 characters")
         String complications,
         @Size(max = 500, message = "Interruption reason must not exceed 500 characters")
-        String interruptionReason
+        String interruptionReason,
+        String donationType,
+        Integer volumeMl,
+        @Size(max = 1000, message = "Donor state must not exceed 1000 characters")
+        String donorState
 ) {
 }

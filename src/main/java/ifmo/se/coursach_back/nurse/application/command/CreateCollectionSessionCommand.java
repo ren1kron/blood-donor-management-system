@@ -11,6 +11,9 @@ public record CreateCollectionSessionCommand(
         UUID visitId,
         UUID bookingId,
         VitalsPayload preVitals,
-        String notes
+        String notes,
+        String donationType,
+        Integer volumeMl,
+        String donorState
 ) {
 }

@@ -23,7 +23,10 @@ public class AbortCollectionSessionService implements AbortCollectionSessionUseC
                 null,
                 command.notes(),
                 null,
-                command.reason()
+                command.reason(),
+                null,
+                null,
+                null
         );
         CollectionSessionResponse response = nurseWorkflowService.abortSession(
                 command.accountId(),
@@ -47,6 +50,9 @@ public class AbortCollectionSessionService implements AbortCollectionSessionUseC
                 response.notes(),
                 response.complications(),
                 response.interruptionReason(),
+                response.donationType(),
+                response.volumeMl(),
+                response.donorState(),
                 response.createdAt(),
                 response.updatedAt()
         );

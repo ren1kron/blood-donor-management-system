@@ -31,8 +31,8 @@ public class BloodUnit {
     @JoinColumn(name = "donation_id", nullable = false)
     private Donation donation;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "component_type_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "component_type_id")
     private BloodComponentType componentType;
 
     @Column(name = "blood_group")
@@ -56,13 +56,16 @@ public class BloodUnit {
     @Column(name = "storage_location")
     private String storageLocation;
 
+    @Column(name = "quarantine_reason")
+    private String quarantineReason;
+
     @PrePersist
     public void prePersist() {
         if (collectedAt == null) {
             collectedAt = OffsetDateTime.now();
         }
         if (status == null) {
-            status = "IN_STOCK";
+            status = "PENDING_LAB_REVIEW";
         }
     }
 }

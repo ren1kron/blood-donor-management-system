@@ -23,7 +23,10 @@ public class CompleteCollectionSessionService implements CompleteCollectionSessi
                 command.postVitals(),
                 command.notes(),
                 null,
-                null
+                null,
+                command.donationType(),
+                command.volumeMl(),
+                command.donorState()
         );
         CollectionSessionResponse response = nurseWorkflowService.completeSession(
                 command.accountId(),
@@ -47,6 +50,9 @@ public class CompleteCollectionSessionService implements CompleteCollectionSessi
                 response.notes(),
                 response.complications(),
                 response.interruptionReason(),
+                response.donationType(),
+                response.volumeMl(),
+                response.donorState(),
                 response.createdAt(),
                 response.updatedAt()
         );

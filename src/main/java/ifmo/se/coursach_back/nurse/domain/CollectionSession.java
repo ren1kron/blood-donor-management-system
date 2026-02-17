@@ -82,6 +82,15 @@ public class CollectionSession {
     @Column(name = "post_wellbeing")
     private String postWellbeing;
 
+    @Column(name = "donation_type")
+    private String donationType;
+
+    @Column(name = "volume_ml")
+    private Integer volumeMl;
+
+    @Column(name = "donor_state")
+    private String donorState;
+
     @Column(name = "notes")
     private String notes;
 

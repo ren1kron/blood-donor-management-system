@@ -8,8 +8,12 @@ import ifmo.se.coursach_back.appointment.domain.Booking;
 import ifmo.se.coursach_back.appointment.domain.BookingStatus;
 import ifmo.se.coursach_back.nurse.domain.CollectionSession;
 import ifmo.se.coursach_back.nurse.domain.CollectionSessionStatus;
+import ifmo.se.coursach_back.medical.domain.BloodUnit;
 import ifmo.se.coursach_back.medical.domain.Donation;
+import ifmo.se.coursach_back.medical.domain.DonationType;
 import ifmo.se.coursach_back.medical.domain.MedicalCheck;
+import ifmo.se.coursach_back.medical.domain.Sample;
+import ifmo.se.coursach_back.medical.domain.SampleStatus;
 import ifmo.se.coursach_back.appointment.domain.SlotPurpose;
 import ifmo.se.coursach_back.admin.domain.StaffProfile;
 import ifmo.se.coursach_back.appointment.domain.Visit;
@@ -19,8 +23,10 @@ import ifmo.se.coursach_back.nurse.api.dto.CollectionSessionUpdateRequest;
 import ifmo.se.coursach_back.nurse.api.dto.VitalsPayload;
 import ifmo.se.coursach_back.appointment.application.ports.BookingRepositoryPort;
 import ifmo.se.coursach_back.nurse.application.ports.CollectionSessionRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.BloodUnitRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.DonationRepositoryPort;
 import ifmo.se.coursach_back.medical.application.ports.MedicalCheckRepositoryPort;
+import ifmo.se.coursach_back.medical.application.ports.SampleRepositoryPort;
 import ifmo.se.coursach_back.admin.application.ports.StaffProfileRepositoryPort;
 import ifmo.se.coursach_back.appointment.application.ports.VisitRepositoryPort;
 import java.math.BigDecimal;
@@ -45,6 +51,8 @@ public class NurseWorkflowService {
     private final DonationRepositoryPort donationRepository;
     private final CollectionSessionRepositoryPort collectionSessionRepository;
     private final StaffProfileRepositoryPort staffProfileRepository;
+    private final SampleRepositoryPort sampleRepository;
+    private final BloodUnitRepositoryPort bloodUnitRepository;
     private final AuditService auditService;
 
     @Transactional(readOnly = true)
@@ -97,6 +105,9 @@ public class NurseWorkflowService {
         session.setStatus(CollectionSessionStatus.PREPARED);
         applyPreVitals(session, request.preVitals());
         session.setNotes(normalize(request.notes()));
+        session.setDonationType(normalize(request.donationType()));
+        session.setVolumeMl(request.volumeMl());
+        session.setDonorState(normalize(request.donorState()));
         CollectionSession saved = collectionSessionRepository.save(session);
 
         auditService.log(accountId, "COLLECTION_SESSION_CREATED", "CollectionSession", saved.getId(),
@@ -145,6 +156,14 @@ public class NurseWorkflowService {
         session.setEndedAt(OffsetDateTime.now());
         applyUpdate(session, request);
         CollectionSession saved = collectionSessionRepository.save(session);
+
+        // Auto-create Donation and BloodUnit when nurse completes session
+        createDonationFromSession(saved, nurse);
+
+        // Mark booking as completed
+        Booking booking = saved.getVisit().getBooking();
+        booking.setStatus(BookingStatus.COMPLETED);
+        bookingRepository.save(booking);
         
         auditService.log(accountId, "COLLECTION_SESSION_COMPLETED", "CollectionSession", saved.getId(), null);
         return toResponse(saved);
@@ -192,6 +211,58 @@ public class NurseWorkflowService {
         if (request.interruptionReason() != null) {
             session.setInterruptionReason(normalize(request.interruptionReason()));
         }
+        if (request.donationType() != null) {
+            session.setDonationType(normalize(request.donationType()));
+        }
+        if (request.volumeMl() != null) {
+            session.setVolumeMl(request.volumeMl());
+        }
+        if (request.donorState() != null) {
+            session.setDonorState(normalize(request.donorState()));
+        }
+    }
+
+    private void createDonationFromSession(CollectionSession session, StaffProfile nurse) {
+        Visit visit = session.getVisit();
+        // Skip if donation already exists for this visit
+        if (donationRepository.findByVisitId(visit.getId()).isPresent()) {
+            return;
+        }
+
+        String donationTypeStr = session.getDonationType();
+        if (donationTypeStr == null || donationTypeStr.isBlank()) {
+            donationTypeStr = "WHOLE_BLOOD";
+        }
+
+        Donation donation = new Donation();
+        donation.setVisit(visit);
+        donation.setDonationType(DonationType.fromString(donationTypeStr));
+        donation.setVolumeMl(session.getVolumeMl());
+        donation.setPerformedBy(nurse);
+        donation.setPerformedAt(session.getEndedAt() != null ? session.getEndedAt() : OffsetDateTime.now());
+        donation.setPublished(true);
+        donation.setPublishedAt(donation.getPerformedAt());
+        Donation savedDonation = donationRepository.save(donation);
+
+        // Create sample for the donation
+        Sample sample = new Sample();
+        sample.setDonation(savedDonation);
+        sample.setSampleCode(generateSampleCode());
+        sample.setStatus(SampleStatus.NEW);
+        sampleRepository.save(sample);
+
+        // Create blood unit with PENDING_LAB_REVIEW status
+        BloodUnit bloodUnit = new BloodUnit();
+        bloodUnit.setDonation(savedDonation);
+        bloodUnit.setVolumeMl(session.getVolumeMl());
+        bloodUnit.setStatus("PENDING_LAB_REVIEW");
+        bloodUnitRepository.save(bloodUnit);
+    }
+
+    private String generateSampleCode() {
+        String datePart = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String randomPart = UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        return "SAM-" + datePart + "-" + randomPart;
     }
 
     private void applyPreVitals(CollectionSession session, VitalsPayload vitals) {
@@ -309,6 +380,9 @@ public class NurseWorkflowService {
                 session.getNotes(),
                 session.getComplications(),
                 session.getInterruptionReason(),
+                session.getDonationType(),
+                session.getVolumeMl(),
+                session.getDonorState(),
                 session.getCreatedAt(),
                 session.getUpdatedAt()
         );

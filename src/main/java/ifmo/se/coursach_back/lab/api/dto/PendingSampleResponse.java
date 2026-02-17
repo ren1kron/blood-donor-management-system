@@ -12,7 +12,9 @@ public record PendingSampleResponse(
         OffsetDateTime collectedAt,
         UUID donationId,
         UUID donorId,
-        String donorFullName
+        String donorFullName,
+        String quarantineReason,
+        String rejectionReason
 ) {
     public static PendingSampleResponse from(Sample sample) {
         return new PendingSampleResponse(
@@ -22,7 +24,9 @@ public record PendingSampleResponse(
                 sample.getCollectedAt(),
                 sample.getDonation().getId(),
                 sample.getDonation().getVisit().getBooking().getDonor().getId(),
-                sample.getDonation().getVisit().getBooking().getDonor().getFullName()
+                sample.getDonation().getVisit().getBooking().getDonor().getFullName(),
+                sample.getQuarantineReason(),
+                sample.getRejectionReason()
         );
     }
 }

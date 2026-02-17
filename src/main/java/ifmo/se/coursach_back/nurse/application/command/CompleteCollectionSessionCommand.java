@@ -10,6 +10,9 @@ public record CompleteCollectionSessionCommand(
         UUID accountId,
         UUID sessionId,
         VitalsPayload postVitals,
-        String notes
+        String notes,
+        String donationType,
+        Integer volumeMl,
+        String donorState
 ) {
 }

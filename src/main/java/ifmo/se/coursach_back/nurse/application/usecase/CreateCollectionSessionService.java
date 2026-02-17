@@ -22,7 +22,10 @@ public class CreateCollectionSessionService implements CreateCollectionSessionUs
                 command.visitId(),
                 command.bookingId(),
                 command.preVitals(),
-                command.notes()
+                command.notes(),
+                command.donationType(),
+                command.volumeMl(),
+                command.donorState()
         );
         CollectionSessionResponse response = nurseWorkflowService.createSession(command.accountId(), request);
         return toResult(response);
@@ -42,6 +45,9 @@ public class CreateCollectionSessionService implements CreateCollectionSessionUs
                 response.notes(),
                 response.complications(),
                 response.interruptionReason(),
+                response.donationType(),
+                response.volumeMl(),
+                response.donorState(),
                 response.createdAt(),
                 response.updatedAt()
         );

@@ -21,6 +21,9 @@ public record CollectionSessionResult(
         String notes,
         String complications,
         String interruptionReason,
+        String donationType,
+        Integer volumeMl,
+        String donorState,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
