@@ -33,4 +33,9 @@ public class BloodUnitRepositoryAdapter implements BloodUnitRepositoryPort {
     public BloodUnit save(BloodUnit bloodUnit) {
         return jpaRepository.save(bloodUnit);
     }
+
+    @Override
+    public List<BloodUnit> findAll() {
+        return jpaRepository.findAll();
+    }
 }

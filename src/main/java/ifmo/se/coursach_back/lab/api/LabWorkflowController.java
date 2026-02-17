@@ -187,7 +187,6 @@ public class LabWorkflowController {
             @Valid @RequestBody ReviewBloodUnitRequest request) {
         ReviewBloodUnitCommand command = new ReviewBloodUnitCommand(
                 principal.getId(), bloodUnitId,
-                request.bloodGroup(), request.rhFactor(), request.componentTypeId(),
                 request.expiresAt(), request.status(), request.storageLocation(),
                 request.quarantineReason()
         );

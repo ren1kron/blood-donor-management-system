@@ -9,9 +9,6 @@ import java.util.UUID;
 public record ReviewBloodUnitCommand(
         UUID accountId,
         UUID bloodUnitId,
-        String bloodGroup,
-        String rhFactor,
-        Short componentTypeId,
         OffsetDateTime expiresAt,
         String status,
         String storageLocation,

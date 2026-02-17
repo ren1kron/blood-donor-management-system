@@ -18,7 +18,8 @@ public class ListPendingBloodUnitsService implements ListPendingBloodUnitsUseCas
 
     @Override
     public List<BloodUnitResult> execute() {
-        List<BloodUnit> units = bloodUnitRepository.findByStatuses(List.of("PENDING_LAB_REVIEW"));
+//        List<BloodUnit> units = bloodUnitRepository.findByStatuses(List.of("PENDING_LAB_REVIEW"));
+        List<BloodUnit> units = bloodUnitRepository.findAll();
         return units.stream().map(this::toResult).toList();
     }
 

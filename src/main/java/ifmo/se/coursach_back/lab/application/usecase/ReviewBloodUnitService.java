@@ -42,17 +42,6 @@ public class ReviewBloodUnitService implements ReviewBloodUnitUseCase {
         BloodUnit unit = bloodUnitRepository.findById(command.bloodUnitId())
                 .orElseThrow(() -> new NotFoundException("Blood unit not found"));
 
-        if (command.bloodGroup() != null) {
-            unit.setBloodGroup(command.bloodGroup().trim().toUpperCase());
-        }
-        if (command.rhFactor() != null) {
-            unit.setRhFactor(command.rhFactor().trim().toUpperCase());
-        }
-        if (command.componentTypeId() != null) {
-            BloodComponentType componentType = bloodComponentTypeRepository.findById(command.componentTypeId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid component type ID"));
-            unit.setComponentType(componentType);
-        }
         if (command.expiresAt() != null) {
             unit.setExpiresAt(command.expiresAt());
         }

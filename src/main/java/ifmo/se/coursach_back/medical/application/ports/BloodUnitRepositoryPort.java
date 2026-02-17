@@ -13,4 +13,5 @@ public interface BloodUnitRepositoryPort {
     List<BloodUnit> findByStatuses(List<String> statuses);
     List<BloodUnit> findByDonationId(UUID donationId);
     BloodUnit save(BloodUnit bloodUnit);
+    List<BloodUnit> findAll();
 }
