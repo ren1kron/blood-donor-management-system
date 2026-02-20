@@ -1,5 +1,6 @@
 package ifmo.se.coursach_back.lab.application.usecase;
 
+import ifmo.se.coursach_back.donor.domain.DonorProfile;
 import ifmo.se.coursach_back.lab.application.result.BloodUnitResult;
 import ifmo.se.coursach_back.medical.application.ports.BloodUnitRepositoryPort;
 import ifmo.se.coursach_back.medical.domain.BloodUnit;
@@ -29,8 +30,20 @@ public class ListPendingBloodUnitsService implements ListPendingBloodUnitsUseCas
                 .orElse(null);
 
         String donorFullName = null;
+        DonorProfile donor = null;
         if (donation.getVisit().getBooking() != null && donation.getVisit().getBooking().getDonor() != null) {
-            donorFullName = donation.getVisit().getBooking().getDonor().getFullName();
+            donor = donation.getVisit().getBooking().getDonor();
+            donorFullName = donor.getFullName();
+        }
+
+        // Fall back to donor profile blood group / rh factor when the blood unit has none
+        String bloodGroup = unit.getBloodGroup();
+        String rhFactor = unit.getRhFactor();
+        if (bloodGroup == null && donor != null && donor.getBloodGroup() != null) {
+            bloodGroup = donor.getBloodGroup().getDisplayValue();
+        }
+        if (rhFactor == null && donor != null && donor.getRhFactor() != null) {
+            rhFactor = donor.getRhFactor().getDisplayValue();
         }
 
         return new BloodUnitResult(
@@ -40,8 +53,8 @@ public class ListPendingBloodUnitsService implements ListPendingBloodUnitsUseCas
                 donorFullName,
                 donation.getDonationType() != null ? donation.getDonationType().getValue() : null,
                 unit.getVolumeMl(),
-                unit.getBloodGroup(),
-                unit.getRhFactor(),
+                bloodGroup,
+                rhFactor,
                 unit.getComponentType() != null ? unit.getComponentType().getId() : null,
                 unit.getComponentType() != null ? unit.getComponentType().getCode() : null,
                 unit.getCollectedAt(),

@@ -84,6 +84,12 @@ public class LabWorkflowService {
         result.setResultValue(request.resultValue());
         result.setResultFlag(flag);
         result.setTestedAt(OffsetDateTime.now());
+
+        if (sample.getStatus() == SampleStatus.NEW) {
+            sample.setStatus(SampleStatus.REGISTERED);
+            sampleRepository.save(sample);
+        }
+
         return labTestResultRepository.save(result);
     }
 
@@ -96,6 +102,12 @@ public class LabWorkflowService {
             result.setPublished(true);
             result.setPublishedAt(OffsetDateTime.now());
             result = labTestResultRepository.save(result);
+
+            Sample sample = result.getSample();
+            if (sample.getStatus() == SampleStatus.NEW || sample.getStatus() == SampleStatus.REGISTERED) {
+                sample.setStatus(SampleStatus.PROCESSED);
+                sampleRepository.save(sample);
+            }
         }
         return result;
     }
